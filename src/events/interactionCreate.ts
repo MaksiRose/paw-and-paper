@@ -12,7 +12,7 @@ import DiscordUser from '../models/discordUser';
 import Server from '../models/server';
 import UserToServer from '../models/userToServer';
 import Quid from '../models/quid';
-import ServerToDiscordUser from '../models/serverToDiscordUser';
+import DiscordUserToServer from '../models/discordUserToServer';
 import QuidToServer from '../models/quidToServer';
 import { getDisplayname, getDisplayspecies, pronoun, pronounAndPlural } from '../utils/getQuidInfo';
 import User from '../models/user';
@@ -35,7 +35,7 @@ export const event: DiscordEvent = {
 
 			const discordUser = await DiscordUser.findByPk(interaction.user.id, {
 				include: [{ model: User, as: 'user' }],
-			});
+			}) ?? undefined;
 			const user = discordUser?.user;
 
 			const server = interaction.inCachedGuild()
@@ -73,10 +73,10 @@ export const event: DiscordEvent = {
 			}
 
 			/* It's updating the info for the discord user in the server */
-			const serverToDiscordUser = (discordUser && server)
-				? await ServerToDiscordUser.findOne({ where: { discordUserId: discordUser.id, serverId: server.id } }).then((row) => {
+			const discordUserToServer = (discordUser && server)
+				? await DiscordUserToServer.findOne({ where: { discordUserId: discordUser.id, serverId: server.id } }).then((row) => {
 					if (row) { return row.update({ isMember: true, lastUpdatedTimestamp: Date.now() }, { logging: false }); }
-					else { return ServerToDiscordUser.create({ id: generateId(), discordUserId: discordUser.id, serverId: server.id, isMember: true, lastUpdatedTimestamp: Date.now() }); }
+					else { return DiscordUserToServer.create({ id: generateId(), discordUserId: discordUser.id, serverId: server.id, isMember: true, lastUpdatedTimestamp: Date.now() }); }
 				}) : undefined;
 
 			/* It's updating the info for the quid in the server, if it exists */
@@ -109,7 +109,7 @@ export const event: DiscordEvent = {
 				if (command === undefined || command.sendAutocomplete === undefined) { return; }
 
 				/* It's sending the autocomplete message. */
-				await command.sendAutocomplete(interaction, { });
+				await command.sendAutocomplete(interaction, { user, userToServer, quid, quidToServer, discordUser, discordUserToServer });
 				return;
 			}
 
@@ -131,7 +131,7 @@ export const event: DiscordEvent = {
 
 				/* This sends the command and error message if an error occurs. */
 				{ console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully executed \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`); }
-				await command.sendCommand(interaction, { });
+				await command.sendCommand(interaction, { user, userToServer, quid, quidToServer, discordUser, discordUserToServer });
 
 				/* If sapling exists, a gentle reminder has not been sent and the watering time is after the perfect time, send a gentle reminder */
 				if (interaction.inGuild() && quid && quidToServer && quidToServer.sapling_exists && !quidToServer.sapling_sentGentleReminder && Date.now() > (quidToServer.sapling_nextWaterTimestamp || 0) + 60_000) { // The 60 seconds is so this doesn't trigger when you just found your sapling while exploring
@@ -188,7 +188,7 @@ export const event: DiscordEvent = {
 				if (command === undefined || command.sendModalResponse === undefined) { return; }
 
 				/* It's sending the autocomplete message. */
-				await command.sendModalResponse(interaction, { });
+				await command.sendModalResponse(interaction, { user, userToServer, quid, quidToServer, discordUser, discordUserToServer });
 				return;
 			}
 
@@ -278,7 +278,7 @@ export const event: DiscordEvent = {
 				}
 
 				/* It's sending the autocomplete message. */
-				await command.sendMessageComponentResponse(interaction, { user, userToServer, quidToServer });
+				await command.sendMessageComponentResponse(interaction, { user, userToServer, quid, quidToServer, discordUser, discordUserToServer });
 				return;
 			}
 		}

@@ -78,18 +78,18 @@ export const command: SlashCommand = {
 
 		const messageContent = remindOfAttack(interaction.guildId);
 
-		if (userData.quid.profile.rank === RankType.Youngling) {
+		if (quidToServer.rank === RankType.Youngling) {
 
 			// This is always a reply
 			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
-					.setColor(userData.quid.color)
+					.setColor(quid.color)
 					.setAuthor({
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
-					.setDescription(`*A healer rushes into the medicine den in fury.*\n"${userData.quid.name}, you are not trained to heal yourself, and especially not to heal others! I don't ever wanna see you again in here without supervision!"\n*${userData.quid.name} lowers ${userData.quid.pronoun(2)} head and leaves in shame.*`)],
+					.setDescription(`*A healer rushes into the medicine den in fury.*\n"${quid.name}, you are not trained to heal yourself, and especially not to heal others! I don't ever wanna see you again in here without supervision!"\n*${quid.name} lowers ${pronoun(quid, 2)} head and leaves in shame.*`)],
 			});
 			return;
 		}
@@ -174,15 +174,15 @@ export function quidNeedsHealing(
 
 	return hasNameAndSpecies(u)
 		&& (
-			((checkOnlyFor === undefined || checkOnlyFor === 'energy') && u.quid.profile.energy === 0)
-			|| (checkOnlyFor === undefined && u.quid.profile.health === 0)
-			|| ((checkOnlyFor === undefined || checkOnlyFor === 'hunger') && u.quid.profile.hunger === 0)
-			|| (checkOnlyFor === undefined && u.quid.profile.thirst === 0)
-			|| ((checkOnlyFor === undefined || checkOnlyFor === 'wounds') && u.quid.profile.injuries.wounds > 0)
-			|| ((checkOnlyFor === undefined || checkOnlyFor === 'infections') && u.quid.profile.injuries.infections > 0)
-			|| ((checkOnlyFor === undefined || checkOnlyFor === 'cold') && u.quid.profile.injuries.cold === true)
-			|| ((checkOnlyFor === undefined || checkOnlyFor === 'sprains') && u.quid.profile.injuries.sprains > 0)
-			|| ((checkOnlyFor === undefined || checkOnlyFor === 'poison') && u.quid.profile.injuries.poison === true)
+			((checkOnlyFor === undefined || checkOnlyFor === 'energy') && u.quidToServer.energy === 0)
+			|| (checkOnlyFor === undefined && u.quidToServer.health === 0)
+			|| ((checkOnlyFor === undefined || checkOnlyFor === 'hunger') && u.quidToServer.hunger === 0)
+			|| (checkOnlyFor === undefined && u.quidToServer.thirst === 0)
+			|| ((checkOnlyFor === undefined || checkOnlyFor === 'wounds') && u.quidToServer.injuries.wounds > 0)
+			|| ((checkOnlyFor === undefined || checkOnlyFor === 'infections') && u.quidToServer.injuries.infections > 0)
+			|| ((checkOnlyFor === undefined || checkOnlyFor === 'cold') && u.quidToServer.injuries.cold === true)
+			|| ((checkOnlyFor === undefined || checkOnlyFor === 'sprains') && u.quidToServer.injuries.sprains > 0)
+			|| ((checkOnlyFor === undefined || checkOnlyFor === 'poison') && u.quidToServer.injuries.poison === true)
 		);
 }
 
@@ -247,12 +247,12 @@ export async function getHealResponse(
 		const botReply = await respond(interaction, {
 			content: messageContent,
 			embeds: [...embedArray, new EmbedBuilder()
-				.setColor(userData.quid.color)
+				.setColor(quid.color)
 				.setAuthor({
 					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
-				.setDescription(`*${userData.quid.name} sits in front of the medicine den, looking if anyone needs help with injuries or illnesses.*`)
+				.setDescription(`*${quid.name} sits in front of the medicine den, looking if anyone needs help with injuries or illnesses.*`)
 				.setFooter({ text: 'Tip: Healing yourself has a lower chance of being successful than healing others. Healers and Elderlies are more often successful than Apprentices and Hunters.' })],
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 			fetchReply: true,
@@ -278,15 +278,15 @@ export async function getHealResponse(
 
 		let healUserConditionText = '';
 
-		healUserConditionText += (userToHeal.quid.profile.health <= 0) ? '\nHealth: 0' : '';
-		healUserConditionText += (userToHeal.quid.profile.energy <= 0) ? '\nEnergy: 0' : '';
-		healUserConditionText += (userToHeal.quid.profile.hunger <= 0) ? '\nHunger: 0' : '';
-		healUserConditionText += (userToHeal.quid.profile.thirst <= 0) ? '\nThirst: 0' : '';
-		healUserConditionText += (userToHeal.quid.profile.injuries.wounds > 0) ? `\nWounds: ${userToHeal.quid.profile.injuries.wounds}` : '';
-		healUserConditionText += (userToHeal.quid.profile.injuries.infections > 0) ? `\nInfections: ${userToHeal.quid.profile.injuries.infections}` : '';
-		healUserConditionText += (userToHeal.quid.profile.injuries.cold == true) ? '\nCold: yes' : '';
-		healUserConditionText += (userToHeal.quid.profile.injuries.sprains > 0) ? `\nSprains: ${userToHeal.quid.profile.injuries.sprains}` : '';
-		healUserConditionText += (userToHeal.quid.profile.injuries.poison == true) ? '\nPoison: yes' : '';
+		healUserConditionText += (userToHeal.quidToServer.health <= 0) ? '\nHealth: 0' : '';
+		healUserConditionText += (userToHeal.quidToServer.energy <= 0) ? '\nEnergy: 0' : '';
+		healUserConditionText += (userToHeal.quidToServer.hunger <= 0) ? '\nHunger: 0' : '';
+		healUserConditionText += (userToHeal.quidToServer.thirst <= 0) ? '\nThirst: 0' : '';
+		healUserConditionText += (userToHeal.quidToServer.injuries.wounds > 0) ? `\nWounds: ${userToHeal.quidToServer.injuries.wounds}` : '';
+		healUserConditionText += (userToHeal.quidToServer.injuries.infections > 0) ? `\nInfections: ${userToHeal.quidToServer.injuries.infections}` : '';
+		healUserConditionText += (userToHeal.quidToServer.injuries.cold == true) ? '\nCold: yes' : '';
+		healUserConditionText += (userToHeal.quidToServer.injuries.sprains > 0) ? `\nSprains: ${userToHeal.quidToServer.injuries.sprains}` : '';
+		healUserConditionText += (userToHeal.quidToServer.injuries.poison == true) ? '\nPoison: yes' : '';
 
 		if (healUserConditionText === '') {
 
@@ -294,12 +294,12 @@ export async function getHealResponse(
 			const botReply = await respond(interaction, {
 				content: messageContent,
 				embeds: [...embedArray, new EmbedBuilder()
-					.setColor(userData.quid.color)
+					.setColor(quid.color)
 					.setAuthor({
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
-					.setDescription(`*${userData.quid.name} approaches ${userToHeal.quid.name}, desperately searching for someone to help.*\n"Do you have any injuries or illnesses you know of?" *the ${userData.quid.getDisplayspecies()} asks.\n${userToHeal.quid.name} shakes ${userToHeal.quid.pronoun(2)} head.* "Not that I know of, no."\n*Disappointed, ${userData.quid.name} goes back to the medicine den.*`)],
+					.setDescription(`*${quid.name} approaches ${userToHeal.quid.name}, desperately searching for someone to help.*\n"Do you have any injuries or illnesses you know of?" *the ${quid.getDisplayspecies()} asks.\n${userToHeal.quid.name} shakes ${userToHeal.quid.pronoun(2)} head.* "Not that I know of, no."\n*Disappointed, ${quid.name} goes back to the medicine den.*`)],
 				components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 				fetchReply: true,
 			}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
@@ -309,16 +309,16 @@ export async function getHealResponse(
 		}
 
 		const quidConditionEmbed = new EmbedBuilder()
-			.setColor(userData.quid.color)
+			.setColor(quid.color)
 			.setAuthor({
 				name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 				iconURL: quid.avatarURL,
 			})
 			.setDescription(userToHeal._id === userData._id
 				? `*${userToHeal.quid.name} pushes aside the leaves acting as the entrance to the healer's den. With tired eyes ${userToHeal.quid.pronounAndPlural(0, 'inspect')} the rows of herbs, hoping to find one that can ease ${userToHeal.quid.pronoun(2)} pain.*`
-				: userToHeal.quid.profile.energy <= 0 || userToHeal.quid.profile.health <= 0 || userToHeal.quid.profile.hunger <= 0 || userToHeal.quid.profile.thirst <= 0
-					? `*${userData.quid.name} runs towards the pack borders, where ${userToHeal.quid.name} lies, only barely conscious. The ${userData.quid.profile.rank} immediately looks for the right herbs to help the ${userToHeal.quid.getDisplayspecies()}.*`
-					: `*${userToHeal.quid.name} enters the medicine den with tired eyes.* "Please help me!" *${userToHeal.quid.pronounAndPlural(0, 'say')}, ${userToHeal.quid.pronoun(2)} face contorted in pain. ${userData.quid.name} looks up with worry.* "I'll see what I can do for you."`)
+				: userToHeal.quidToServer.energy <= 0 || userToHeal.quidToServer.health <= 0 || userToHeal.quidToServer.hunger <= 0 || userToHeal.quidToServer.thirst <= 0
+					? `*${quid.name} runs towards the pack borders, where ${userToHeal.quid.name} lies, only barely conscious. The ${quidToServer.rank} immediately looks for the right herbs to help the ${userToHeal.quid.getDisplayspecies()}.*`
+					: `*${userToHeal.quid.name} enters the medicine den with tired eyes.* "Please help me!" *${userToHeal.quid.pronounAndPlural(0, 'say')}, ${userToHeal.quid.pronoun(2)} face contorted in pain. ${quid.name} looks up with worry.* "I'll see what I can do for you."`)
 			.setFooter({ text: `${userToHeal.quid.name}'s condition:${healUserConditionText}` });
 
 		let { embedDescription, selectMenuOptions } = getInventoryElements(serverData.inventory, inventoryPage);
@@ -329,7 +329,7 @@ export async function getHealResponse(
 		}
 
 		const inventoryEmbed = new EmbedBuilder()
-			.setColor(userData.quid.color)
+			.setColor(quid.color)
 			.setTitle(`Inventory of ${interaction.guild.name} - Page ${inventoryPage}`)
 			.setDescription(embedDescription || null);
 		const inventorySelectMenu = new ActionRowBuilder<StringSelectMenuBuilder>()
@@ -358,7 +358,7 @@ export async function getHealResponse(
 		const botReply = await respond(interaction, {
 			content: messageContent,
 			embeds: [...embedArray, new EmbedBuilder()
-				.setColor(userData.quid.color)
+				.setColor(quid.color)
 				.setTitle(`${userToHeal.quid.name} doesn't need to be healed anymore. Please select another quid to heal if available.`)],
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 			fetchReply: true,
@@ -373,11 +373,11 @@ export async function getHealResponse(
 	let isSuccessful = false;
 
 	let injuryUpdateText = '';
-	const injuries = { ...userToHeal.quid.profile.injuries };
+	const injuries = { ...userToHeal.quidToServer.injuries };
 
 	if (item === 'water') {
 
-		if (userToHeal.quid.profile.thirst <= 0) { isSuccessful = true; }
+		if (userToHeal.quidToServer.thirst <= 0) { isSuccessful = true; }
 		else if (userCondition?.includes('thirst')) { userHasChangedCondition = true; }
 	}
 	else {
@@ -394,11 +394,11 @@ export async function getHealResponse(
 
 		if (itemInfo[item].edibility === PlantEdibilityType.Edible) {
 
-			if (userToHeal.quid.profile.hunger <= 0) { isSuccessful = true; }
+			if (userToHeal.quidToServer.hunger <= 0) { isSuccessful = true; }
 			else if (userCondition?.includes('hunger')) { userHasChangedCondition = true; }
 		}
 
-		if (userToHeal.quid.profile.health <= 0) { isSuccessful = true; }
+		if (userToHeal.quidToServer.health <= 0) { isSuccessful = true; }
 		else if (userCondition?.includes('health')) { userHasChangedCondition = true; }
 
 		if (itemInfo[item].healsWounds) {
@@ -458,7 +458,7 @@ export async function getHealResponse(
 
 		if (itemInfo[item].givesEnergy) {
 
-			if (userToHeal.quid.profile.energy <= 0) { isSuccessful = true; }
+			if (userToHeal.quidToServer.energy <= 0) { isSuccessful = true; }
 		}
 	}
 
@@ -467,7 +467,7 @@ export async function getHealResponse(
 		// If this is a ChatInputCommand, this is a reply, else this is an update to the message with the component
 		const botReply = await respond(interaction, {
 			embeds: [...embedArray, new EmbedBuilder()
-				.setColor(userData.quid.color)
+				.setColor(quid.color)
 				.setTitle(`${userToHeal.quid.name}'s condition changed before you healed them. Please try again.`)],
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 			fetchReply: true,
@@ -498,49 +498,49 @@ export async function getHealResponse(
 			},
 		);
 
-		if (chosenUserPlus.health > 0) { statsUpdateText += `\n+${chosenUserPlus.health} HP for ${userToHeal.quid.name} (${userToHeal.quid.profile.health}/${userToHeal.quid.profile.maxHealth})${injuryUpdateText}`; }
-		if (chosenUserPlus.energy > 0) { statsUpdateText += `\n+${chosenUserPlus.energy} energy for ${userToHeal.quid.name} (${userToHeal.quid.profile.energy}/${userToHeal.quid.profile.maxEnergy})`; }
-		if (chosenUserPlus.hunger > 0) { statsUpdateText += `\n+${chosenUserPlus.hunger} hunger for ${userToHeal.quid.name} (${userToHeal.quid.profile.hunger}/${userToHeal.quid.profile.maxHunger})`; }
-		if (chosenUserPlus.thirst > 0) { statsUpdateText += `\n+${chosenUserPlus.thirst} thirst for ${userToHeal.quid.name} (${userToHeal.quid.profile.thirst}/${userToHeal.quid.profile.maxThirst})`; }
+		if (chosenUserPlus.health > 0) { statsUpdateText += `\n+${chosenUserPlus.health} HP for ${userToHeal.quid.name} (${userToHeal.quidToServer.health}/${userToHeal.quidToServer.maxHealth})${injuryUpdateText}`; }
+		if (chosenUserPlus.energy > 0) { statsUpdateText += `\n+${chosenUserPlus.energy} energy for ${userToHeal.quid.name} (${userToHeal.quidToServer.energy}/${userToHeal.quidToServer.maxEnergy})`; }
+		if (chosenUserPlus.hunger > 0) { statsUpdateText += `\n+${chosenUserPlus.hunger} hunger for ${userToHeal.quid.name} (${userToHeal.quidToServer.hunger}/${userToHeal.quidToServer.maxHunger})`; }
+		if (chosenUserPlus.thirst > 0) { statsUpdateText += `\n+${chosenUserPlus.thirst} thirst for ${userToHeal.quid.name} (${userToHeal.quidToServer.thirst}/${userToHeal.quidToServer.maxThirst})`; }
 
 		if (item === 'water') {
 
-			embedDescription = `*${userData.quid.name} takes ${userToHeal.quid.name}'s body, drags it over to the river, and positions ${userToHeal.quid.pronoun(2)} head right over the water. The ${userToHeal.quid.getDisplayspecies()} sticks ${userToHeal.quid.pronoun(2)} tongue out and slowly starts drinking. Immediately you can observe how the newfound energy flows through ${userToHeal.quid.pronoun(2)} body.*`;
+			embedDescription = `*${quid.name} takes ${userToHeal.quid.name}'s body, drags it over to the river, and positions ${userToHeal.quid.pronoun(2)} head right over the water. The ${userToHeal.quid.getDisplayspecies()} sticks ${userToHeal.quid.pronoun(2)} tongue out and slowly starts drinking. Immediately you can observe how the newfound energy flows through ${userToHeal.quid.pronoun(2)} body.*`;
 		}
-		else if (userData.quid._id === userToHeal.quid._id) {
+		else if (quid._id === userToHeal.quid._id) {
 
-			embedDescription = `*${userData.quid.name} takes a ${item}. After a bit of preparation, the ${userData.quid.getDisplayspecies()} can apply it correctly. Immediately you can see the effect. ${capitalize(userData.quid.pronounAndPlural(0, 'feel'))} much better!*`;
+			embedDescription = `*${quid.name} takes a ${item}. After a bit of preparation, the ${quid.getDisplayspecies()} can apply it correctly. Immediately you can see the effect. ${capitalize(pronounAndPlural(quid, 0, 'feel'))} much better!*`;
 		}
 		else {
 
-			embedDescription = `*${userData.quid.name} takes a ${item}. After a bit of preparation, ${userData.quid.pronounAndPlural(0, 'give')} it to ${userToHeal.quid.name}. Immediately you can see the effect. ${capitalize(userToHeal.quid.pronounAndPlural(0, 'feel'))} much better!*`;
+			embedDescription = `*${quid.name} takes a ${item}. After a bit of preparation, ${pronounAndPlural(quid, 0, 'give')} it to ${userToHeal.quid.name}. Immediately you can see the effect. ${capitalize(userToHeal.quid.pronounAndPlural(0, 'feel'))} much better!*`;
 		}
 	}
 	else if (item === 'water') {
 
-		if (userData.quid._id === userToHeal.quid._id) {
+		if (quid._id === userToHeal.quid._id) {
 
-			embedDescription = `*${userData.quid.name} thinks about just drinking some water, but that won't help with ${userData.quid.pronoun(2)} issues...*`;
+			embedDescription = `*${quid.name} thinks about just drinking some water, but that won't help with ${pronoun(quid, 2)} issues...*`;
 		}
-		else if (userToHeal.quid.profile.thirst > 0) {
+		else if (userToHeal.quidToServer.thirst > 0) {
 
-			embedDescription = `*${userToHeal.quid.name} looks at ${userData.quid.name} with indignation.* "Being hydrated is really not my biggest problem right now!"`;
+			embedDescription = `*${userToHeal.quid.name} looks at ${quid.name} with indignation.* "Being hydrated is really not my biggest problem right now!"`;
 		}
 		else {
 
-			embedDescription = `*${userData.quid.name} takes ${userToHeal.quid.name}'s body and tries to drag it over to the river. The ${userData.quid.getDisplayspecies()} attempts to position the ${userToHeal.quid.getDisplayspecies()}'s head right over the water, but every attempt fails miserably. ${capitalize(userData.quid.pronounAndPlural(0, 'need'))} to concentrate and try again.*`;
+			embedDescription = `*${quid.name} takes ${userToHeal.quid.name}'s body and tries to drag it over to the river. The ${quid.getDisplayspecies()} attempts to position the ${userToHeal.quid.getDisplayspecies()}'s head right over the water, but every attempt fails miserably. ${capitalize(pronounAndPlural(quid, 0, 'need'))} to concentrate and try again.*`;
 		}
 	}
-	else if (userData.quid._id === userToHeal.quid._id) {
+	else if (quid._id === userToHeal.quid._id) {
 
-		embedDescription = `*${userData.quid.name} holds the ${item} in ${userData.quid.pronoun(2)} mouth, trying to find a way to apply it. After a few attempts, the herb breaks into little pieces, rendering it useless. Guess ${userData.quid.pronounAndPlural(0, 'has', 'have')} to try again...*`;
+		embedDescription = `*${quid.name} holds the ${item} in ${pronoun(quid, 2)} mouth, trying to find a way to apply it. After a few attempts, the herb breaks into little pieces, rendering it useless. Guess ${pronounAndPlural(quid, 0, 'has', 'have')} to try again...*`;
 	}
 	else {
 
-		embedDescription = `*${userData.quid.name} takes a ${item}. After a bit of preparation, ${userData.quid.pronounAndPlural(0, 'give')} it to ${userToHeal.quid.name}. But no matter how long ${userData.quid.pronoun(0)} wait, it does not seem to help. Looks like ${userData.quid.name} has to try again...*`;
+		embedDescription = `*${quid.name} takes a ${item}. After a bit of preparation, ${pronounAndPlural(quid, 0, 'give')} it to ${userToHeal.quid.name}. But no matter how long ${pronoun(quid, 0)} wait, it does not seem to help. Looks like ${quid.name} has to try again...*`;
 	}
 
-	const experiencePoints = isSuccessful === false ? 0 : getRandomNumber(5, userData.quid.profile.levels + 8);
+	const experiencePoints = isSuccessful === false ? 0 : getRandomNumber(5, quidToServer.levels + 8);
 	const changedCondition = await changeCondition(userData._id === userToHeal._id ? userToHeal : userData, experiencePoints); // userToHeal is used here when a user is healing themselves to take into account the changes to the injuries & health
 	const infectedEmbed = userData._id === userToHeal._id ? await infectWithChance(userData, userToHeal) : [];
 	const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
@@ -553,7 +553,7 @@ export async function getHealResponse(
 		embeds: [
 			...embedArray,
 			new EmbedBuilder()
-				.setColor(userData.quid.color)
+				.setColor(quid.color)
 				.setAuthor({
 					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
@@ -601,7 +601,7 @@ export async function getHealResponse(
 /**
  * It returns an object with the stats that will be added to the profile when the item is consumed
  * @param {CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | 'water'} item - The item that is being used.
- * @param {Profile} userToHeal.quid.profile - The profile that will be healed.
+ * @param {Profile} userToHeal.quidToServer - The profile that will be healed.
  * @returns An object with the keys: thirst, hunger, energy, health.
  */
 export function getStatsPoints(
@@ -609,10 +609,10 @@ export function getStatsPoints(
 	userToHeal: UserData<never, never>,
 ): { health: number, energy: number, hunger: number, thirst: number; } {
 
-	const thirst = item === 'water' ? getSmallerNumber(getRandomNumber(10, 6), userToHeal.quid.profile.maxThirst - userToHeal.quid.profile.thirst) : 0;
-	const health = item === 'water' ? 0 : getSmallerNumber(getRandomNumber(10, 6), userToHeal.quid.profile.maxHealth - userToHeal.quid.profile.health);
-	const energy = (item !== 'water' && itemInfo[item].givesEnergy) ? getSmallerNumber(30, userToHeal.quid.profile.maxEnergy - userToHeal.quid.profile.energy) : 0;
-	const hunger = (item !== 'water' && itemInfo[item].edibility === PlantEdibilityType.Edible) ? getSmallerNumber(5, userToHeal.quid.profile.maxHunger - userToHeal.quid.profile.hunger) : 0;
+	const thirst = item === 'water' ? getSmallerNumber(getRandomNumber(10, 6), userToHeal.quidToServer.maxThirst - userToHeal.quidToServer.thirst) : 0;
+	const health = item === 'water' ? 0 : getSmallerNumber(getRandomNumber(10, 6), userToHeal.quidToServer.maxHealth - userToHeal.quidToServer.health);
+	const energy = (item !== 'water' && itemInfo[item].givesEnergy) ? getSmallerNumber(30, userToHeal.quidToServer.maxEnergy - userToHeal.quidToServer.energy) : 0;
+	const hunger = (item !== 'water' && itemInfo[item].edibility === PlantEdibilityType.Edible) ? getSmallerNumber(5, userToHeal.quidToServer.maxHunger - userToHeal.quidToServer.hunger) : 0;
 	return { thirst, hunger, energy, health };
 }
 
@@ -632,4 +632,4 @@ export function isUnlucky(
 	userToHeal: UserData<never, never>,
 	userData: UserData<never, never>,
 	serverData: ServerSchema,
-): boolean { return (userToHeal._id === userData._id && pullFromWeightedTable({ 0: 75, 1: 25 + userData.quid.profile.sapling.waterCycles - decreaseSuccessChance(serverData) }) === 0) || (userToHeal._id !== userData._id && (userData.quid.profile.rank === RankType.Apprentice || userData.quid.profile.rank === RankType.Hunter) && pullFromWeightedTable({ 0: userData.quid.profile.rank === RankType.Hunter ? 90 : 40, 1: 60 + userData.quid.profile.sapling.waterCycles - decreaseSuccessChance(serverData) }) === 0); }
+): boolean { return (userToHeal._id === userData._id && pullFromWeightedTable({ 0: 75, 1: 25 + quidToServer.sapling.waterCycles - decreaseSuccessChance(serverData) }) === 0) || (userToHeal._id !== userData._id && (quidToServer.rank === RankType.Apprentice || quidToServer.rank === RankType.Hunter) && pullFromWeightedTable({ 0: quidToServer.rank === RankType.Hunter ? 90 : 40, 1: 60 + quidToServer.sapling.waterCycles - decreaseSuccessChance(serverData) }) === 0); }

@@ -46,19 +46,19 @@ export const command: SlashCommand = {
 		const messageContent = remindOfAttack(interaction.guildId);
 
 		/* Checks whether the user has shared within the last two hours. */
-		const recoverCooldown = recoverCooldownProfilesMap.get(userData.quid._id + interaction.guildId);
+		const recoverCooldown = recoverCooldownProfilesMap.get(quid._id + interaction.guildId);
 		if (recoverCooldown && Date.now() - recoverCooldown < twelveHoursInMs) {
 
 			// This is always a reply
 			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
-					.setColor(userData.quid.color)
+					.setColor(quid.color)
 					.setAuthor({
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
-					.setDescription(`*${userData.quid.name} walks towards the entrance of the grotto, when an elderly is stopping ${userData.quid.pronoun(1)}.*\n"Didn't I see you in here in the past 12 hours? You shouldn't use the grotto this often, it's a very precious place that needs to be preserved as much as possible!"\n\nYou can recover again <t:${Math.floor((recoverCooldown + twelveHoursInMs) / 1_000)}:R>.`),
+					.setDescription(`*${quid.name} walks towards the entrance of the grotto, when an elderly is stopping ${pronoun(quid, 1)}.*\n"Didn't I see you in here in the past 12 hours? You shouldn't use the grotto this often, it's a very precious place that needs to be preserved as much as possible!"\n\nYou can recover again <t:${Math.floor((recoverCooldown + twelveHoursInMs) / 1_000)}:R>.`),
 				],
 			});
 			return;
@@ -68,27 +68,27 @@ export const command: SlashCommand = {
 			.setComponents([new ButtonBuilder()
 				.setCustomId('recover_wounds')
 				.setLabel('Wound')
-				.setDisabled(userData.quid.profile.injuries.wounds <= 0 || inventoryHasHealingItem(serverData.inventory, 'healsWounds'))
+				.setDisabled(quidToServer.injuries.wounds <= 0 || inventoryHasHealingItem(serverData.inventory, 'healsWounds'))
 				.setStyle(ButtonStyle.Secondary),
 			new ButtonBuilder()
 				.setCustomId('recover_infections')
 				.setLabel('Infection')
-				.setDisabled(userData.quid.profile.injuries.infections <= 0 || inventoryHasHealingItem(serverData.inventory, 'healsInfections'))
+				.setDisabled(quidToServer.injuries.infections <= 0 || inventoryHasHealingItem(serverData.inventory, 'healsInfections'))
 				.setStyle(ButtonStyle.Secondary),
 			new ButtonBuilder()
 				.setCustomId('recover_cold')
 				.setLabel('Cold')
-				.setDisabled(userData.quid.profile.injuries.cold === false || inventoryHasHealingItem(serverData.inventory, 'healsColds'))
+				.setDisabled(quidToServer.injuries.cold === false || inventoryHasHealingItem(serverData.inventory, 'healsColds'))
 				.setStyle(ButtonStyle.Secondary),
 			new ButtonBuilder()
 				.setCustomId('recover_sprains')
 				.setLabel('Sprain')
-				.setDisabled(userData.quid.profile.injuries.sprains <= 0 || inventoryHasHealingItem(serverData.inventory, 'healsSprains'))
+				.setDisabled(quidToServer.injuries.sprains <= 0 || inventoryHasHealingItem(serverData.inventory, 'healsSprains'))
 				.setStyle(ButtonStyle.Secondary),
 			new ButtonBuilder()
 				.setCustomId('recover_poison')
 				.setLabel('Poison')
-				.setDisabled(userData.quid.profile.injuries.poison === false || inventoryHasHealingItem(serverData.inventory, 'healsPoison'))
+				.setDisabled(quidToServer.injuries.poison === false || inventoryHasHealingItem(serverData.inventory, 'healsPoison'))
 				.setStyle(ButtonStyle.Secondary),
 			]),
 		];
@@ -97,12 +97,12 @@ export const command: SlashCommand = {
 		let botReply: Message | InteractionResponse = await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
-				.setColor(userData.quid.color)
+				.setColor(quid.color)
 				.setAuthor({
 					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
-				.setDescription(`*${userData.quid.name} walks towards the entrance of the grotto, where an elderly is already waiting for ${userData.quid.pronoun(1)}.*\n"Do you already know about this place? It has everything needed to heal any injury or illness. This makes it very precious, and so it should only be used in emergencies. So only go here if you can't find anything in the medicine den that can cure you!"\n*The ${userData.quid.getDisplayspecies()} must decide which of their injuries ${userData.quid.pronounAndPlural(0, 'want')} to heal here.*`)
+				.setDescription(`*${quid.name} walks towards the entrance of the grotto, where an elderly is already waiting for ${pronoun(quid, 1)}.*\n"Do you already know about this place? It has everything needed to heal any injury or illness. This makes it very precious, and so it should only be used in emergencies. So only go here if you can't find anything in the medicine den that can cure you!"\n*The ${quid.getDisplayspecies()} must decide which of their injuries ${pronounAndPlural(quid, 0, 'want')} to heal here.*`)
 				.setFooter({ text: 'You can only select an injury when the pack has no herbs that can heal that injury.' })],
 			components: components,
 			fetchReply: true,
@@ -124,12 +124,12 @@ export const command: SlashCommand = {
 			botReply = await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
-					.setColor(userData.quid.color)
+					.setColor(quid.color)
 					.setAuthor({
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
-					.setDescription(`*After careful consideration, ${userData.quid.name} decides that none of ${userData.quid.pronoun(2)} injuries are urgent enough to use the grotto to regenerate. The ${userData.quid.getDisplayspecies()} might inspect the medicine den for useful plants instead.*`)],
+					.setDescription(`*After careful consideration, ${quid.name} decides that none of ${pronoun(quid, 2)} injuries are urgent enough to use the grotto to regenerate. The ${quid.getDisplayspecies()} might inspect the medicine den for useful plants instead.*`)],
 				components: disableAllComponents(components),
 			}, 'reply', getMessageId(botReply));
 			return;
@@ -207,7 +207,7 @@ export const command: SlashCommand = {
 						botReply = await respond(interaction, {
 							content: messageContent,
 							embeds: [new EmbedBuilder()
-								.setColor(userData.quid.color)
+								.setColor(quid.color)
 								.setAuthor({
 									name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 									iconURL: quid.avatarURL,
@@ -261,7 +261,7 @@ export const command: SlashCommand = {
 							botReply = await respond(int, {
 								content: messageContent,
 								embeds: [new EmbedBuilder()
-									.setColor(userData.quid.color)
+									.setColor(quid.color)
 									.setAuthor({
 										name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 										iconURL: quid.avatarURL,
@@ -301,12 +301,12 @@ export const command: SlashCommand = {
 							changedCondition = await changeCondition(userData, 0);
 
 							embed = new EmbedBuilder()
-								.setColor(userData.quid.color)
+								.setColor(quid.color)
 								.setAuthor({
 									name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 									iconURL: quid.avatarURL,
 								})
-								.setDescription('✅'.repeat((choosingEmoji || 1) - 1) + '❌\n\n' + `*${userData.quid.name} makes every effort to take full advantage of the grotto to heal ${userData.quid.pronoun(2)} own injuries. But ${userData.quid.pronounAndPlural(0, 'just doesn\'t', 'just don\'t')} seem to get better. The ${userData.quid.getDisplayspecies()} may have to try again...*`);
+								.setDescription('✅'.repeat((choosingEmoji || 1) - 1) + '❌\n\n' + `*${quid.name} makes every effort to take full advantage of the grotto to heal ${pronoun(quid, 2)} own injuries. But ${pronounAndPlural(quid, 0, 'just doesn\'t', 'just don\'t')} seem to get better. The ${quid.getDisplayspecies()} may have to try again...*`);
 							if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 						}
 						else if (emojisToClick.length < 12) {
@@ -316,56 +316,56 @@ export const command: SlashCommand = {
 						}
 						else {
 
-							recoverCooldownProfilesMap.set(userData.quid._id + interaction.guildId, Date.now());
+							recoverCooldownProfilesMap.set(quid._id + interaction.guildId, Date.now());
 
 							let injuryText = '';
 
 							if (healKind === 'wounds') {
 
-								injuryText += `\n-1 wound for ${userData.quid.name}`;
-								userData.quid.profile.injuries.wounds -= 1;
+								injuryText += `\n-1 wound for ${quid.name}`;
+								quidToServer.injuries.wounds -= 1;
 							}
 
 							if (healKind === 'infections') {
 
-								injuryText += `\n-1 infection for ${userData.quid.name}`;
-								userData.quid.profile.injuries.infections -= 1;
+								injuryText += `\n-1 infection for ${quid.name}`;
+								quidToServer.injuries.infections -= 1;
 							}
 
 							if (healKind === 'cold') {
 
-								injuryText += `\ncold healed for ${userData.quid.name}`;
-								userData.quid.profile.injuries.cold = false;
+								injuryText += `\ncold healed for ${quid.name}`;
+								quidToServer.injuries.cold = false;
 							}
 
 							if (healKind === 'sprains') {
 
-								injuryText += `\n-1 sprain for ${userData.quid.name}`;
-								userData.quid.profile.injuries.sprains -= 1;
+								injuryText += `\n-1 sprain for ${quid.name}`;
+								quidToServer.injuries.sprains -= 1;
 							}
 
 							if (healKind === 'poison') {
 
-								injuryText += `\npoison healed for ${userData.quid.name}`;
-								userData.quid.profile.injuries.poison = false;
+								injuryText += `\npoison healed for ${quid.name}`;
+								quidToServer.injuries.poison = false;
 							}
 
 							await userData.update(
 								(u) => {
 									const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
-									p.injuries = userData.quid.profile.injuries;
+									p.injuries = quidToServer.injuries;
 								},
 							);
 
 							changedCondition = await changeCondition(userData, 0);
 
 							embed = new EmbedBuilder()
-								.setColor(userData.quid.color)
+								.setColor(quid.color)
 								.setAuthor({
 									name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 									iconURL: quid.avatarURL,
 								})
-								.setDescription(`*The cave is a pleasant place, with a small pond of crystal clear water, stalagmites, stalactites and stalagnates, and cool, damp air. Some stones glisten slightly, giving the room a magical atmosphere. ${userData.quid.name} does not have to stay here for long before ${userData.quid.pronounAndPlural(0, 'feel')} much better.*`)
+								.setDescription(`*The cave is a pleasant place, with a small pond of crystal clear water, stalagmites, stalactites and stalagnates, and cool, damp air. Some stones glisten slightly, giving the room a magical atmosphere. ${quid.name} does not have to stay here for long before ${pronounAndPlural(quid, 0, 'feel')} much better.*`)
 								.setFooter({ text: `${changedCondition.statsUpdateText}\n${injuryText}` });
 						}
 

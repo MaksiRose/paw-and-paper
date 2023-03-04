@@ -124,7 +124,7 @@ export const command: SlashCommand = {
 			if (type === 'individual') {
 
 				const quidId = customId.args[2];
-				const quid = userData.quids.get(quidId);
+				const quid = quids.get(quidId);
 
 				await userData.update(
 					(u) => {
@@ -155,7 +155,7 @@ export const command: SlashCommand = {
 			if (type === 'server') {
 
 				const serverId = customId.args[2];
-				const accountsOnServer = userData.quids.map(q => q.profiles[serverId]).filter(p => p !== undefined);
+				const accountsOnServer = quids.map(q => q.profiles[serverId]).filter(p => p !== undefined);
 
 				await userData.update(
 					(u) => {
@@ -221,7 +221,7 @@ export const command: SlashCommand = {
 		if (interaction.isStringSelectMenu() && customId.args[0] === 'individual' && customId.args[1] === 'options' && selectOptionId[0] === 'nextpage') {
 
 			let deletePage = Number(selectOptionId[1]) + 1;
-			if (deletePage >= Math.ceil(Object.keys(userData.quids).length / 24)) { deletePage = 0; }
+			if (deletePage >= Math.ceil(Object.keys(quids).length / 24)) { deletePage = 0; }
 
 			// This is always an update to the message with the select menu
 			await respond(interaction, {
@@ -238,7 +238,7 @@ export const command: SlashCommand = {
 		if (interaction.isStringSelectMenu() && customId.args[0] === 'individual' && customId.args[1] === 'options') {
 
 			const quidId = selectOptionId[0];
-			const quid = userData.quids.get(quidId);
+			const quid = quids.get(quidId);
 
 			// This is always an update to the message with the select menu
 			await respond(interaction, {
@@ -269,7 +269,7 @@ export const command: SlashCommand = {
 		if (interaction.isStringSelectMenu() && customId.args[0] === 'server' && customId.args[1] === 'options' && selectOptionId[0] === 'nextpage') {
 
 			let deletePage = Number(selectOptionId[1]) + 1;
-			if (deletePage >= Math.ceil([...new Set(userData.quids.map(q => Object.keys(q.profiles)).flat())].length / 24)) { deletePage = 0; }
+			if (deletePage >= Math.ceil([...new Set(quids.map(q => Object.keys(q.profiles)).flat())].length / 24)) { deletePage = 0; }
 
 			// This is always an update to the message with the select menu
 			await respond(interaction, {
@@ -286,7 +286,7 @@ export const command: SlashCommand = {
 		if (interaction.isStringSelectMenu() && customId.args[0] === 'server' && customId.args[1] === 'options') {
 
 			const serverId = selectOptionId[0];
-			const accountsOnServer = userData.quids.map(q => q.profiles[serverId]).filter(p => p !== undefined);
+			const accountsOnServer = quids.map(q => q.profiles[serverId]).filter(p => p !== undefined);
 			const server = (() => {
 				try { return serverModel.findOne(s => s.serverId === selectOptionId[0]); }
 				catch { return null; }
@@ -361,7 +361,7 @@ function getQuidsPage(
 	userData: UserData<undefined, ''>,
 ): StringSelectMenuBuilder {
 
-	let accountsMenuOptions: RestOrArray<SelectMenuComponentOptionData> = userData.quids.map(quid => ({
+	let accountsMenuOptions: RestOrArray<SelectMenuComponentOptionData> = quids.map(quid => ({
 		label: quid.name,
 		value: constructSelectOptions<SelectOptionArgs>([quid._id]),
 	}));
@@ -393,7 +393,7 @@ function getServersPage(
 
 	let accountsMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [];
 
-	const serverIdList = [...new Set([...userData.quids.map(q => Object.keys(q.profiles)), ...Object.keys(userData.servers)].flat())];
+	const serverIdList = [...new Set([...quids.map(q => Object.keys(q.profiles)), ...Object.keys(userData.servers)].flat())];
 	for (const serverId of serverIdList) {
 
 		const server = (() => {

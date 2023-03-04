@@ -35,7 +35,7 @@ export const command: SlashCommand = {
 
 		const messageContent = remindOfAttack(interaction.guildId);
 
-		if (userData.quid.profile.unlockedRanks === 1 && userData.quid.profile.rank === RankType.Youngling) {
+		if (quidToServer.unlockedRanks === 1 && quidToServer.rank === RankType.Youngling) {
 
 			await userData.update(
 				(u) => {
@@ -48,30 +48,30 @@ export const command: SlashCommand = {
 			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
-					.setColor(userData.quid.color)
+					.setColor(quid.color)
 					.setAuthor({
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
-					.setDescription(`*An elderly smiles down at the young ${userData.quid.profile.rank}.*\n"${userData.quid.name}, you have proven strength for the first time. I believe you are ready to explore the wild, and learn your strengths and weaknesses. Good luck in your rank as Apprentice" *they say. ${userData.quid.name}'s chest swells with pride.*`)],
+					.setDescription(`*An elderly smiles down at the young ${quidToServer.rank}.*\n"${quid.name}, you have proven strength for the first time. I believe you are ready to explore the wild, and learn your strengths and weaknesses. Good luck in your rank as Apprentice" *they say. ${quid.name}'s chest swells with pride.*`)],
 			});
 
 			await checkRankRequirements(serverData, interaction, interaction.member, RankType.Apprentice, true);
 
 			return;
 		}
-		else if (userData.quid.profile.unlockedRanks === 2 && userData.quid.profile.rank === RankType.Apprentice) {
+		else if (quidToServer.unlockedRanks === 2 && quidToServer.rank === RankType.Apprentice) {
 
 			// This is always a reply
 			const { id } = await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
-					.setColor(userData.quid.color)
+					.setColor(quid.color)
 					.setAuthor({
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
-					.setTitle(`What rank should ${userData.quid.name} have?`)
+					.setTitle(`What rank should ${quid.name} have?`)
 					.setFooter({ text: 'Available options: \n\nHealer (recommended for herbivores)\nHunter (recommended for carnivores)' })],
 				components: [new ActionRowBuilder<ButtonBuilder>()
 					.setComponents([
@@ -93,7 +93,7 @@ export const command: SlashCommand = {
 
 			return;
 		}
-		else if (userData.quid.profile.unlockedRanks === 3 && (userData.quid.profile.rank === RankType.Healer || userData.quid.profile.rank === RankType.Hunter)) {
+		else if (quidToServer.unlockedRanks === 3 && (quidToServer.rank === RankType.Healer || quidToServer.rank === RankType.Hunter)) {
 
 			await userData.update(
 				(u) => {
@@ -106,30 +106,30 @@ export const command: SlashCommand = {
 			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
-					.setColor(userData.quid.color)
+					.setColor(quid.color)
 					.setAuthor({
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
-					.setDescription(`"We are here to celebrate the nomination of ${userData.quid.name} to the highest rank, Elderly. The ${userData.quid.getDisplayspecies()} has shown incredible skills and persistence, and we congratulate ${userData.quid.pronoun(1)} to ${userData.quid.pronoun(2)} new title." *A mixture of howls, crows, meows, roars and squeaks are heard all around the hill, on which the Alpha stoof to announce this special event. It is not every day that a packmate gets the title of Elderly.*`)],
+					.setDescription(`"We are here to celebrate the nomination of ${quid.name} to the highest rank, Elderly. The ${quid.getDisplayspecies()} has shown incredible skills and persistence, and we congratulate ${pronoun(quid, 1)} to ${pronoun(quid, 2)} new title." *A mixture of howls, crows, meows, roars and squeaks are heard all around the hill, on which the Alpha stoof to announce this special event. It is not every day that a packmate gets the title of Elderly.*`)],
 			});
 
 			await checkRankRequirements(serverData, interaction, interaction.member, RankType.Elderly, true);
 
 			return;
 		}
-		else if (userData.quid.profile.rank === RankType.Elderly) {
+		else if (quidToServer.rank === RankType.Elderly) {
 
 			// This is always a reply
 			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
-					.setColor(userData.quid.color)
+					.setColor(quid.color)
 					.setAuthor({
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
-					.setDescription(`*${userData.quid.name} is very wise from all the adventures ${userData.quid.pronoun(0)} had, but also a little... quaint. The ${userData.quid.getDisplayspecies()} seems to have forgotten that as Elderly, ${userData.quid.pronounAndPlural(0, 'has', 'have')} already achieved the highest possible rank.*`)],
+					.setDescription(`*${quid.name} is very wise from all the adventures ${pronoun(quid, 0)} had, but also a little... quaint. The ${quid.getDisplayspecies()} seems to have forgotten that as Elderly, ${pronounAndPlural(quid, 0, 'has', 'have')} already achieved the highest possible rank.*`)],
 			});
 			return;
 		}
@@ -138,13 +138,13 @@ export const command: SlashCommand = {
 		await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
-				.setColor(userData.quid.color)
+				.setColor(quid.color)
 				.setAuthor({
 					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
-				.setDescription(`*${userData.quid.name} looks at the Elderly with puppy eyes, trying to convince them.*\n"I'm sorry, little ${userData.quid.getDisplayspecies()}, you haven't proven yourself worthy of moving up a rank yet. Try again once you were able to put your strength, agility and decision-making to the test!" *the Elderly says.*`)
-				.setFooter({ text: `Go ${userData.quid.profile.rank === 'Youngling' ? 'playing' : 'exploring'} until you find a quest! Once you have completed the quest, you can move up a rank.` })],
+				.setDescription(`*${quid.name} looks at the Elderly with puppy eyes, trying to convince them.*\n"I'm sorry, little ${quid.getDisplayspecies()}, you haven't proven yourself worthy of moving up a rank yet. Try again once you were able to put your strength, agility and decision-making to the test!" *the Elderly says.*`)
+				.setFooter({ text: `Go ${quidToServer.rank === 'Youngling' ? 'playing' : 'exploring'} until you find a quest! Once you have completed the quest, you can move up a rank.` })],
 		});
 	},
 	async sendMessageComponentResponse(interaction, userData, serverData) {
@@ -167,12 +167,12 @@ export const command: SlashCommand = {
 		// This is always an update to the message with the button
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
-				.setColor(userData.quid.color)
+				.setColor(quid.color)
 				.setAuthor({
 					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
-				.setDescription(`*${userData.quid.name} stands before one of the eldest, excited to hear their following words.* "Congratulations, ${userData.quid.name}, you are now a fully-fledged ${rank}. I am certain you will contribute greatly to the pack in this role."\n*The ${userData.quid.getDisplayspecies()} grins from ear to ear.*`)],
+				.setDescription(`*${quid.name} stands before one of the eldest, excited to hear their following words.* "Congratulations, ${quid.name}, you are now a fully-fledged ${rank}. I am certain you will contribute greatly to the pack in this role."\n*The ${quid.getDisplayspecies()} grins from ear to ear.*`)],
 			components: [],
 		}, 'update', interaction.message.id);
 

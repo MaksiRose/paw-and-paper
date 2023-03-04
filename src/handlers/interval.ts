@@ -31,7 +31,7 @@ export async function execute(): Promise<void> {
 		const userList = await userModel.find();
 		for (const userData of userList) {
 
-			for (const quidData of Object.values(userData.quids)) {
+			for (const quidData of Object.values(quids)) {
 
 				for (const profileData of Object.values(quidData.profiles)) {
 
@@ -81,8 +81,8 @@ export async function execute(): Promise<void> {
 				if (!serverData) { continue; }
 
 				const lastInteractionIsTenMinutesAgo = serverInfo.lastInteractionTimestamp < Date.now() - tenMinutesInMs;
-				const hasLessThanMaxEnergy = userData.quid.profile.energy < userData.quid.profile.maxEnergy;
-				const isConscious = userData.quid.profile.energy > 0 || userData.quid.profile.health > 0 || userData.quid.profile.hunger > 0 || userData.quid.profile.thirst > 0;
+				const hasLessThanMaxEnergy = quidToServer.energy < quidToServer.maxEnergy;
+				const isConscious = quidToServer.energy > 0 || quidToServer.health > 0 || quidToServer.hunger > 0 || quidToServer.thirst > 0;
 				const hasNoCooldown = userData.serverInfo?.hasCooldown !== true;
 				if (lastInteractionIsTenMinutesAgo && isResting(userData) === false && hasLessThanMaxEnergy && isConscious && hasNoCooldown) {
 

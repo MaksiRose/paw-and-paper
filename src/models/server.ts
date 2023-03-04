@@ -7,7 +7,7 @@ import GroupToServer from './groupToServer';
 import ProxyLimits from './proxyLimits';
 import Quid from './quid';
 import QuidToServer from './quidToServer';
-import ServerToDiscordUser from './serverToDiscordUser';
+import DiscordUserToServer from './discordUserToServer';
 import ShopRole from './shopRole';
 import User from './user';
 import UserToServer from './userToServer';
@@ -115,6 +115,6 @@ export default class Server extends Model<ServerAttributes, ServerCreationAttrib
 	@HasMany(() => QuidToServer, { foreignKey: 'serverId' })
 	declare quidToServers: QuidToServer[];
 
-	@BelongsToMany(() => DiscordUser, () => ServerToDiscordUser)
+	@BelongsToMany(() => DiscordUser, () => DiscordUserToServer)
 	declare discordUsers: DiscordUser[];
 }

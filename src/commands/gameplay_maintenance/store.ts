@@ -53,7 +53,7 @@ export const command: SlashCommand = {
 				const chosenFood = getArrayElement(interaction.values, 0) as CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | SpeciesNames | MaterialNames;
 				let maximumAmount = 0;
 
-				const inventory_ = widenValues(userData.quid.profile.inventory);
+				const inventory_ = widenValues(quidToServer.inventory);
 				for (const itemType of unsafeKeys(inventory_)) {
 
 					if (unsafeKeys(inventory_[itemType]).includes(chosenFood)) {
@@ -90,7 +90,7 @@ export const command: SlashCommand = {
 				const chosenAmount = Number(getArrayElement(getArrayElement(interaction.values, 0).split('_'), 1));
 				if (isNaN(chosenAmount)) { throw new TypeError('chosenAmount is NaN'); }
 
-				const userInventory = widenValues(userData.quid.profile.inventory);
+				const userInventory = widenValues(quidToServer.inventory);
 				const serverInventory = widenValues(serverData.inventory);
 				for (const itemType of unsafeKeys(userInventory)) {
 
@@ -152,18 +152,18 @@ export async function sendStoreMessage(
 
 	const messageContent = remindOfAttack(interaction.guildId);
 
-	if (calculateInventorySize(userData.quid.profile.inventory) === 0) {
+	if (calculateInventorySize(quidToServer.inventory) === 0) {
 
 		// This is a reply if the interaction is a ChatInputCommand, and an update to the message with the button if the interaction is a button
 		await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
-				.setColor(userData.quid.color)
+				.setColor(quid.color)
 				.setAuthor({
 					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
-				.setDescription(`*${userData.quid.name} goes to the food den to store ${userData.quid.pronoun(2)} findings away, but ${userData.quid.pronoun(2)} mouth is empty...*`),
+				.setDescription(`*${quid.name} goes to the food den to store ${pronoun(quid, 2)} findings away, but ${pronoun(quid, 2)} mouth is empty...*`),
 			],
 			components: [],
 		}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
@@ -194,12 +194,12 @@ function getOriginalEmbed(
 ): EmbedBuilder {
 
 	return new EmbedBuilder()
-		.setColor(userData.quid.color)
+		.setColor(quid.color)
 		.setAuthor({
 			name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 			iconURL: quid.avatarURL,
 		})
-		.setDescription(`*${userData.quid.name} wanders to the food den, ready to store away ${userData.quid.pronoun(2)} findings. ${capitalize(userData.quid.pronounAndPlural(0, 'circle'))} the food pile…*`);
+		.setDescription(`*${quid.name} wanders to the food den, ready to store away ${pronoun(quid, 2)} findings. ${capitalize(pronounAndPlural(quid, 0, 'circle'))} the food pile…*`);
 }
 
 function getOriginalComponents(
@@ -209,7 +209,7 @@ function getOriginalComponents(
 
 	const itemSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [];
 
-	const inventory_ = widenValues(userData.quid.profile.inventory);
+	const inventory_ = widenValues(quidToServer.inventory);
 	for (const itemType of unsafeKeys(inventory_)) {
 
 		for (const item of unsafeKeys(inventory_[itemType])) {
@@ -243,7 +243,7 @@ async function storeAll(
 	const embed = new EmbedBuilder(mainEmbed?.toJSON() || getOriginalEmbed(userData).toJSON());
 	let footerText = embed.toJSON().footer?.text ?? '';
 
-	const userInventory = widenValues(userData.quid.profile.inventory);
+	const userInventory = widenValues(quidToServer.inventory);
 	const serverInventory = widenValues(serverData.inventory);
 	for (const itemType of unsafeKeys(userInventory)) {
 

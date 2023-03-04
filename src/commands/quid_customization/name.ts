@@ -9,10 +9,11 @@ import { GivenIdList } from '../../typings/data/general';
 import BannedUser from '../../models/bannedUser';
 import User from '../../models/user';
 import DiscordUser from '../../models/discordUser';
-import ServerToDiscordUser from '../../models/serverToDiscordUser';
+import DiscordUserToServer from '../../models/discordUserToServer';
 import Quid from '../../models/quid';
 import QuidToServer from '../../models/quidToServer';
 import UserToServer from '../../models/userToServer';
+import { Op } from 'sequelize';
 const { version } = require('../../../package.json');
 const { default_color, error_color } = require('../../../config.json');
 
@@ -58,7 +59,7 @@ export const command: SlashCommand = {
 
 			if (interaction.inGuild()) {
 
-				await ServerToDiscordUser.create({ id: generateId(), discordUserId: interaction.user.id, serverId: interaction.guildId, isMember: true, lastUpdatedTimestamp: Date.now() });
+				await DiscordUserToServer.create({ id: generateId(), discordUserId: interaction.user.id, serverId: interaction.guildId, isMember: true, lastUpdatedTimestamp: Date.now() });
 			}
 		}
 
@@ -114,11 +115,17 @@ export const command: SlashCommand = {
 		if (interaction.inCachedGuild() && quidToServer && (interaction.member instanceof GuildMember)) {
 
 			const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
-			const serverDiscordUsers = (await Promise.all(discordUsers.map(async (du) => (await ServerToDiscordUser.findOne({ where: { discordUserId: du.id, serverId: interaction.guildId, isMember: true } }))))).filter(function(v): v is ServerToDiscordUser { return v !== null; });
+			const discordUserToServer = await DiscordUserToServer.findAll({
+				where: {
+					serverId: interaction.guildId,
+					isMember: true,
+					discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
+				},
+			});
 
-			const members = (await Promise.all(serverDiscordUsers
-				.map(async (v) => (await interaction.guild.members.fetch(v.discordUserId).catch(() => {
-					v.update({ isMember: false });
+			const members = (await Promise.all(discordUserToServer
+				.map(async (duts) => (await interaction.guild.members.fetch(duts.discordUserId).catch(() => {
+					duts.update({ isMember: false });
 					return null;
 				}))))).filter(function(v): v is GuildMember { return v !== null; });
 

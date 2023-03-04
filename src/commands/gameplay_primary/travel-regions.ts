@@ -111,7 +111,7 @@ async function sendTravelMessage(
 ): Promise<Snowflake> {
 
 	const embed = new EmbedBuilder()
-		.setColor(userData.quid.color)
+		.setColor(quid.color)
 		.setAuthor({
 			name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 			iconURL: quid.avatarURL,
@@ -134,7 +134,7 @@ async function sendTravelMessage(
 
 		await userData.update(
 			(u) => {
-				const p = getMapData(getMapData(u.quids, userData.quid._id).profiles, interaction.guildId);
+				const p = getMapData(getMapData(u.quids, quid._id).profiles, interaction.guildId);
 				p.currentRegion = chosenRegion;
 			},
 		);
@@ -142,7 +142,7 @@ async function sendTravelMessage(
 
 	if (chosenRegion === CurrentRegionType.SleepingDens) {
 
-		embed.setDescription(`*${userData.quid.name} slowly trots to the sleeping dens, tired from all the hard work ${userData.quid.pronoun(0)} did. For a moment, the ${userData.quid.getDisplayspecies()} thinks about if ${userData.quid.pronounAndPlural(0, 'want')} to rest or just a break.*`);
+		embed.setDescription(`*${quid.name} slowly trots to the sleeping dens, tired from all the hard work ${pronoun(quid, 0)} did. For a moment, the ${quid.getDisplayspecies()} thinks about if ${pronounAndPlural(quid, 0, 'want')} to rest or just a break.*`);
 
 		return (await respond(interaction, {
 			content: messageContent,
@@ -156,7 +156,7 @@ async function sendTravelMessage(
 	}
 	else if (chosenRegion === CurrentRegionType.FoodDen) {
 
-		embed.setDescription(`*${userData.quid.name} runs to the food den. Maybe ${userData.quid.pronoun(0)} will eat something, or put ${userData.quid.pronoun(2)} food onto the pile.*`);
+		embed.setDescription(`*${quid.name} runs to the food den. Maybe ${pronoun(quid, 0)} will eat something, or put ${pronoun(quid, 2)} food onto the pile.*`);
 		const allFoodDenUsersList = (await userModel.find(
 			(u) => {
 				return Object.values(u.quids).filter(q => {
@@ -185,7 +185,7 @@ async function sendTravelMessage(
 	}
 	else if (chosenRegion === CurrentRegionType.MedicineDen) {
 
-		embed.setDescription(`*${userData.quid.name} rushes over to the medicine den. Nearby are a mix of packmates, some with illnesses and injuries, others trying to heal them.*`);
+		embed.setDescription(`*${quid.name} rushes over to the medicine den. Nearby are a mix of packmates, some with illnesses and injuries, others trying to heal them.*`);
 		const allMedicineDenUsersList = (await userModel.find(
 			(u) => {
 				return Object.values(u.quids).filter(q => {
@@ -210,7 +210,7 @@ async function sendTravelMessage(
 			embeds: [...restEmbed, embed],
 			components: [
 				travelComponent,
-				...(userData.quid.profile.rank === RankType.Youngling ? [] : [new ActionRowBuilder<ButtonBuilder>()
+				...(quidToServer.rank === RankType.Youngling ? [] : [new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
 						.setCustomId(`travel-regions_heal_@${userData._id}`)
 						.setLabel('Heal')
@@ -220,7 +220,7 @@ async function sendTravelMessage(
 	}
 	else if (chosenRegion === CurrentRegionType.Ruins) {
 
-		embed.setDescription(`*${userData.quid.name} walks up to the ruins, carefully stepping over broken bricks. Hopefully, ${userData.quid.pronoun(0)} will find someone to talk with.*`);
+		embed.setDescription(`*${quid.name} walks up to the ruins, carefully stepping over broken bricks. Hopefully, ${pronoun(quid, 0)} will find someone to talk with.*`);
 		const allRuinsUsersList = (await userModel.find(
 			(u) => {
 				return Object.values(u.quids).filter(q => {
@@ -239,7 +239,7 @@ async function sendTravelMessage(
 	}
 	else if (chosenRegion === CurrentRegionType.Lake) {
 
-		embed.setDescription(`*${userData.quid.name} looks at ${userData.quid.pronoun(2)} reflection as ${userData.quid.pronounAndPlural(0, 'passes', 'pass')} the lake. Suddenly the ${userData.quid.getDisplayspecies()} remembers how long ${userData.quid.pronounAndPlural(0, 'has', 'have')}n't drunk anything.*`);
+		embed.setDescription(`*${quid.name} looks at ${pronoun(quid, 2)} reflection as ${pronounAndPlural(quid, 0, 'passes', 'pass')} the lake. Suddenly the ${quid.getDisplayspecies()} remembers how long ${pronounAndPlural(quid, 0, 'has', 'have')}n't drunk anything.*`);
 
 		return (await respond(interaction, {
 			content: messageContent,
@@ -253,7 +253,7 @@ async function sendTravelMessage(
 	}
 	else if (chosenRegion === CurrentRegionType.Prairie) {
 
-		embed.setDescription(`*${userData.quid.name} approaches the prairie, watching younger packmates testing their strength in playful fights. Maybe the ${userData.quid.getDisplayspecies()} could play with them!*`);
+		embed.setDescription(`*${quid.name} approaches the prairie, watching younger packmates testing their strength in playful fights. Maybe the ${quid.getDisplayspecies()} could play with them!*`);
 		const allPrairieUsersList = (await userModel.find(
 			(u) => {
 				return Object.values(u.quids).filter(q => {
@@ -276,7 +276,7 @@ async function sendTravelMessage(
 	}
 	else {
 
-		embed.setDescription(`You are currently at the ${userData.quid.profile.currentRegion}! Here are the regions you can go to:`);
+		embed.setDescription(`You are currently at the ${quidToServer.currentRegion}! Here are the regions you can go to:`);
 		embed.setFields([
 			{ name: '💤 sleeping dens', value: 'A place to sleep and relax. Go here if you need to refill your energy!' },
 			{ name: '🍖 food den', value: 'Inspect all the food the pack has gathered, eat some or add to it from your inventory!' },

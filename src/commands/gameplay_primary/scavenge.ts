@@ -61,18 +61,18 @@ async function executeScavenging(
 
 	const messageContent = remindOfAttack(interaction.guildId);
 
-	if (userData.quid.profile.rank === RankType.Youngling) {
+	if (quidToServer.rank === RankType.Youngling) {
 
 		// This is always a reply
 		await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
-				.setColor(userData.quid.color)
+				.setColor(quid.color)
 				.setAuthor({
 					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
-				.setDescription(`*A hunter cuts ${userData.quid.name} as they see ${userData.quid.pronoun(1)} running towards the pack borders.* "You don't have enough experience to go into the wilderness, ${userData.quid.profile.rank}," *they say.*`)],
+				.setDescription(`*A hunter cuts ${quid.name} as they see ${pronoun(quid, 1)} running towards the pack borders.* "You don't have enough experience to go into the wilderness, ${quidToServer.rank}," *they say.*`)],
 		});
 		return;
 	}
@@ -81,11 +81,11 @@ async function executeScavenging(
 
 	await setCooldown(userData, interaction.guildId, true);
 
-	let experiencePoints = getRandomNumber(5, userData.quid.profile.levels);
+	let experiencePoints = getRandomNumber(5, quidToServer.levels);
 	const changedCondition = await changeCondition(userData, 0);
 
 	const embed = new EmbedBuilder()
-		.setColor(userData.quid.color)
+		.setColor(quid.color)
 		.setAuthor({
 			name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 			iconURL: quid.avatarURL,
@@ -125,12 +125,12 @@ async function executeScavenging(
 	let botReply = await respond(interaction, {
 		content: messageContent,
 		embeds: [...restEmbed, new EmbedBuilder()
-			.setColor(userData.quid.color)
+			.setColor(quid.color)
 			.setAuthor({
 				name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 				iconURL: quid.avatarURL,
 			})
-			.setDescription(`*${userData.quid.name} carefully examines the terrain around the pack, hoping to find useful materials or carcasses. The ${userData.quid.getDisplayspecies()} must now prove prudence and a keen eye...*`)
+			.setDescription(`*${quid.name} carefully examines the terrain around the pack, hoping to find useful materials or carcasses. The ${quid.getDisplayspecies()} must now prove prudence and a keen eye...*`)
 			.setFooter({ text: 'Click the fields to reveal what\'s underneath. Based on how close you are to the correct field, a color on a scale from green (closest) to red (farthest) is going to appear. You can click 4 times and have 2 minutes to win.' })],
 		components: componentArray,
 	});
@@ -186,7 +186,7 @@ async function executeScavenging(
 						/* Checking if the server has enough meat, if it doesn't, give the user meat. If it does, check if the server has enough materials, if it doesn't, give the user material. If it does, do nothing. */
 						if (meatCount < 0 && pullFromWeightedTable({ 0: -meatCount, 1: -materialCount }) === 0) {
 
-							const carcassArray = [...speciesInfo[userData.quid.species].biome1OpponentArray];
+							const carcassArray = [...speciesInfo[quid.species].biome1OpponentArray];
 							const foundCarcass = pickMeat(carcassArray, serverData.inventory);
 							if (!foundCarcass) {
 								await sendErrorMessage(interaction, new Error('foundCarcass is undefined'))
@@ -194,7 +194,7 @@ async function executeScavenging(
 								return;
 							}
 
-							embed.setDescription(`*After a while, ${userData.quid.name} can indeed find something useful: On the floor is a ${foundCarcass} that seems to have recently lost a fight fatally. Although the animal has a few injuries, it can still serve as great nourishment. What a success!*\n${playingField}`);
+							embed.setDescription(`*After a while, ${quid.name} can indeed find something useful: On the floor is a ${foundCarcass} that seems to have recently lost a fight fatally. Although the animal has a few injuries, it can still serve as great nourishment. What a success!*\n${playingField}`);
 							embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}\n\n+1 ${foundCarcass}` });
 
 							await userData.update(
@@ -213,7 +213,7 @@ async function executeScavenging(
 								return;
 							}
 
-							embed.setDescription(`*${userData.quid.name} searches in vain for edible remains of deceased animals. But the expedition is not without success: the ${userData.quid.getDisplayspecies()} sees a ${foundMaterial}, which can serve as a great material for repairs and work in the pack. ${capitalize(userData.quid.pronoun(0))} happily takes it home with ${userData.quid.pronoun(1)}.*\n${playingField}`);
+							embed.setDescription(`*${quid.name} searches in vain for edible remains of deceased animals. But the expedition is not without success: the ${quid.getDisplayspecies()} sees a ${foundMaterial}, which can serve as a great material for repairs and work in the pack. ${capitalize(pronoun(quid, 0))} happily takes it home with ${pronoun(quid, 1)}.*\n${playingField}`);
 							embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}\n\n+1 ${foundMaterial}` });
 
 							await userData.update(
@@ -225,7 +225,7 @@ async function executeScavenging(
 						}
 						else {
 
-							embed.setDescription(`*Although ${userData.quid.name} searches everything very thoroughly, there doesn't seem to be anything in the area that can be used at the moment. Probably everything has already been found. The ${userData.quid.getDisplayspecies()} decides to look again later.*\n${playingField}`);
+							embed.setDescription(`*Although ${quid.name} searches everything very thoroughly, there doesn't seem to be anything in the area that can be used at the moment. Probably everything has already been found. The ${quid.getDisplayspecies()} decides to look again later.*\n${playingField}`);
 							if (changedCondition.statsUpdateText) { embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}` }); }
 						}
 
@@ -271,29 +271,29 @@ async function executeScavenging(
 					if (isHurt == 0) {
 
 						experiencePoints = Math.round(experiencePoints / 2);
-						embed.setDescription(`*After ${userData.quid.name} gets over the initial shock, the ${userData.quid.getDisplayspecies()} quickly manages to free ${userData.quid.pronoun(4)} from the net. That was close!*`);
+						embed.setDescription(`*After ${quid.name} gets over the initial shock, the ${quid.getDisplayspecies()} quickly manages to free ${pronoun(quid, 4)} from the net. That was close!*`);
 						embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}` });
 					}
 					else {
 
-						const healthPoints = function(health) { return (userData.quid.profile.health - health < 0) ? userData.quid.profile.health : health; }(getRandomNumber(5, 3));
+						const healthPoints = function(health) { return (quidToServer.health - health < 0) ? quidToServer.health : health; }(getRandomNumber(5, 3));
 
 						switch (pullFromWeightedTable({ 0: 1, 1: 1 })) {
 
 							case 0:
 
-								userData.quid.profile.injuries.infections += 1;
+								quidToServer.injuries.infections += 1;
 
-								embed.setDescription(`*${userData.quid.name} is still shocked for a while, but finally manages to free ${userData.quid.pronoun(4)}. Not long after, however, ${userData.quid.pronounAndPlural(0, 'feel')} a shock wave run through ${userData.quid.pronoun(2)} body. Something sharp must have pressed into the ${userData.quid.getDisplayspecies()}. It looks infected.*`);
+								embed.setDescription(`*${quid.name} is still shocked for a while, but finally manages to free ${pronoun(quid, 4)}. Not long after, however, ${pronounAndPlural(quid, 0, 'feel')} a shock wave run through ${pronoun(quid, 2)} body. Something sharp must have pressed into the ${quid.getDisplayspecies()}. It looks infected.*`);
 								embed.setFooter({ text: `-${healthPoints} HP (from infection)\n${changedCondition.statsUpdateText}` });
 
 								break;
 
 							default:
 
-								userData.quid.profile.injuries.sprains += 1;
+								quidToServer.injuries.sprains += 1;
 
-								embed.setDescription(`*${userData.quid.name} is still shocked for a while, but finally manages to free ${userData.quid.pronoun(4)}. But the escape was not perfect: while the ${userData.quid.getDisplayspecies()} was untangling ${userData.quid.pronoun(4)} from the net, ${userData.quid.pronoun(0)} got entangled and stuck. It looks sprained.*`);
+								embed.setDescription(`*${quid.name} is still shocked for a while, but finally manages to free ${pronoun(quid, 4)}. But the escape was not perfect: while the ${quid.getDisplayspecies()} was untangling ${pronoun(quid, 4)} from the net, ${pronoun(quid, 0)} got entangled and stuck. It looks sprained.*`);
 								embed.setFooter({ text: `-${healthPoints} HP (from sprain)\n${changedCondition.statsUpdateText}` });
 						}
 
@@ -301,7 +301,7 @@ async function executeScavenging(
 							(u) => {
 								const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
 								p.health -= healthPoints;
-								p.injuries = userData.quid.profile.injuries;
+								p.injuries = quidToServer.injuries;
 							},
 						);
 					}

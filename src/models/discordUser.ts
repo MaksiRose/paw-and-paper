@@ -1,7 +1,8 @@
-import { Column, DataType, Table, Model, BelongsTo, BelongsToMany, ForeignKey } from 'sequelize-typescript';
+import { Column, DataType, Table, Model, BelongsTo, BelongsToMany, ForeignKey, HasMany } from 'sequelize-typescript';
 import Server from './server';
-import ServerToDiscordUser from './serverToDiscordUser';
+import DiscordUserToServer from './discordUserToServer';
 import User from './user';
+import Webhook from './webhook';
 
 interface DiscordUserAttributes {
 	id: string;
@@ -20,6 +21,9 @@ export default class DiscordUser extends Model<DiscordUserAttributes, DiscordUse
 	@BelongsTo(() => User, { foreignKey: 'userId' })
 	declare user: User;
 
-	@BelongsToMany(() => Server, () => ServerToDiscordUser)
+	@BelongsToMany(() => Server, () => DiscordUserToServer)
 	declare servers: Server[];
+
+	@HasMany(() => Webhook, { foreignKey: 'discordUserId' })
+	declare webhooks: Webhook[];
 }

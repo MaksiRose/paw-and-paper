@@ -1,8 +1,8 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, Message, RepliableInteraction, SlashCommandBuilder } from 'discord.js';
 import { client } from '../..';
-import serverModel from '../../oldModels/serverModel';
-import { ServerSchema } from '../../typings/data/server';
-import { CurrentRegionType, UserData } from '../../typings/data/user';
+import QuidToServer from '../../models/quidToServer';
+import UserToServer from '../../models/userToServer';
+import { CurrentRegionType } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasCooldown, isPassedOut } from '../../utils/checkValidity';
@@ -56,29 +56,29 @@ export async function executeResting(
 		await respond(interaction, {
 			content: messageContent,
 			embeds: [new EmbedBuilder()
-				.setColor(userData.quid.color)
+				.setColor(quid.color)
 				.setAuthor({
 					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
-				.setDescription(`*${userData.quid.name} dreams of resting on a beach, out in the sun. The imaginary wind rocked the also imaginative hammock. ${capitalize(userData.quid.pronoun(0))} must be really tired to dream of sleeping!*`),
+				.setDescription(`*${quid.name} dreams of resting on a beach, out in the sun. The imaginary wind rocked the also imaginative hammock. ${capitalize(pronoun(quid, 0))} must be really tired to dream of sleeping!*`),
 			],
 		}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
 		return;
 	}
 
-	if (userData.quid.profile.energy >= userData.quid.profile.maxEnergy) {
+	if (quidToServer.energy >= quidToServer.maxEnergy) {
 
 		// This is an update to the button if the interaction is a button from the travel-regions command, or a reply if the interaction is a ChatInputCommand
 		await respond(interaction, {
 			content: messageContent,
 			embeds: [new EmbedBuilder()
-				.setColor(userData.quid.color)
+				.setColor(quid.color)
 				.setAuthor({
 					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
-				.setDescription(`*${userData.quid.name} trots around the dens eyeing ${userData.quid.pronoun(2)} comfortable moss-covered bed. A nap looks nice, but ${userData.quid.pronounAndPlural(0, 'has', 'have')} far too much energy to rest!*`),
+				.setDescription(`*${quid.name} trots around the dens eyeing ${pronoun(quid, 2)} comfortable moss-covered bed. A nap looks nice, but ${pronounAndPlural(quid, 0, 'has', 'have')} far too much energy to rest!*`),
 			],
 		}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
 		return;
@@ -115,13 +115,13 @@ export async function startResting(
 
 		const embedFooterLines = botReply.embeds[0]?.footer?.text.split('\n');
 		isAutomatic = embedFooterLines?.[1]?.includes('inactive') === true || embedFooterLines?.[2]?.includes('inactive') === true;
-		previousRegion = (embedFooterLines?.[1]?.startsWith(prePreviousRegionText) === true) ? embedFooterLines[1].replace(prePreviousRegionText, '') as CurrentRegionType : userData.quid.profile.currentRegion;
+		previousRegion = (embedFooterLines?.[1]?.startsWith(prePreviousRegionText) === true) ? embedFooterLines[1].replace(prePreviousRegionText, '') as CurrentRegionType : quidToServer.currentRegion;
 		weardownText = embedFooterLines?.[embedFooterLines.length - 3] ?? '';
 		energyPoints = Number(embedFooterLines?.[0]?.split(' ')[0]?.replace('+', '') ?? '0');
 	}
 	else {
 
-		previousRegion = userData.quid.profile.currentRegion;
+		previousRegion = quidToServer.currentRegion;
 		weardownText = await wearDownDen(serverData, CurrentRegionType.SleepingDens);
 		energyPoints = 0;
 
@@ -168,8 +168,8 @@ export async function startResting(
 	}
 
 	// This is just a safety net to make absolutely sure that no two restingIntervals are running at the same time
-	clearInterval(restingIntervalMap.get(userData._id + userData.quid.profile.serverId));
-	restingIntervalMap.delete(userData._id + userData.quid.profile.serverId);
+	clearInterval(restingIntervalMap.get(userData._id + quidToServer.serverId));
+	restingIntervalMap.delete(userData._id + quidToServer.serverId);
 
 	const intervalId = setInterval(async function(): Promise<void> {
 		try {
@@ -189,7 +189,7 @@ export async function startResting(
 			});
 
 			/* It checks if the user has reached their maximum energy, and if they have, it stops the resting process. */
-			if (userData.quid.profile.energy >= userData.quid.profile.maxEnergy) {
+			if (quidToServer.energy >= quidToServer.maxEnergy) {
 
 				stopResting(userData);
 				userData.update(
@@ -203,7 +203,7 @@ export async function startResting(
 
 				await botReply.channel.send({
 					content: userData.settings.reminders.resting ? (interaction?.user.toString() || `<@${Object.keys(userData.userIds)[0]}>`) : undefined,
-					embeds: [embed.setDescription(`*${userData.quid.name}'s eyes blink open, ${userData.quid.pronounAndPlural(0, 'sit')} up to stretch and then walk out into the light and buzz of late morning camp. Younglings are spilling out of the nursery, ambitious to start the day, Hunters and Healers are traveling in and out of the camp border. It is the start of the next good day!*`)],
+					embeds: [embed.setDescription(`*${quid.name}'s eyes blink open, ${pronounAndPlural(quid, 0, 'sit')} up to stretch and then walk out into the light and buzz of late morning camp. Younglings are spilling out of the nursery, ambitious to start the day, Hunters and Healers are traveling in and out of the camp border. It is the start of the next good day!*`)],
 					components: isAutomatic ? [component] : [],
 				});
 				return;
@@ -222,7 +222,7 @@ export async function startResting(
 			else { console.error(error); }
 		}
 	}, 30_000 + await getExtraRestingTime(serverData.serverId));
-	restingIntervalMap.set(userData._id + userData.quid.profile.serverId, intervalId);
+	restingIntervalMap.set(userData._id + quidToServer.serverId, intervalId);
 }
 
 /**
@@ -245,34 +245,26 @@ function getRestingEmbed(
 ): EmbedBuilder {
 
 	return new EmbedBuilder()
-		.setColor(userData.quid.color)
+		.setColor(quid.color)
 		.setAuthor({
 			name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 			iconURL: quid.avatarURL,
 		})
-		.setDescription(`*${userData.quid.name}'s chest rises and falls with the crickets. Snoring bounces off each wall, finally exiting the den and rising free to the clouds.*`)
-		.setFooter({ text: `+${energyPoints} energy (${userData.quid.profile.energy}/${userData.quid.profile.maxEnergy})${(previousRegion !== CurrentRegionType.SleepingDens) ? `\n${prePreviousRegionText}sleeping dens` : ''}${isAutomatic ? '\nYour quid started resting because you were inactive for 10 minutes' : ''}\n\n${weardownText}\n\nTip: You can also do "/vote" to get +30 energy per vote!` });
+		.setDescription(`*${quid.name}'s chest rises and falls with the crickets. Snoring bounces off each wall, finally exiting the den and rising free to the clouds.*`)
+		.setFooter({ text: `+${energyPoints} energy (${quidToServer.energy}/${quidToServer.maxEnergy})${(previousRegion !== CurrentRegionType.SleepingDens) ? `\n${prePreviousRegionText}sleeping dens` : ''}${isAutomatic ? '\nYour quid started resting because you were inactive for 10 minutes' : ''}\n\n${weardownText}\n\nTip: You can also do "/vote" to get +30 energy per vote!` });
 }
 
 /**
  * Clears the timeout of the specific user that is resting.
  */
 export function stopResting(
-	userData: UserData<never, never>,
+	userToServer: UserToServer,
 ): void {
 
-	userData.update(
-		(u) => {
-			u.servers[userData.quid.profile.serverId] = {
-				...userDataServersObject(u, userData.quid.profile.serverId),
-				restingChannelId: null,
-				restingMessageId: null,
-			};
-		},
-	);
+	userToServer.update({ resting_channelId: null, resting_messageId: null });
 
-	clearInterval(restingIntervalMap.get(userData._id + userData.quid.profile.serverId));
-	restingIntervalMap.delete(userData._id + userData.quid.profile.serverId);
+	clearInterval(restingIntervalMap.get(userToServer.userId + userToServer.serverId));
+	restingIntervalMap.delete(userToServer.userId + userToServer.serverId);
 }
 
 /**
@@ -282,8 +274,8 @@ export function stopResting(
  * @returns A boolean value.
  */
 export function isResting(
-	userData: UserData<never, never>,
-): boolean { return restingIntervalMap.has(userData._id + userData.quid.profile.serverId); }
+	userToServer: UserToServer,
+): boolean { return restingIntervalMap.has(userToServer.userId + userToServer.serverId); }
 
 /**
  * It gets the server's den stats, calculates a multiplier based on those stats, and returns the

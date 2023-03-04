@@ -48,7 +48,7 @@ export const command: SlashCommand = {
 				return;
 			}
 
-			userData = getUserData(_userData, interaction.guildId, getMapData(_userData.quids, getMapData(_userData.servers, interaction.guildId).currentQuid ?? ''));
+			userData = getUserData(_userData, interaction.guildId, getMapData(_quids, getMapData(_userData.servers, interaction.guildId).currentQuid ?? ''));
 			if (!hasNameAndSpecies(userData)) {
 
 				// This is always a reply
@@ -79,8 +79,8 @@ export const command: SlashCommand = {
 			const creatorUserId = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
 
 			const _userData = await userModel.findOne(u => Object.keys(u.quids).includes(quidId));
-			userData = getUserData(_userData, interaction.guildId, getMapData(_userData.quids, quidId));
-			if (!hasNameAndSpecies(userData)) { throw Error('userData.quid.species is empty string'); }
+			userData = getUserData(_userData, interaction.guildId, getMapData(_quids, quidId));
+			if (!hasNameAndSpecies(userData)) { throw Error('quid.species is empty string'); }
 			await sendStatsMessage(interaction, userData, creatorUserId);
 			return;
 		}
@@ -105,7 +105,7 @@ async function sendStatsMessage(
 
 	const components = new ActionRowBuilder<ButtonBuilder>()
 		.setComponents([new ButtonBuilder()
-			.setCustomId(`stats_refresh_${userData.quid._id}_@${creatorUserId}`)
+			.setCustomId(`stats_refresh_${quid._id}_@${creatorUserId}`)
 			.setEmoji('🔁')
 			.setStyle(ButtonStyle.Secondary),
 		new ButtonBuilder()
@@ -114,7 +114,7 @@ async function sendStatsMessage(
 			.setStyle(ButtonStyle.Secondary),
 		]);
 
-	if (calculateInventorySize(userData.quid.profile.inventory) === 0 || !Object.keys(userData.userIds).includes(creatorUserId)) {
+	if (calculateInventorySize(quidToServer.inventory) === 0 || !Object.keys(userData.userIds).includes(creatorUserId)) {
 
 		components.components.pop();
 	}
@@ -122,7 +122,7 @@ async function sendStatsMessage(
 	// "item" needs to be == and not === in order to catch the booleans as well
 	let injuryText = '';
 
-	for (const [injuryKind, injuryAmount] of Object.entries(userData.quid.profile.injuries)) {
+	for (const [injuryKind, injuryAmount] of Object.entries(quidToServer.injuries)) {
 
 		if (injuryAmount > 0) {
 
@@ -137,17 +137,17 @@ async function sendStatsMessage(
 		}
 	}
 
-	const canRankUp = userData.quid.profile.unlockedRanks > { [RankType.Youngling]: 0, [RankType.Apprentice]: 1, [RankType.Hunter]: 2, [RankType.Healer]: 2, [RankType.Elderly]: 3 }[userData.quid.profile.rank];
+	const canRankUp = quidToServer.unlockedRanks > { [RankType.Youngling]: 0, [RankType.Apprentice]: 1, [RankType.Hunter]: 2, [RankType.Healer]: 2, [RankType.Elderly]: 3 }[quidToServer.rank];
 
 	// This is a reply if the interaction is a ChatInputCommand, or an update to the message with the button if the refresh button was clicked
 	await respond(interaction, {
-		content: `🚩 Levels: \`${userData.quid.profile.levels}\` - 🏷️ Rank: ${userData.quid.profile.rank}\n` +
-			`✨ XP: \`${userData.quid.profile.experience}/${userData.quid.profile.levels * 50}\` - 🗺️ Region: ${userData.quid.profile.currentRegion}\n` +
-			`❤️ HP: \`${userData.quid.profile.health}/${userData.quid.profile.maxHealth}\` - ⚡ Energy: \`${userData.quid.profile.energy}/${userData.quid.profile.maxEnergy}\`\n` +
-			`🍗 Hunger: \`${userData.quid.profile.hunger}/${userData.quid.profile.maxHunger}\` - 🥤 Thirst: \`${userData.quid.profile.thirst}/${userData.quid.profile.maxThirst}\`` +
+		content: `🚩 Levels: \`${quidToServer.levels}\` - 🏷️ Rank: ${quidToServer.rank}\n` +
+			`✨ XP: \`${quidToServer.experience}/${quidToServer.levels * 50}\` - 🗺️ Region: ${quidToServer.currentRegion}\n` +
+			`❤️ HP: \`${quidToServer.health}/${quidToServer.maxHealth}\` - ⚡ Energy: \`${quidToServer.energy}/${quidToServer.maxEnergy}\`\n` +
+			`🍗 Hunger: \`${quidToServer.hunger}/${quidToServer.maxHunger}\` - 🥤 Thirst: \`${quidToServer.thirst}/${quidToServer.maxThirst}\`` +
 			(injuryText ? `\n🩹 Injuries/Illnesses: ${injuryText.slice(2)}` : injuryText) +
-			(userData.quid.profile.sapling.exists === false ? '' : `\n🌱 Ginkgo Sapling: ${userData.quid.profile.sapling.waterCycles} days alive - ${userData.quid.profile.sapling.health} health - Next watering <t:${Math.floor((userData.quid.profile.sapling.nextWaterTimestamp || 0) / 1000)}:R>`) +
-			(userData.quid.profile.hasQuest ? `\n${userData.quid.name} has one open quest!` : '') + (canRankUp ? `\n${userData.quid.name} can rank up!` : ''),
+			(quidToServer.sapling.exists === false ? '' : `\n🌱 Ginkgo Sapling: ${quidToServer.sapling.waterCycles} days alive - ${quidToServer.sapling.health} health - Next watering <t:${Math.floor((quidToServer.sapling.nextWaterTimestamp || 0) / 1000)}:R>`) +
+			(quidToServer.hasQuest ? `\n${quid.name} has one open quest!` : '') + (canRankUp ? `\n${quid.name} can rank up!` : ''),
 		components: [components],
 	}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
 }

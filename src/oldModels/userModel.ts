@@ -404,7 +404,7 @@
 // 			},
 // 		}) as (U extends QuidSchema<T> ? never : undefined) | Quid<T>,
 // 		serverInfo: userData.servers[server_id],
-// 		quids: new Collection(Object.entries(userData.quids)),
+// 		quids: new Collection(Object.entries(quids)),
 // 		servers: new Collection(Object.entries(userData.servers)),
 // 		lastPlayedVersion: userData.lastPlayedVersion,
 // 		antiproxy: userData.antiproxy,
@@ -420,7 +420,7 @@
 // 				updateFunction,
 // 				options,
 // 			);
-// 			const player = getUserData(userData, server_id, userData.quids[quidData?._id ?? '']);
+// 			const player = getUserData(userData, server_id, quids[quidData?._id ?? '']);
 // 			Object.assign(this, player);
 // 		},
 // 	};

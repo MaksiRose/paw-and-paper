@@ -3,7 +3,7 @@ import { Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript
 import DiscordUser from './discordUser';
 import Server from './server';
 
-interface ServerToDiscordUserAttributes {
+interface DiscordUserToServerAttributes {
 	id: string;
 	discordUserId: string;
 	serverId: string;
@@ -11,10 +11,10 @@ interface ServerToDiscordUserAttributes {
 	lastUpdatedTimestamp: number
 }
 
-type ServerToDiscordUserCreationAttributes = Optional<ServerToDiscordUserAttributes, 'isMember' | 'lastUpdatedTimestamp'>
+type DiscordUserToServerCreationAttributes = Optional<DiscordUserToServerAttributes, 'isMember' | 'lastUpdatedTimestamp'>
 
 @Table
-export default class ServerToDiscordUser extends Model<ServerToDiscordUserAttributes, ServerToDiscordUserCreationAttributes> {
+export default class DiscordUserToServer extends Model<DiscordUserToServerAttributes, DiscordUserToServerCreationAttributes> {
 	@Column({ type: DataType.STRING, primaryKey: true })
 	declare id: string;
 

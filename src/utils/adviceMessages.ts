@@ -15,7 +15,7 @@ export async function restAdvice(
 	userData: UserData<never, never>,
 ): Promise<void> {
 
-	if (userData.quid.profile.energy <= 80 && userData.advice.resting === false) {
+	if (quidToServer.energy <= 80 && userData.advice.resting === false) {
 
 		await userData.update(
 			(u) => {
@@ -41,7 +41,7 @@ export async function drinkAdvice(
 	userData: UserData<never, never>,
 ): Promise<void> {
 
-	if (userData.quid.profile.thirst <= 80 && userData.advice.drinking === false) {
+	if (quidToServer.thirst <= 80 && userData.advice.drinking === false) {
 
 		await userData.update(
 			(u) => {
@@ -67,7 +67,7 @@ export async function eatAdvice(
 	userData: UserData<never, never>,
 ): Promise<void> {
 
-	if (userData.quid.profile.hunger <= 80 && userData.advice.eating === false) {
+	if (quidToServer.hunger <= 80 && userData.advice.eating === false) {
 
 		await userData.update(
 			(u) => {

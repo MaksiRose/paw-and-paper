@@ -12,10 +12,10 @@ export async function execute(
 		/* This executes the sendReminder function for each profile for which the sapling exists and where lastMessageChannelId is a string, if the user has enabled water reminders. */
 		if (user.settings.reminders.water === true) {
 			for (const quid of Object.values(user.quids)) {
-				for (const profile of Object.values(quid.profiles)) {
+				for (const profile of Object.values(quidToServers)) {
 
 					const userData = getUserData(user, profile.serverId, quid);
-					if (hasNameAndSpecies(userData) && userData.quid.profile.sapling.exists && typeof userData.quid.profile.sapling.lastMessageChannelId === 'string' && !userData.quid.profile.sapling.sentReminder) { await sendReminder(userData); }
+					if (hasNameAndSpecies(userData) && quidToServer.sapling.exists && typeof quidToServer.sapling.lastMessageChannelId === 'string' && !quidToServer.sapling.sentReminder) { await sendReminder(userData); }
 				}
 			}
 		}

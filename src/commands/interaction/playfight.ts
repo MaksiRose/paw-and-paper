@@ -371,11 +371,11 @@ export const command: SlashCommand = {
 
 				if (reason.includes('win')) {
 
-					const x = getBiggerNumber(userDataOther.quid.profile.levels - userDataCurrent.quid.profile.levels, 0);
+					const x = getBiggerNumber(userDataOther.quidToServer.levels - userDataCurrent.quidToServer.levels, 0);
 					const extraExperience = Math.round((80 / (1 + Math.pow(Math.E, -0.09375 * x))) - 40);
-					const experiencePoints = userDataCurrent.quid.profile.rank === RankType.Youngling ? 0 : (getRandomNumber(11, 10) + extraExperience);
+					const experiencePoints = userDataCurrent.quidToServer.rank === RankType.Youngling ? 0 : (getRandomNumber(11, 10) + extraExperience);
 
-					(user1IsPlaying ? decreasedStatsData1 : decreasedStatsData2).statsUpdateText = `\n+${experiencePoints} XP (${userDataCurrent.quid.profile.experience + experiencePoints}/${userDataCurrent.quid.profile.levels * 50}) for ${userDataCurrent.quid.name}${(user1IsPlaying ? decreasedStatsData1 : decreasedStatsData2).statsUpdateText}`;
+					(user1IsPlaying ? decreasedStatsData1 : decreasedStatsData2).statsUpdateText = `\n+${experiencePoints} XP (${userDataCurrent.quidToServer.experience + experiencePoints}/${userDataCurrent.quidToServer.levels * 50}) for ${userDataCurrent.quid.name}${(user1IsPlaying ? decreasedStatsData1 : decreasedStatsData2).statsUpdateText}`;
 
 					await userDataCurrent.update(
 						(u) => {
@@ -386,11 +386,11 @@ export const command: SlashCommand = {
 				}
 				else {
 
-					const experiencePointsCurrent = userDataCurrent.quid.profile.rank === RankType.Youngling ? 0 : getRandomNumber(5, userDataCurrent.quid.profile.levels + 8);
-					const experiencePointsOther = userDataOther.quid.profile.rank === RankType.Youngling ? 0 : getRandomNumber(5, userDataOther.quid.profile.levels + 8);
+					const experiencePointsCurrent = userDataCurrent.quidToServer.rank === RankType.Youngling ? 0 : getRandomNumber(5, userDataCurrent.quidToServer.levels + 8);
+					const experiencePointsOther = userDataOther.quidToServer.rank === RankType.Youngling ? 0 : getRandomNumber(5, userDataOther.quidToServer.levels + 8);
 
-					decreasedStatsData1.statsUpdateText = `\n+${experiencePointsCurrent} XP (${userDataCurrent.quid.profile.experience + experiencePointsCurrent}/${userDataCurrent.quid.profile.levels * 50}) for ${userDataCurrent.quid.name}${decreasedStatsData1.statsUpdateText}`;
-					decreasedStatsData2.statsUpdateText = `\n+${experiencePointsOther} XP (${userDataOther.quid.profile.experience + experiencePointsOther}/${userDataOther.quid.profile.levels * 50}) for ${userDataOther.quid.name}${decreasedStatsData2.statsUpdateText}`;
+					decreasedStatsData1.statsUpdateText = `\n+${experiencePointsCurrent} XP (${userDataCurrent.quidToServer.experience + experiencePointsCurrent}/${userDataCurrent.quidToServer.levels * 50}) for ${userDataCurrent.quid.name}${decreasedStatsData1.statsUpdateText}`;
+					decreasedStatsData2.statsUpdateText = `\n+${experiencePointsOther} XP (${userDataOther.quidToServer.experience + experiencePointsOther}/${userDataOther.quidToServer.levels * 50}) for ${userDataOther.quid.name}${decreasedStatsData2.statsUpdateText}`;
 
 					await userDataCurrent.update(
 						(u) => {

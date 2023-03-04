@@ -4,7 +4,7 @@ import DiscordUser from '../models/discordUser';
 import ProxyLimits from '../models/proxyLimits';
 import Quid from '../models/quid';
 import Server from '../models/server';
-import ServerToDiscordUser from '../models/serverToDiscordUser';
+import DiscordUserToServer from '../models/discordUserToServer';
 import User from '../models/user';
 import UserToServer from '../models/userToServer';
 // import { sendVisitMessage } from '../commands/interaction/requestvisit';
@@ -157,7 +157,7 @@ export async function checkForProxy(
 		isAntiProxied = true;
 	}
 
-	await ServerToDiscordUser.update({ isMember: true, lastUpdatedTimestamp: Date.now() }, { where: { discordUserId: message.author.id, serverId: message.guildId } });
+	await DiscordUserToServer.update({ isMember: true, lastUpdatedTimestamp: Date.now() }, { where: { discordUserId: message.author.id, serverId: message.guildId } });
 	if (replaceMessage || isAntiProxied) {
 
 		await userToServer?.update({ lastProxiedQuidId: chosenQuid?.id ?? null }, { logging: false });

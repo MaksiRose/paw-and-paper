@@ -126,7 +126,7 @@ export const command: SlashCommand = {
 			voteCache['id_' + interaction.user.id] = newUserVoteCache;
 			writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
 
-			const energyPoints = getSmallerNumber(userData.quid.profile.maxEnergy - userData.quid.profile.energy, 30);
+			const energyPoints = getSmallerNumber(quidToServer.maxEnergy - quidToServer.energy, 30);
 
 			await userData.update(
 				(u) => {
@@ -140,7 +140,7 @@ export const command: SlashCommand = {
 				embeds: [new EmbedBuilder()
 					.setColor(default_color)
 					.setTitle('Thank you for voting ☺️')
-					.setFooter({ text: `+${energyPoints} energy (${userData.quid.profile.energy}/${userData.quid.profile.maxEnergy})` })],
+					.setFooter({ text: `+${energyPoints} energy (${quidToServer.energy}/${quidToServer.maxEnergy})` })],
 			});
 			return;
 		}

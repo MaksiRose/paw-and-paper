@@ -9,7 +9,7 @@ import ShopRole from './models/shopRole';
 import ProxyLimits from './models/proxyLimits';
 import User from './models/user';
 import DiscordUser from './models/discordUser';
-import ServerToDiscordUser from './models/serverToDiscordUser';
+import DiscordUserToServer from './models/discordUserToServer';
 import Quid from './models/quid';
 import Group from './models/group';
 import GroupToServer from './models/groupToServer';
@@ -164,7 +164,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 			for (const [serverId, information] of Object.entries(server!)) {
 
 				if (!serverList.includes(serverId)) { continue; }
-				await ServerToDiscordUser.create({
+				await DiscordUserToServer.create({
 					id: generateId(),
 					discordUserId: discordUserId,
 					serverId: serverId,
@@ -221,7 +221,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 			});
 
 			// quidToServer
-			for (const profile of Object.values(quid.profiles) as any[]) {
+			for (const profile of Object.values(quidToServers) as any[]) {
 
 				if (!serverList.includes(profile.serverId)) { continue; }
 				const quidToServer = await QuidToServer.create({
@@ -336,9 +336,14 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 		if (newQuidId === undefined) { continue; }
 		if (!quidList.includes(newQuidId)) { continue; }
 
+		const q = await Quid.findByPk(newQuidId, { rejectOnEmpty: true });
+		const u = await User.findByPk(q.userId, { rejectOnEmpty: true });
+		const du = await DiscordUser.findOne({ where: { userId: u.id }, rejectOnEmpty: true });
+
 		await Webhook.create({
 			id: messageId,
 			quidId: newQuidId,
+			discordUserId: du.id,
 		});
 	}
 

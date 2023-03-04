@@ -5,7 +5,7 @@ import { SlashCommand } from '../../typings/handle';
 import BannedUser from '../../models/bannedUser';
 import DiscordUser from '../../models/discordUser';
 import UserModel from '../../models/user';
-import ServerToDiscordUser from '../../models/serverToDiscordUser';
+import DiscordUserToServer from '../../models/discordUserToServer';
 import Quid from '../../models/quid';
 import Webhook from '../../models/webhook';
 import Friendship from '../../models/friendship';
@@ -66,7 +66,7 @@ export const command: SlashCommand = {
 			for (const discordUserId of discordUserIds) {
 
 				await BannedUser.create({ id: discordUserId }, { ignoreDuplicates: true });
-				await ServerToDiscordUser.destroy({ where: { discordUserId: discordUserId } });
+				await DiscordUserToServer.destroy({ where: { discordUserId: discordUserId } });
 				await DiscordUser.destroy({ where: { id: discordUserId } });
 
 				if (userData !== undefined) {
@@ -125,7 +125,7 @@ export const command: SlashCommand = {
 				await ProxyLimits.destroy({ where: { [Op.or]: [{ id: serverData.proxy_roleLimitsId }, { id: serverData.proxy_channelLimitsId }] } });
 				await UserToServer.destroy({ where: { serverId: id } });
 				await GroupToServer.destroy({ where: { serverId: id } });
-				await ServerToDiscordUser.destroy({ where: { serverId: id } });
+				await DiscordUserToServer.destroy({ where: { serverId: id } });
 				const quidToServers = await QuidToServer.findAll({ where: { serverId: id } });
 				for (const quidToServer of quidToServers) {
 					await QuidToServerToShopRole.destroy({ where: { quidToServerId: quidToServer.id } });

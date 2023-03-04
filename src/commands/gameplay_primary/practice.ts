@@ -40,18 +40,18 @@ export const command: SlashCommand = {
 
 		const messageContent = remindOfAttack(interaction.guildId);
 
-		if (userData.quid.profile.rank === RankType.Youngling) {
+		if (quidToServer.rank === RankType.Youngling) {
 
 			// This is always a reply
 			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
-					.setColor(userData.quid.color)
+					.setColor(quid.color)
 					.setAuthor({
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
-					.setDescription(`*The Elderly shakes their head as they see ${userData.quid.name} approaching.*\n"At your age, you shouldn't prepare for fights. Go play with your friends instead!"`)],
+					.setDescription(`*The Elderly shakes their head as they see ${quid.name} approaching.*\n"At your age, you shouldn't prepare for fights. Go play with your friends instead!"`)],
 			});
 			return;
 		}
@@ -75,12 +75,12 @@ export const command: SlashCommand = {
 		let botReply: Message | InteractionResponse = await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
-				.setColor(userData.quid.color)
+				.setColor(quid.color)
 				.setAuthor({
 					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
-				.setDescription(`*A very experienced Elderly approaches ${userData.quid.name}.* "I've seen that you have not performed well in fights lately. Do you want to practice with me for a bit to strengthen your skills?"`)
+				.setDescription(`*A very experienced Elderly approaches ${quid.name}.* "I've seen that you have not performed well in fights lately. Do you want to practice with me for a bit to strengthen your skills?"`)
 				.setFooter({ text: 'You will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response. The footer will provide hints as to which button you should click. This is a memory game, so try to remember which button to click in which situation.' })],
 			components: components,
 			fetchReply: true,
@@ -105,12 +105,12 @@ export const command: SlashCommand = {
 			// This is an edit to the reply if there is no int, or an update
 			botReply = await respond(int ?? interaction, {
 				embeds: [...restEmbed, new EmbedBuilder()
-					.setColor(userData.quid.color)
+					.setColor(quid.color)
 					.setAuthor({
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
-					.setDescription(`*After a bit of thinking, ${userData.quid.name} decides that now is not a good time to practice ${userData.quid.pronoun(2)} fighting skills. Politely, ${userData.quid.pronounAndPlural(0, 'decline')} the Elderlies offer.*`)],
+					.setDescription(`*After a bit of thinking, ${quid.name} decides that now is not a good time to practice ${pronoun(quid, 2)} fighting skills. Politely, ${pronounAndPlural(quid, 0, 'decline')} the Elderlies offer.*`)],
 				components: disableAllComponents(components),
 			}, int !== undefined ? 'update' : 'reply', int?.message.id);
 			return;
@@ -123,7 +123,7 @@ export const command: SlashCommand = {
 		const changedCondition = await changeCondition(userData, experiencePoints);
 
 		const embed = new EmbedBuilder()
-			.setColor(userData.quid.color)
+			.setColor(quid.color)
 			.setAuthor({
 				name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 				iconURL: quid.avatarURL,
@@ -148,17 +148,17 @@ export const command: SlashCommand = {
 
 			if (fightGame.cycleKind === '_attack') {
 
-				embed.setDescription(`⏫ *The Elderly gets ready to attack. ${userData.quid.name} must think quickly about how ${userData.quid.pronounAndPlural(0, 'want')} to react.*`);
+				embed.setDescription(`⏫ *The Elderly gets ready to attack. ${quid.name} must think quickly about how ${pronounAndPlural(quid, 0, 'want')} to react.*`);
 				embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (⏫ Attack).\nTip: Dodging an attack surprises the opponent and puts you in the perfect position for a counterattack.' });
 			}
 			else if (fightGame.cycleKind === 'dodge') {
 
-				embed.setDescription(`↪️ *Looks like the Elderly is preparing a maneuver for ${userData.quid.name}'s next move. The ${userData.quid.getDisplayspecies()} must think quickly about how ${userData.quid.pronounAndPlural(0, 'want')} to react.*`);
+				embed.setDescription(`↪️ *Looks like the Elderly is preparing a maneuver for ${quid.name}'s next move. The ${quid.getDisplayspecies()} must think quickly about how ${pronounAndPlural(quid, 0, 'want')} to react.*`);
 				embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (↪️ Dodge).\nTip: Defending a maneuver blocks it effectively, which prevents your opponent from hurting you.' });
 			}
 			else if (fightGame.cycleKind === 'defend') {
 
-				embed.setDescription(`⏺️ *The Elderly gets into position to oppose an attack. ${userData.quid.name} must think quickly about how ${userData.quid.pronounAndPlural(0, 'want')} to react.*`);
+				embed.setDescription(`⏺️ *The Elderly gets into position to oppose an attack. ${quid.name} must think quickly about how ${pronounAndPlural(quid, 0, 'want')} to react.*`);
 				embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (⏺️ Defend).\nTip: Attacks come with a lot of force, making them difficult to defend against.' });
 			}
 			else { throw new Error('cycleKind is not attack, dodge or defend'); }
@@ -176,7 +176,7 @@ export const command: SlashCommand = {
 				.awaitMessageComponent({
 					componentType: ComponentType.Button,
 					filter: i => i.user.id === interaction.user.id,
-					time: userData.quid.profile.rank === RankType.Elderly ? 6_000 : userData.quid.profile.rank === RankType.Hunter || userData.quid.profile.rank === RankType.Healer ? 8_000 : 10_000,
+					time: quidToServer.rank === RankType.Elderly ? 6_000 : quidToServer.rank === RankType.Hunter || quidToServer.rank === RankType.Healer ? 8_000 : 10_000,
 				})
 				.then(async i => {
 
@@ -220,15 +220,15 @@ export const command: SlashCommand = {
 
 			if (winLoseRatio > 0) {
 
-				embed.setDescription(`*The Elderly pants as they heave themselves to their feet.* "You're much stronger than I anticipated, ${userData.quid.name}. There's nothing I can teach you at this point!"`);
+				embed.setDescription(`*The Elderly pants as they heave themselves to their feet.* "You're much stronger than I anticipated, ${quid.name}. There's nothing I can teach you at this point!"`);
 			}
 			else if (winLoseRatio < 0) {
 
-				embed.setDescription(`*With a worried look, the Elderly gives ${userData.quid.name} a sign to stop.* "It doesn't seem like you are very concentrated right now. Maybe we should continue training later."`);
+				embed.setDescription(`*With a worried look, the Elderly gives ${quid.name} a sign to stop.* "It doesn't seem like you are very concentrated right now. Maybe we should continue training later."`);
 			}
 			else if (winLoseRatio === 0) {
 
-				embed.setDescription(`*The two packmates fight for a while, before ${userData.quid.name} finally gives up.* "The training was good, but there is room for improvement. Please continue practicing," *the Elderly says.*`);
+				embed.setDescription(`*The two packmates fight for a while, before ${quid.name} finally gives up.* "The training was good, but there is room for improvement. Please continue practicing," *the Elderly says.*`);
 			}
 			if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 

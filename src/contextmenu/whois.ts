@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
 import { CustomIdArgs, getProfileMessageOptions } from '../commands/quid_customization/profile';
-import { getArrayElement, respond } from '../utils/helperFunctions';
+import { respond } from '../utils/helperFunctions';
 import { ContextMenuCommand } from '../typings/handle';
 import { isInGuild } from '../utils/checkUserState';
 import { constructCustomId } from '../utils/customId';
@@ -9,8 +9,6 @@ import Quid from '../models/quid';
 import User from '../models/user';
 import DiscordUser from '../models/discordUser';
 import UserToServer from '../models/userToServer';
-import ServerToDiscordUser from '../models/serverToDiscordUser';
-import { getRandomNumber } from '../utils/randomizers';
 
 export const command: ContextMenuCommand = {
 	data: {
@@ -31,19 +29,12 @@ export const command: ContextMenuCommand = {
 				include: [{
 					model: User,
 					as: 'user',
-					include: [{
-						model: DiscordUser,
-						as: 'discordUsers',
-					}],
 				}],
 			}],
 		});
 		const webhookQuid = webhookData?.quid;
 		const webhookUser = webhookQuid?.user;
-		const webhookDiscordUsersInServer = webhookUser ? await Promise.all(
-			webhookUser.discordUsers.map(async (du) => (await ServerToDiscordUser.findOne({ where: { discordUserId: du.id, serverId: interaction.guildId } }))?.discordUserId),
-		).then((results) => results.filter((result): result is string => result !== undefined)) : [];
-		const webhookDiscordUserId = webhookDiscordUsersInServer.length > 0 ? getArrayElement(webhookDiscordUsersInServer, getRandomNumber(webhookDiscordUsersInServer.length)) : webhookUser ? getArrayElement(webhookUser.discordUsers, getRandomNumber(webhookUser.discordUsers.length)).id : undefined ;
+		const webhookDiscordUserId = webhookData?.discordUserId;
 
 		if (webhookData === null && interaction.targetMessage.author.bot) {
 

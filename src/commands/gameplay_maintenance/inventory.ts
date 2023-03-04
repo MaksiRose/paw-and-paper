@@ -121,7 +121,7 @@ export async function showInventoryMessage(
 			.setDescription(description || null)],
 		components: [
 			inventorySelectMenu,
-			...userData.quid.profile.hunger < userData.quid.profile.maxHunger && foodSelectMenuOptions.length > 0
+			...quidToServer.hunger < quidToServer.maxHunger && foodSelectMenuOptions.length > 0
 				? [new ActionRowBuilder<StringSelectMenuBuilder>()
 					.setComponents(new StringSelectMenuBuilder()
 						.setCustomId(`inventory_eat_@${userData._id}`)

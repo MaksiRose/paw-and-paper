@@ -57,7 +57,7 @@ export const command: SlashCommand = {
 				embeds: [new EmbedBuilder()
 					.setColor(userData?.quid?.color || member?.displayColor || interaction.user.accentColor || '#ffffff')
 					.setAuthor({
-						name: userData?.quid ? userData.quid.getDisplayname() : (member?.displayName || interaction.user.tag),
+						name: userData?.quid ? quid.getDisplayname() : (member?.displayName || interaction.user.tag),
 						iconURL: userData?.quid?.avatarURL || member?.displayAvatarURL() || interaction.user.avatarURL() || undefined,
 					})
 					.setImage(selfHugURLs[getRandomNumber(selfHugURLs.length)] || null)],
@@ -71,7 +71,7 @@ export const command: SlashCommand = {
 			embeds: [new EmbedBuilder()
 				.setColor(userData?.quid?.color || member?.displayColor || interaction.user.accentColor || '#ffffff')
 				.setAuthor({
-					name: userData?.quid ? userData.quid.getDisplayname() : (member?.displayName || interaction.user.tag),
+					name: userData?.quid ? quid.getDisplayname() : (member?.displayName || interaction.user.tag),
 					iconURL: userData?.quid?.avatarURL || member?.displayAvatarURL() || interaction.user.avatarURL() || undefined,
 				})
 				.setDescription(`${mentionedUser.username}, do you accept the hug?`)],
@@ -113,7 +113,7 @@ export const command: SlashCommand = {
 			try { return userModel.findOne(u => Object.keys(u.userIds).includes(originalUserId)); }
 			catch { return null; }
 		})();
-		const userData = _userData === null ? null : getUserData(_userData, interaction.guildId || 'DMs', _userData.quids[_userData.servers[interaction.guildId || 'DMs']?.currentQuid ?? '']);
+		const userData = _userData === null ? null : getUserData(_userData, interaction.guildId || 'DMs', _quids[_userData.servers[interaction.guildId || 'DMs']?.currentQuid ?? '']);
 
 		if (interaction.customId.includes('accept')) {
 
@@ -144,7 +144,7 @@ export const command: SlashCommand = {
 				embeds: [new EmbedBuilder()
 					.setColor(userData?.quid?.color || originalMember?.displayColor || originalUser.accentColor || '#ffffff')
 					.setAuthor({
-						name: userData?.quid ? userData.quid.getDisplayname() : (originalMember?.displayName || originalUser.tag),
+						name: userData?.quid ? quid.getDisplayname() : (originalMember?.displayName || originalUser.tag),
 						iconURL: userData?.quid?.avatarURL || originalMember?.displayAvatarURL() || originalUser.avatarURL() || undefined,
 					})
 					.setImage(hugURLs[getRandomNumber(hugURLs.length)] || null)],
@@ -163,7 +163,7 @@ export const command: SlashCommand = {
 				embeds: [new EmbedBuilder()
 					.setColor(userData?.quid?.color || originalMember?.displayColor || originalUser.accentColor || '#ffffff')
 					.setAuthor({
-						name: userData?.quid ? userData.quid.getDisplayname() : (originalMember?.displayName || originalUser.tag),
+						name: userData?.quid ? quid.getDisplayname() : (originalMember?.displayName || originalUser.tag),
 						iconURL: userData?.quid?.avatarURL || originalMember?.displayAvatarURL() || originalUser.avatarURL() || undefined,
 					})
 					.setDescription(`${interaction.user.toString()} did not accept the hug.`)],

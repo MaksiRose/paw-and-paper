@@ -12,8 +12,9 @@ import ShopRole from '../../models/shopRole';
 import QuidToServerToShopRole from '../../models/quidToServerToShopRole';
 import QuidToServer from '../../models/quidToServer';
 import DiscordUser from '../../models/discordUser';
-import ServerToDiscordUser from '../../models/serverToDiscordUser';
+import DiscordUserToServer from '../../models/discordUserToServer';
 import { generateId } from 'crystalid';
+import { Op } from 'sequelize';
 const { error_color, default_color } = require('../../../config.json');
 
 type CustomIdArgs = []
@@ -104,11 +105,17 @@ export const command: SlashCommand = {
 					await quidToServerRoleToBuy.destroy();
 
 					const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
-					const serverDiscordUsers = (await Promise.all(discordUsers.map(async (du) => (await ServerToDiscordUser.findOne({ where: { discordUserId: du.id, serverId: interaction.guildId, isMember: true } }))))).filter(function(v): v is ServerToDiscordUser { return v !== null; });
+					const discordUserToServer = await DiscordUserToServer.findAll({
+						where: {
+							serverId: interaction.guildId,
+							isMember: true,
+							discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
+						},
+					});
 
-					const members = (await Promise.all(serverDiscordUsers
-						.map(async (v) => (await interaction.guild.members.fetch(v.discordUserId).catch(() => {
-							v.update({ isMember: false });
+					const members = (await Promise.all(discordUserToServer
+						.map(async (duts) => (await interaction.guild.members.fetch(duts.discordUserId).catch(() => {
+							duts.update({ isMember: false });
 							return null;
 						}))))).filter(function(v): v is GuildMember { return v !== null; });
 					for (const member of members) {
@@ -160,11 +167,16 @@ export const command: SlashCommand = {
 					await QuidToServerToShopRole.create({ id: generateId(), quidToServerId: quidToServer.id, shopRoleId: roleToBuy.id });
 
 					const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
-					const serverDiscordUsers = (await Promise.all(discordUsers.map(async (du) => (await ServerToDiscordUser.findOne({ where: { discordUserId: du.id, serverId: interaction.guildId, isMember: true } }))))).filter(function(v): v is ServerToDiscordUser { return v !== null; });
+					const discordUserToServer = await DiscordUserToServer.findAll({
+						where: {
+							serverId: interaction.guildId,
+							isMember: true,
+							discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
+						} });
 
-					const members = (await Promise.all(serverDiscordUsers
-						.map(async (v) => (await interaction.guild.members.fetch(v.discordUserId).catch(() => {
-							v.update({ isMember: false });
+					const members = (await Promise.all(discordUserToServer
+						.map(async (duts) => (await interaction.guild.members.fetch(duts.discordUserId).catch(() => {
+							duts.update({ isMember: false });
 							return null;
 						}))))).filter(function(v): v is GuildMember { return v !== null; });
 					for (const member of members) {

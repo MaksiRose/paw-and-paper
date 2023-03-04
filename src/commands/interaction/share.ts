@@ -67,7 +67,7 @@ export const command: SlashCommand = {
 		}
 
 		/* Checks whether the user is an elderly. */
-		if (userData1.quid.profile.rank !== 'Elderly') {
+		if (userData1.quidToServer.rank !== 'Elderly') {
 
 			// This is always a reply
 			await respond(interaction, {
@@ -145,7 +145,7 @@ export const command: SlashCommand = {
 		/* Check if the user is interactable, and if they are, define quid data and profile data. */
 		const userData2 = _userData2 ? getUserData(_userData2, interaction.guildId, _userData2.quids[_userData2.servers[interaction.guildId]?.currentQuid ?? '']) : null;
 		if (!isInteractable(interaction, userData2, messageContent, restEmbed)) { return; }
-		if (userData2.quid.profile.rank === RankType.Youngling) {
+		if (userData2.quidToServer.rank === RankType.Youngling) {
 
 			// This is always a reply
 			await respond(interaction, {
@@ -166,7 +166,7 @@ export const command: SlashCommand = {
 		const decreasedStatsData = await changeCondition(userData1, 0, CurrentRegionType.Ruins);
 
 		/* Give user 2 experience */
-		const experienceIncrease = getRandomNumber(Math.round(userData2.quid.profile.levels * 7.5), Math.round(userData2.quid.profile.levels * 2.5));
+		const experienceIncrease = getRandomNumber(Math.round(userData2.quidToServer.levels * 7.5), Math.round(userData2.quidToServer.levels * 2.5));
 		await userData2.update(
 			(u) => {
 				const p = getMapData(getMapData(u.quids, userData2.quid._id).profiles, interaction.guildId);
@@ -187,7 +187,7 @@ export const command: SlashCommand = {
 					.setColor(userData1.quid.color)
 					.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
 					.setDescription(`*${userData2.quid.name} comes running to the old wooden trunk at the ruins where ${userData1.quid.name} sits, ready to tell an exciting story from long ago. ${capitalize(userData2.quid.pronoun(2))} eyes are sparkling as the ${userData1.quid.getDisplayspecies()} recounts great adventures and the lessons to be learned from them.*`)
-					.setFooter({ text: `${decreasedStatsData.statsUpdateText}\n\n+${experienceIncrease} XP (${userData2.quid.profile.experience}/${userData2.quid.profile.levels * 50}) for ${userData2.quid.name}` }),
+					.setFooter({ text: `${decreasedStatsData.statsUpdateText}\n\n+${experienceIncrease} XP (${userData2.quidToServer.experience}/${userData2.quidToServer.levels * 50}) for ${userData2.quid.name}` }),
 				...decreasedStatsData.injuryUpdateEmbed,
 				...infectedEmbed,
 				...levelUpEmbed,
@@ -214,5 +214,5 @@ function isEligableForSharing(
 ): quid is QuidSchema<never> {
 
 	const user = getUserData(userData, guildId, quid);
-	return hasNameAndSpecies(user) && user.quid.profile !== undefined && user.quid.profile.rank !== RankType.Youngling && user.quid.profile.currentRegion === CurrentRegionType.Ruins && user.quid.profile.energy > 0 && user.quid.profile.health > 0 && user.quid.profile.hunger > 0 && user.quid.profile.thirst > 0 && user.quid.profile.injuries.cold === false && user.serverInfo?.hasCooldown !== true && isResting(user) === false;
+	return hasNameAndSpecies(user) && user.quidToServer !== undefined && user.quidToServer.rank !== RankType.Youngling && user.quidToServer.currentRegion === CurrentRegionType.Ruins && user.quidToServer.energy > 0 && user.quidToServer.health > 0 && user.quidToServer.hunger > 0 && user.quidToServer.thirst > 0 && user.quidToServer.injuries.cold === false && user.serverInfo?.hasCooldown !== true && isResting(user) === false;
 }

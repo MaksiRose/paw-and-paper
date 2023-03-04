@@ -9,9 +9,10 @@ import ShopRole from '../../models/shopRole';
 import QuidToServer from '../../models/quidToServer';
 import Quid from '../../models/quid';
 import DiscordUser from '../../models/discordUser';
-import ServerToDiscordUser from '../../models/serverToDiscordUser';
+import DiscordUserToServer from '../../models/discordUserToServer';
 import QuidToServerToShopRole from '../../models/quidToServerToShopRole';
 import ProxyLimits from '../../models/proxyLimits';
+import { Op } from 'sequelize';
 const { default_color, update_channel_id } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -213,10 +214,16 @@ export const command: SlashCommand = {
 								// for each discorduser, get the member and also put it in the list, then do the loop except if its already in the list
 								for (const [, u] of users) {
 
-									const stdu = (await Promise.all(u.discordUsers.map(async (du) => (await ServerToDiscordUser.findOne({ where: { discordUserId: du.id, serverId: i.guildId, isMember: true } }))))).filter(function(v): v is ServerToDiscordUser { return v !== null; });
-									const members = (await Promise.all(stdu
-										.map(async (v) => (await i.guild.members.fetch(v.discordUserId).catch(() => {
-											v.update({ isMember: false });
+									const discordUserToServer = await DiscordUserToServer.findAll({
+										where: {
+											serverId: interaction.guildId,
+											isMember: true,
+											discordUserId: { [Op.in]: u.discordUsers.map(du => du.id) },
+										},
+									});
+									const members = (await Promise.all(discordUserToServer
+										.map(async (duts) => (await i.guild.members.fetch(duts.discordUserId).catch(() => {
+											duts.update({ isMember: false });
 											return null;
 										}))))).filter(function(v): v is GuildMember { return v !== null; });
 

@@ -53,7 +53,7 @@ export const command: SlashCommand = {
 /**
  * It gets an array of texts for all the friendships of the quid of the user who executed the command
  * @param userData - The userData of the user who executed the command.
- * @param userData.quid - The quid data of the user who executed the command.
+ * @param quid - The quid data of the user who executed the command.
  * @returns An array of strings.
  */
 async function getFriendshipTexts(
@@ -64,15 +64,15 @@ async function getFriendshipTexts(
 	const allFriendedUsersList = await userModel.find(
 		u => {
 			return Object.values(u.quids).filter(q => {
-				return Object.keys(userData.quid.mentions).includes(q._id) || Object.keys(q.mentions).includes(userData.quid._id);
+				return Object.keys(quid.mentions).includes(q._id) || Object.keys(q.mentions).includes(quid._id);
 			}).length > 0;
 		},
 	);
 
 	/** An array of quids who are friends with the user who executed the command by their quid ID. */
 	const friendshipList = [...new Set([
-		...Object.keys(userData.quid.mentions),
-		...allFriendedUsersList.map(u => Object.values(u.quids).filter(q => Object.keys(q.mentions).includes(userData.quid._id)).map(q => q._id)).flat(),
+		...Object.keys(quid.mentions),
+		...allFriendedUsersList.map(u => Object.values(u.quids).filter(q => Object.keys(q.mentions).includes(quid._id)).map(q => q._id)).flat(),
 	])];
 
 	const friendshipTexts: string[] = [];
@@ -80,13 +80,13 @@ async function getFriendshipTexts(
 
 		/* Getting the userData of the other user. Skips to next iteration if there is no data */
 		const _otherUserData = allFriendedUsersList.find(u => u.quids[_id] !== undefined);
-		const otherUserData = _otherUserData === undefined ? undefined : getUserData(_otherUserData, userData.quid.profile.serverId, _otherUserData.quids[_id]);
+		const otherUserData = _otherUserData === undefined ? undefined : getUserData(_otherUserData, quidToServer.serverId, _otherUserData.quids[_id]);
 		if (!hasNameAndSpecies(otherUserData)) { continue; }
 
 		/* Updating the mentions and extracting them from the new userData. */
 		await checkOldMentions(userData, otherUserData);
-		const userDataMentions = userData.quids.get(userData.quid._id)?.mentions[_id] ?? [];
-		const otherUserDataMentions = otherUserData.quids.get(_id)?.mentions[userData.quid._id] ?? [];
+		const userDataMentions = quids.get(quid._id)?.mentions[_id] ?? [];
+		const otherUserDataMentions = otherUserData.quids.get(_id)?.mentions[quid._id] ?? [];
 
 		/* Getting the current friendship points and hearts. Skips to the next iteration if there is no friendship hearts. */
 		const friendshipPoints = getFriendshipPoints(userDataMentions, otherUserDataMentions);
@@ -102,7 +102,7 @@ async function getFriendshipTexts(
 /**
  * It returns an embed and a component for the friendship command
  * @param userData - The user data of the user who executed the command.
- * @param userData.quid - The quid data of the user who executed the command.
+ * @param quid - The quid data of the user who executed the command.
  * @param page - The page number of the friendship list.
  * @param [friendshipTexts] - An array of strings that contain the friendship texts.
  * @returns An object with two properties: embeds and components.
@@ -122,12 +122,12 @@ async function getFriendshipMessage(
 
 	return {
 		embeds: [new EmbedBuilder()
-			.setColor(userData.quid.color)
+			.setColor(quid.color)
 			.setAuthor({
 				name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 				iconURL: quid.avatarURL,
 			})
-			.setTitle(`${userData.quid.name}'s friendships - Page ${page + 1}`)
+			.setTitle(`${quid.name}'s friendships - Page ${page + 1}`)
 			.setDescription(friendshipTexts.length > 0 ?
 				friendshipTexts.slice(page * 25, (page + 1) * 25).join('\n') :
 				'You have not formed any friendships yet :(')],

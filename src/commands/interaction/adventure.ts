@@ -195,8 +195,8 @@ export const command: SlashCommand = {
 		await setCooldown(userData2, interaction.guildId, true);
 		deleteCommandDisablingInfo(userData1, interaction.guildId);
 		deleteCommandDisablingInfo(userData2, interaction.guildId);
-		const decreasedStatsData1 = await changeCondition(userData1, userData1.quid.profile.rank === RankType.Youngling ? 0 : getRandomNumber(5, userData1.quid.profile.levels + 8), CurrentRegionType.Prairie, true);
-		const decreasedStatsData2 = await changeCondition(userData2, userData2.quid.profile.rank === RankType.Youngling ? 0 : getRandomNumber(5, userData2.quid.profile.levels + 8), CurrentRegionType.Prairie, true);
+		const decreasedStatsData1 = await changeCondition(userData1, userData1.quidToServer.rank === RankType.Youngling ? 0 : getRandomNumber(5, userData1.quidToServer.levels + 8), CurrentRegionType.Prairie, true);
+		const decreasedStatsData2 = await changeCondition(userData2, userData2.quidToServer.rank === RankType.Youngling ? 0 : getRandomNumber(5, userData2.quidToServer.levels + 8), CurrentRegionType.Prairie, true);
 
 		/* Define number of rounds, and the uncovered card amount for both users. */
 		let finishedRounds = 0;
@@ -371,25 +371,25 @@ export const command: SlashCommand = {
 
 						let extraFooter = '';
 						let outcome: string | 1 | 2;
-						const losingHealthPoints = getSmallerNumber(maxHP, losingUserData.quid.profile.health);
+						const losingHealthPoints = getSmallerNumber(maxHP, losingUserData.quidToServer.health);
 
-						const { itemType, itemName } = getHighestItem(losingUserData.quid.profile.inventory);
-						const inventory_ = widenValues(losingUserData.quid.profile.inventory);
+						const { itemType, itemName } = getHighestItem(losingUserData.quidToServer.inventory);
+						const inventory_ = widenValues(losingUserData.quidToServer.inventory);
 						if (itemType && itemName && pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
 
 							inventory_[itemType][itemName] -= 1;
 							extraFooter = `-1 ${itemName} for ${losingUserData.quid.name}`;
 							outcome = itemName;
 						}
-						else if (losingUserData.quid.profile.injuries.cold === false && pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
+						else if (losingUserData.quidToServer.injuries.cold === false && pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
 
-							losingUserData.quid.profile.injuries.cold = true;
+							losingUserData.quidToServer.injuries.cold = true;
 							extraFooter = `-${losingHealthPoints} HP (from cold) for ${losingUserData.quid.name}`;
 							outcome = 1;
 						}
 						else {
 
-							losingUserData.quid.profile.injuries.wounds += 1;
+							losingUserData.quidToServer.injuries.wounds += 1;
 							extraFooter = `-${losingHealthPoints} HP (from wound) for ${losingUserData.quid.name}`;
 							outcome = 2;
 						}
@@ -399,7 +399,7 @@ export const command: SlashCommand = {
 								const p = getMapData(getMapData(u.quids, getMapData(u.servers, lastInteraction.guildId).currentQuid ?? '').profiles, lastInteraction.guildId);
 								p.inventory = inventory_;
 								p.health -= losingHealthPoints;
-								p.injuries = losingUserData.quid.profile.injuries;
+								p.injuries = losingUserData.quidToServer.injuries;
 							}),
 						);
 
@@ -496,28 +496,28 @@ export const command: SlashCommand = {
 						let foundItem: KeyOfUnion<Inventory[keyof Inventory]> | null = null;
 						let extraHealthPoints = 0;
 
-						if (winningUserData.quid.profile.health < winningUserData.quid.profile.maxHealth) {
+						if (winningUserData.quidToServer.health < winningUserData.quidToServer.maxHealth) {
 
-							extraHealthPoints = getSmallerNumber(maxHP, winningUserData.quid.profile.maxHealth - winningUserData.quid.profile.health);
+							extraHealthPoints = getSmallerNumber(maxHP, winningUserData.quidToServer.maxHealth - winningUserData.quidToServer.health);
 						}
 						else if (pullFromWeightedTable({ 0: 20 - finishedRounds, 1: finishedRounds - 10 }) === 0) {
 
 							const specialPlants = Object.keys(serverData.inventory.specialPlants) as SpecialPlantNames[];
 							foundItem = specialPlants[getRandomNumber(specialPlants.length)]!;
-							winningUserData.quid.profile.inventory.specialPlants[foundItem] += 1;
+							winningUserData.quidToServer.inventory.specialPlants[foundItem] += 1;
 						}
 						else {
 
 							foundItem = await pickPlant(pullFromWeightedTable({ 0: finishedRounds + 10, 1: (2 * finishedRounds) - 10, 2: (20 - finishedRounds) * 3 }) as 0 | 1 | 2, serverData);
-							if (keyInObject(winningUserData.quid.profile.inventory.commonPlants, foundItem)) { winningUserData.quid.profile.inventory.commonPlants[foundItem] += 1; }
-							else if (keyInObject(winningUserData.quid.profile.inventory.uncommonPlants, foundItem)) { winningUserData.quid.profile.inventory.uncommonPlants[foundItem] += 1; }
-							else { winningUserData.quid.profile.inventory.rarePlants[foundItem] += 1; }
+							if (keyInObject(winningUserData.quidToServer.inventory.commonPlants, foundItem)) { winningUserData.quidToServer.inventory.commonPlants[foundItem] += 1; }
+							else if (keyInObject(winningUserData.quidToServer.inventory.uncommonPlants, foundItem)) { winningUserData.quidToServer.inventory.uncommonPlants[foundItem] += 1; }
+							else { winningUserData.quidToServer.inventory.rarePlants[foundItem] += 1; }
 						}
 
 						winningUserData.update(
 							(u => {
 								const p = getMapData(getMapData(u.quids, getMapData(u.servers, lastInteraction.guildId).currentQuid ?? '').profiles, lastInteraction.guildId);
-								p.inventory = winningUserData.quid.profile.inventory;
+								p.inventory = winningUserData.quidToServer.inventory;
 								p.health += extraHealthPoints;
 							}),
 						);
@@ -579,7 +579,7 @@ export const command: SlashCommand = {
 								.setColor(userData1.quid.color)
 								.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
 								.setDescription(`*The two animals laugh as they return from a successful adventure. ${extraDescription}. What a success!*`)
-								.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}\n\n${extraHealthPoints1 > 0 ? `+${extraHealthPoints1} HP for ${userData1.quid.name} (${userData1.quid.profile.health}/${userData1.quid.profile.maxHealth})` : `+1 ${foundItem1} for ${userData1.quid.name}`}\n${extraHealthPoints2 > 0 ? `+${extraHealthPoints2} HP for ${userData2.quid.name} (${userData2.quid.profile.health}/${userData2.quid.profile.maxHealth})` : `+1 ${foundItem2} for ${userData2.quid.name}`}` }),
+								.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}\n\n${extraHealthPoints1 > 0 ? `+${extraHealthPoints1} HP for ${userData1.quid.name} (${userData1.quidToServer.health}/${userData1.quidToServer.maxHealth})` : `+1 ${foundItem1} for ${userData1.quid.name}`}\n${extraHealthPoints2 > 0 ? `+${extraHealthPoints2} HP for ${userData2.quid.name} (${userData2.quidToServer.health}/${userData2.quidToServer.maxHealth})` : `+1 ${foundItem2} for ${userData2.quid.name}`}` }),
 							...decreasedStatsData1.injuryUpdateEmbed,
 							...decreasedStatsData2.injuryUpdateEmbed,
 							...(levelUpEmbeds?.levelUpEmbed1 ?? []),

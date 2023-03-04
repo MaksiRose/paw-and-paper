@@ -48,18 +48,18 @@ export const command: SlashCommand = {
 
 		const messageContent = remindOfAttack(interaction.guildId);
 
-		if (userData.quid.profile.rank === RankType.Youngling) {
+		if (quidToServer.rank === RankType.Youngling) {
 
 			// This is always a reply
 			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
-					.setColor(userData.quid.color)
+					.setColor(quid.color)
 					.setAuthor({
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
-					.setDescription(`*A hunter rushes to stop the ${userData.quid.profile.rank}.*\n"${userData.quid.name}, you are not trained to repair dens, it is very dangerous! You should be playing on the prairie instead."\n*${userData.quid.name} lowers ${userData.quid.pronoun(2)} head and leaves in shame.*`)],
+					.setDescription(`*A hunter rushes to stop the ${quidToServer.rank}.*\n"${quid.name}, you are not trained to repair dens, it is very dangerous! You should be playing on the prairie instead."\n*${quid.name} lowers ${pronoun(quid, 2)} head and leaves in shame.*`)],
 			});
 			return;
 		}
@@ -70,12 +70,12 @@ export const command: SlashCommand = {
 			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
-					.setColor(userData.quid.color)
+					.setColor(quid.color)
 					.setAuthor({
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
-					.setDescription(`*${userData.quid.name} goes to look if any dens need to be repaired. But it looks like the pack has nothing that can be used to repair dens in the first place. Looks like the ${userData.quid.getDisplayspecies()} needs to go out and find materials first!*`)
+					.setDescription(`*${quid.name} goes to look if any dens need to be repaired. But it looks like the pack has nothing that can be used to repair dens in the first place. Looks like the ${quid.getDisplayspecies()} needs to go out and find materials first!*`)
 					.setFooter({ text: 'Materials can be found through scavenging and adventuring.' })],
 			});
 			return;
@@ -87,12 +87,12 @@ export const command: SlashCommand = {
 		const botReply = await respond(interaction, (chosenDen !== 'sleepingDens' && chosenDen !== 'medicineDen' && chosenDen !== 'foodDen') ? {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
-				.setColor(userData.quid.color)
+				.setColor(quid.color)
 				.setAuthor({
 					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
-				.setDescription(`*${userData.quid.name} roams around the pack, looking if any dens need to be repaired.*`)],
+				.setDescription(`*${quid.name} roams around the pack, looking if any dens need to be repaired.*`)],
 			components: [getDenButtons(userData._id)],
 			fetchReply: true,
 		} : getMaterials(userData, serverData, chosenDen, restEmbed, messageContent));
@@ -138,7 +138,7 @@ export const command: SlashCommand = {
 				},
 			);
 
-			const experiencePoints = isSuccessful === false ? 0 : getRandomNumber(5, userData.quid.profile.levels + 8);
+			const experiencePoints = isSuccessful === false ? 0 : getRandomNumber(5, quidToServer.levels + 8);
 			const changedCondition = await changeCondition(userData, experiencePoints);
 			const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
 
@@ -148,12 +148,12 @@ export const command: SlashCommand = {
 			await respond(interaction, {
 				embeds: [
 					new EmbedBuilder()
-						.setColor(userData.quid.color)
+						.setColor(quid.color)
 						.setAuthor({
 							name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 							iconURL: quid.avatarURL,
 						})
-						.setDescription(`*${userData.quid.name} takes a ${chosenItem} and tries to ${repairKind === 'structure' ? 'tuck it into parts of the walls and ceiling that look less stable.' : repairKind === 'bedding' ? 'spread it over parts of the floor that look harsh and rocky.' : repairKind === 'thickness' ? 'cover parts of the walls that look a little thin with it.' : 'drag it over parts of the walls with bumps and material sticking out.'} ` + (isSuccessful ? `Immediately you can see the ${repairKind} of the den improving. What a success!*` : `After a few attempts, the material breaks into little pieces, rendering it useless. Looks like the ${userData.quid.getDisplayspecies()} has to try again...*`))
+						.setDescription(`*${quid.name} takes a ${chosenItem} and tries to ${repairKind === 'structure' ? 'tuck it into parts of the walls and ceiling that look less stable.' : repairKind === 'bedding' ? 'spread it over parts of the floor that look harsh and rocky.' : repairKind === 'thickness' ? 'cover parts of the walls that look a little thin with it.' : 'drag it over parts of the walls with bumps and material sticking out.'} ` + (isSuccessful ? `Immediately you can see the ${repairKind} of the den improving. What a success!*` : `After a few attempts, the material breaks into little pieces, rendering it useless. Looks like the ${quid.getDisplayspecies()} has to try again...*`))
 						.setFooter({ text: `${changedCondition.statsUpdateText}\n\n-1 ${chosenItem} for ${interaction.guild.name}\n${isSuccessful ? `+${repairAmount}% ${repairKind} for ${denName} (${serverData.dens[chosenDen][repairKind]}%  total)` : ''}` }),
 					...changedCondition.injuryUpdateEmbed,
 					...levelUpEmbed,
@@ -208,15 +208,15 @@ function getMaterials(
 		embeds: [
 			...restEmbed,
 			new EmbedBuilder()
-				.setColor(userData.quid.color)
+				.setColor(quid.color)
 				.setAuthor({
 					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
-				.setDescription(`*${userData.quid.name} patrols around the den, looking for anything that has to be repaired. The condition isn't perfect, and reinforcing it would definitely improve its quality. But what would be the best way?*`)
+				.setDescription(`*${quid.name} patrols around the den, looking for anything that has to be repaired. The condition isn't perfect, and reinforcing it would definitely improve its quality. But what would be the best way?*`)
 				.setFooter({ text: `Structure: ${serverData.dens[chosenDen].structure}%\nBedding: ${serverData.dens[chosenDen].bedding}%\nThickness: ${serverData.dens[chosenDen].thickness}%\nEvenness: ${serverData.dens[chosenDen].evenness}%` }),
 			new EmbedBuilder()
-				.setColor(userData.quid.color)
+				.setColor(quid.color)
 				.setTitle(`Inventory of ${serverData.name} - Materials`)
 				.setDescription(description || null)
 				.setFooter({ text: 'Choose one of the materials above to repair the den with it!' }),
@@ -238,4 +238,4 @@ export function addMaterialPoints() { return getRandomNumber(5, 6); }
 
 export function isUnlucky(
 	userData: UserData<never, never>,
-): boolean { return userData.quid.profile.rank !== RankType.Hunter && userData.quid.profile.rank !== RankType.Elderly && pullFromWeightedTable({ 0: userData.quid.profile.rank === RankType.Healer ? 90 : 40, 1: 60 + userData.quid.profile.sapling.waterCycles }) === 0; }
+): boolean { return quidToServer.rank !== RankType.Hunter && quidToServer.rank !== RankType.Elderly && pullFromWeightedTable({ 0: quidToServer.rank === RankType.Healer ? 90 : 40, 1: 60 + quidToServer.sapling.waterCycles }) === 0; }

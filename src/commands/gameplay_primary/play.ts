@@ -81,9 +81,9 @@ export async function executePlaying(
 
 	if (await hasFullInventory(interaction, userData1, restEmbed, messageContent)) { return; }
 
-	const tutorialMapEntry = tutorialMap.get(userData1.quid._id + userData1.quid.profile.serverId);
+	const tutorialMapEntry = tutorialMap.get(userData1.quid._id + userData1.quidToServer.serverId);
 	const mentionedUserId = tutorialMapEntry === 2 ? undefined : interaction.isChatInputCommand() ? interaction.options.getUser('user')?.id : deconstructCustomId<CustomIdArgs>(interaction.customId)?.args[1];
-	if (userData1.quid.profile.tutorials.play === false && userData1.quid.profile.rank === RankType.Youngling && (tutorialMapEntry === undefined || tutorialMapEntry === 0)) {
+	if (userData1.quidToServer.tutorials.play === false && userData1.quidToServer.rank === RankType.Youngling && (tutorialMapEntry === undefined || tutorialMapEntry === 0)) {
 
 		// This is an update when forceEdit is true, which it is only for the travel-regions command, else this is a reply
 		await respond(interaction, {
@@ -99,7 +99,7 @@ export async function executePlaying(
 						.setStyle(ButtonStyle.Success)),
 			],
 		}, forceEdit ? 'update' : 'reply', (forceEdit && interaction.isMessageComponent()) ? interaction.message.id : undefined);
-		tutorialMap.set(userData1.quid._id + userData1.quid.profile.serverId, 1);
+		tutorialMap.set(userData1.quid._id + userData1.quidToServer.serverId, 1);
 		return;
 	}
 
@@ -153,7 +153,7 @@ export async function executePlaying(
 
 	const changedCondition = await changeCondition(userData1, 0, CurrentRegionType.Prairie);
 
-	const responseTime = userData1.quid.profile.rank === RankType.Youngling ? (tutorialMapEntry === 1 || tutorialMapEntry === 2) ? 3_600_000 : 10_000 : 5_000;
+	const responseTime = userData1.quidToServer.rank === RankType.Youngling ? (tutorialMapEntry === 1 || tutorialMapEntry === 2) ? 3_600_000 : 10_000 : 5_000;
 	const embed = new EmbedBuilder()
 		.setColor(userData1.quid.color)
 		.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL });
@@ -166,23 +166,23 @@ export async function executePlaying(
 	let foundQuest = false;
 	let playedTogether = false;
 	// If the user is a Youngling with a level over 2 that doesn't have a quest and has not unlocked any ranks and they haven't mentioned anyone, with an at least 33% chance get a quest
-	if (userData1.quid.profile.rank === RankType.Youngling
+	if (userData1.quidToServer.rank === RankType.Youngling
 		&& !mentionedUserId
 		&& userFindsQuest(userData1)) { foundQuest = true; }
 	// Play together either 100% of the time if someone was mentioned, or 70% of the time if either there is a userData2 or the user is a Youngling
 	else if (tutorialMapEntry !== 1
 		&& (mentionedUserId
 			|| tutorialMapEntry === 2
-			|| ((userData2 || userData1.quid.profile.rank === RankType.Youngling)
+			|| ((userData2 || userData1.quidToServer.rank === RankType.Youngling)
 				&& pullFromWeightedTable({ 0: 3, 1: 7 }) === 1))
 	) {
 
 		playedTogether = true;
 		if (tutorialMapEntry === 2) { userData2 = null; }
 
-		if (hasNameAndSpecies(userData2) && (userData1.quid.profile.rank === RankType.Youngling || userData1.quid.profile.rank === RankType.Apprentice)) {
+		if (hasNameAndSpecies(userData2) && (userData1.quidToServer.rank === RankType.Youngling || userData1.quidToServer.rank === RankType.Apprentice)) {
 
-			const partnerHealthPoints = getSmallerNumber(userData2.quid.profile.maxHealth - userData2.quid.profile.health, getRandomNumber(5, 1));
+			const partnerHealthPoints = getSmallerNumber(userData2.quidToServer.maxHealth - userData2.quidToServer.health, getRandomNumber(5, 1));
 
 			if (partnerHealthPoints > 0) {
 
@@ -193,7 +193,7 @@ export async function executePlaying(
 					},
 				);
 
-				changedCondition.statsUpdateText += `\n\n+${partnerHealthPoints} HP for ${userData2.quid.name} (${userData2.quid.profile.health}/${userData2.quid.profile.maxHealth})`;
+				changedCondition.statsUpdateText += `\n\n+${partnerHealthPoints} HP for ${userData2.quid.name} (${userData2.quidToServer.health}/${userData2.quidToServer.maxHealth})`;
 			}
 		}
 
@@ -260,13 +260,13 @@ export async function executePlaying(
 						},
 					);
 
-					tutorialMap.delete(userData1.quid._id + userData1.quid.profile.serverId);
+					tutorialMap.delete(userData1.quid._id + userData1.quidToServer.serverId);
 
 					whoWinsChance = 0;
 
-					if (userData1.quid.profile.rank === RankType.Youngling) { changedCondition.statsUpdateText = `${addExperience(userData1, getRandomNumber(4, 5))}\n${changedCondition.statsUpdateText}`; }
+					if (userData1.quidToServer.rank === RankType.Youngling) { changedCondition.statsUpdateText = `${addExperience(userData1, getRandomNumber(4, 5))}\n${changedCondition.statsUpdateText}`; }
 				}
-				else if (i.customId.includes(fightGame.cycleKind) && userData1.quid.profile.rank === RankType.Youngling) { changedCondition.statsUpdateText = `${addExperience(userData1, getRandomNumber(2, 1))}\n${changedCondition.statsUpdateText}`; }
+				else if (i.customId.includes(fightGame.cycleKind) && userData1.quidToServer.rank === RankType.Youngling) { changedCondition.statsUpdateText = `${addExperience(userData1, getRandomNumber(2, 1))}\n${changedCondition.statsUpdateText}`; }
 
 				buttonInteraction = i;
 			}
@@ -297,22 +297,22 @@ export async function executePlaying(
 		}
 	}
 	// with a 90% chance if the user is not a youngling, find nothing
-	else if (userData1.quid.profile.rank !== RankType.Youngling
-		&& pullFromWeightedTable({ 0: 90, 1: 10 + userData1.quid.profile.sapling.waterCycles }) === 0) {
+	else if (userData1.quidToServer.rank !== RankType.Youngling
+		&& pullFromWeightedTable({ 0: 90, 1: 10 + userData1.quidToServer.sapling.waterCycles }) === 0) {
 
 		embed.setDescription(`*${userData1.quid.name} bounces around camp, watching the busy hustle and blurs of hunters and healers at work. ${capitalize(userData1.quid.pronounAndPlural(0, 'splashes', 'splash'))} into the stream that splits the pack in half, chasing the minnows with ${userData1.quid.pronoun(2)} eyes.*`);
 		if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 	}
 	// if the user is not a youngling, and either the user is also not an apprentice or with a 90% chance, get hurt
-	else if (userData1.quid.profile.rank !== RankType.Youngling
-		&& (userData1.quid.profile.rank !== RankType.Apprentice
-			|| pullFromWeightedTable({ 0: 10, 1: 90 + userData1.quid.profile.sapling.waterCycles }))) {
+	else if (userData1.quidToServer.rank !== RankType.Youngling
+		&& (userData1.quidToServer.rank !== RankType.Apprentice
+			|| pullFromWeightedTable({ 0: 10, 1: 90 + userData1.quidToServer.sapling.waterCycles }))) {
 
-		const healthPoints = getSmallerNumber(getRandomNumber(5, 3), userData1.quid.profile.health);
+		const healthPoints = getSmallerNumber(getRandomNumber(5, 3), userData1.quidToServer.health);
 
-		if (getRandomNumber(2) === 0 && userData1.quid.profile.injuries.cold === false) {
+		if (getRandomNumber(2) === 0 && userData1.quidToServer.injuries.cold === false) {
 
-			userData1.quid.profile.injuries.cold = true;
+			userData1.quidToServer.injuries.cold = true;
 
 			embed.setDescription(`*${userData1.quid.name} tumbles around camp, weaving through dens and packmates at work. ${capitalize(userData1.quid.pronounAndPlural(0, 'pause'))} for a moment, having a sneezing and coughing fit. It looks like ${userData1.quid.name} has caught a cold.*`);
 			embed.setFooter({ text: `-${healthPoints} HP (from cold)\n${changedCondition.statsUpdateText}` });
@@ -320,7 +320,7 @@ export async function executePlaying(
 		}
 		else {
 
-			userData1.quid.profile.injuries.wounds += 1;
+			userData1.quidToServer.injuries.wounds += 1;
 
 			embed.setDescription(`*${userData1.quid.name} strays from camp, playing near the pack borders. ${capitalize(userData1.quid.pronounAndPlural(0, 'hop'))} on rocks and pebbles, trying to keep ${userData1.quid.pronoun(2)} balance, but the rock ahead of ${userData1.quid.pronoun(1)} is steeper and more jagged. ${capitalize(userData1.quid.pronounAndPlural(0, 'land'))} with an oomph and a gash slicing through ${userData1.quid.pronoun(2)} feet from the sharp edges.*`);
 			embed.setFooter({ text: `-${healthPoints} HP (from wound)\n${changedCondition.statsUpdateText}` });
@@ -382,7 +382,7 @@ export async function executePlaying(
 				/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
 				playComponent = plantGame.chosenRightButtonOverwrite(i.customId);
 
-				if (tutorialMapEntry === 1) { tutorialMap.set(userData1.quid._id + userData1.quid.profile.serverId, 2); }
+				if (tutorialMapEntry === 1) { tutorialMap.set(userData1.quid._id + userData1.quidToServer.serverId, 2); }
 
 				await userData1.update(
 					(u) => {
@@ -394,11 +394,11 @@ export async function executePlaying(
 				);
 				isWin = true;
 
-				if (userData1.quid.profile.rank === RankType.Youngling) { changedCondition.statsUpdateText = `${addExperience(userData1, getRandomNumber(4, 5))}\n${changedCondition.statsUpdateText}`; }
+				if (userData1.quidToServer.rank === RankType.Youngling) { changedCondition.statsUpdateText = `${addExperience(userData1, getRandomNumber(4, 5))}\n${changedCondition.statsUpdateText}`; }
 			}
 			else {
 
-				if (!i.customId.includes(plantGame.emojiToFind) && userData1.quid.profile.rank === RankType.Youngling) { changedCondition.statsUpdateText = `${addExperience(userData1, getRandomNumber(2, 1))}\n${changedCondition.statsUpdateText}`; }
+				if (!i.customId.includes(plantGame.emojiToFind) && userData1.quidToServer.rank === RankType.Youngling) { changedCondition.statsUpdateText = `${addExperience(userData1, getRandomNumber(2, 1))}\n${changedCondition.statsUpdateText}`; }
 
 				embed.setDescription(descriptionText.substring(0, descriptionText.length - 1) + ` But as the ${userData1.quid.getDisplayspecies()} tries to pick it up, it just breaks into little pieces.*`);
 			}
@@ -427,7 +427,7 @@ export async function executePlaying(
 	}
 	else {
 
-		const tutorialMapEntry_ = tutorialMap.get(userData1.quid._id + userData1.quid.profile.serverId);
+		const tutorialMapEntry_ = tutorialMap.get(userData1.quid._id + userData1.quidToServer.serverId);
 		// This is an update when forceEdit is true, which it is only for the travel-regions command, else this is a reply
 		({ id: responseId } = await respond(buttonInteraction ?? interaction, {
 			content: messageContent,
@@ -476,5 +476,5 @@ function isEligableForPlaying(
 ): quid is QuidSchema<never> {
 
 	const user = getUserData(userData, guildId, quid);
-	return hasNameAndSpecies(user) && user.quid.profile.currentRegion === CurrentRegionType.Prairie && user.quid.profile.energy > 0 && user.quid.profile.health > 0 && user.quid.profile.hunger > 0 && user.quid.profile.thirst > 0 && user.quid.profile.injuries.cold === false && user.serverInfo?.hasCooldown !== true && isResting(user) === false;
+	return hasNameAndSpecies(user) && user.quidToServer.currentRegion === CurrentRegionType.Prairie && user.quidToServer.energy > 0 && user.quidToServer.health > 0 && user.quidToServer.hunger > 0 && user.quidToServer.thirst > 0 && user.quidToServer.injuries.cold === false && user.serverInfo?.hasCooldown !== true && isResting(user) === false;
 }
