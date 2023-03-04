@@ -429,9 +429,9 @@ export const command: SlashCommand = {
 
 		if (interaction.isButton() && interaction.customId.includes('proxying_setTo')) {
 
-			let channelLimits = await ProxyLimits.findByPk(server.proxy_channelLimitsId);
+			const channelLimits = await ProxyLimits.findByPk(server.proxy_channelLimitsId);
 			if (!channelLimits) { throw new TypeError('channelLimits is null'); }
-			channelLimits = await channelLimits?.update({ setToWhitelist: !channelLimits.setToWhitelist });
+			await channelLimits?.update({ setToWhitelist: !channelLimits.setToWhitelist });
 
 			// This is always an update to the message with the select menu
 			await respond(interaction, await getProxyingMessage(interaction, channelLimits, 0), 'update', interaction.message.id)
@@ -450,7 +450,7 @@ export const command: SlashCommand = {
 		/* It's checking if the interaction is the visits select menu */
 		if (interaction.isStringSelectMenu() && selectOptionId && interaction.customId.includes('proxying_options')) {
 
-			let channelLimits = await ProxyLimits.findByPk(server.proxy_channelLimitsId);
+			const channelLimits = await ProxyLimits.findByPk(server.proxy_channelLimitsId);
 			if (!channelLimits) { throw new TypeError('channelLimits is null'); }
 			/* It's checking if the value is for turning a page. If it is, it's getting the page number from the value, and it's updating the message with the shop message with the page number. */
 			if (selectOptionId.includes('nextpage')) {
@@ -469,7 +469,7 @@ export const command: SlashCommand = {
 				const hasChannel = channelLimits[listType].includes(channelId);
 				if (!hasChannel) { channelLimits[listType].push(channelId); }
 				else { channelLimits[listType] = channelLimits[listType].filter(string => string !== channelId); }
-				channelLimits = await channelLimits.update({
+				await channelLimits.update({
 					whitelist: channelLimits.whitelist,
 					blacklist: channelLimits.blacklist,
 				});

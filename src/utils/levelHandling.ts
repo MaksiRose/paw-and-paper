@@ -29,7 +29,7 @@ export async function checkLevelUp(
 	const requiredExperiencePoints = quidToServer.levels * 50;
 	if (quidToServer.experience >= requiredExperiencePoints) {
 
-		quidToServer = await quidToServer.update({ experience: quidToServer.experience - requiredExperiencePoints, levels: quidToServer.levels + 1 });
+		await quidToServer.update({ experience: quidToServer.experience - requiredExperiencePoints, levels: quidToServer.levels + 1 });
 
 		embed = [new EmbedBuilder()
 			.setColor(quid.color)
@@ -70,7 +70,7 @@ export async function decreaseLevel(
 		footerText += `\n-${countObj[key]} ${key}`;
 	}
 
-	quidToServer = await quidToServer.update({ levels: newUserLevel, experience: 0, inventory: [] });
+	await quidToServer.update({ levels: newUserLevel, experience: 0, inventory: [] });
 
 	/* Get the guild, member, and the profileData roles where the wayOfEarning is levels and the role requirement bigger than the profile level. */
 	const guild = interaction.guild || await interaction.client.guilds.fetch(interaction.guildId);

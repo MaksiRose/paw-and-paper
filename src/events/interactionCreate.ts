@@ -42,7 +42,7 @@ export const event: DiscordEvent = {
 				? ((await Server.findByPk(interaction.guildId)) ?? await createGuild(interaction.guild))
 				: undefined;
 
-			let userToServer = (user && server)
+			const userToServer = (user && server)
 				? (
 					(await UserToServer.findOne({
 						where: { userId: user.id, serverId: server.id },
@@ -62,7 +62,7 @@ export const event: DiscordEvent = {
 			if (userToServer && interaction.inCachedGuild() && interaction.isRepliable()) {
 
 				lastInteractionMap.set(userToServer.userId + userToServer.serverId, interaction);
-				userToServer = await userToServer.update({
+				await userToServer.update({
 					lastInteraction_timestamp: interaction.createdTimestamp,
 					lastInteraction_channelId: interaction.channelId,
 				}, { logging: false });

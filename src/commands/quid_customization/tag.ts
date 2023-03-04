@@ -28,9 +28,9 @@ export const command: SlashCommand = {
 		if (interaction.inGuild()) {
 
 			if (!userToServer) { throw new TypeError('userToServer is undefined'); }
-			userToServer = await userToServer.update({ tag: tag });
+			await userToServer.update({ tag: tag });
 		}
-		else { user = await user.update({ tag: tag }); }
+		else { await user.update({ tag: tag }); }
 
 		// This is always a reply
 		await respond(interaction, {

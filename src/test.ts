@@ -44,6 +44,7 @@ export const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 	await sequelize.sync();
 
 	const obj = await DiscordUser.findByPk('268402976844939266', { include: [{ model: User, as: 'user', include: [{ model: Quid, as: 'quids' }] }] });
-	console.log(obj?.user.quids.map(q => q.toJSON()));
-
+	const quid = obj?.user.quids[0];
+	await quid?.update({ nickname: 'hehehehehe!' });
+	console.log(quid?.nickname);
 })();

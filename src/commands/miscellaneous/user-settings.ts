@@ -57,7 +57,7 @@ export const command: SlashCommand = {
 
 			if (isMentionsChange) {
 
-				user = await user.update({
+				await user.update({
 					reminders_resting: selectOptionId?.flat().includes('resting') ?? false,
 					reminders_water: selectOptionId?.flat().includes('water') ?? false,
 				});
@@ -72,7 +72,7 @@ export const command: SlashCommand = {
 
 			if (isAccessibilityChange) {
 
-				user = await user.update({ accessibility_replaceEmojis: selectOptionId?.flat().includes('replaceEmojis') ?? false });
+				await user.update({ accessibility_replaceEmojis: selectOptionId?.flat().includes('replaceEmojis') ?? false });
 			}
 
 			// This is always an update
@@ -85,7 +85,7 @@ export const command: SlashCommand = {
 
 			if (customId.args[1] === 'water') {
 
-				user = await user.update({ reminders_water: isOn });
+				await user.update({ reminders_water: isOn });
 
 				/* This executes the sendReminder function for each profile for which the sapling exists and where lastMessageChannelId is a string, if the user has enabled water reminders. */
 				if (user.reminders_water === true) {

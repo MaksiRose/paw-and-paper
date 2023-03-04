@@ -155,7 +155,7 @@ export const command: SlashCommand = {
 
 			if (!interaction.inGuild()) {
 
-				user = await user.update({ proxy_globalAutoproxy: !user.proxy_globalAutoproxy });
+				await user.update({ proxy_globalAutoproxy: !user.proxy_globalAutoproxy });
 			}
 			else if (!userToServer) {
 
@@ -165,7 +165,7 @@ export const command: SlashCommand = {
 			}
 			else {
 
-				userToServer = await userToServer.update({ autoproxy_setToWhitelist: newSetting });
+				await userToServer.update({ autoproxy_setToWhitelist: newSetting });
 			}
 
 			// This is always an update to the message with the select menu
@@ -193,7 +193,7 @@ export const command: SlashCommand = {
 
 			if (!interaction.inGuild()) {
 
-				user = await user.update({ proxy_globalStickymode: !user.proxy_globalStickymode });
+				await user.update({ proxy_globalStickymode: !user.proxy_globalStickymode });
 			}
 			else if (!userToServer) {
 
@@ -203,7 +203,7 @@ export const command: SlashCommand = {
 			}
 			else {
 
-				userToServer = await userToServer.update({ stickymode_setTo: newSetting });
+				await userToServer.update({ stickymode_setTo: newSetting });
 			}
 
 			// This is always an update to the message with the select menu
@@ -258,7 +258,7 @@ export const command: SlashCommand = {
 
 					if (!hasChannel) { userToServer[listType].push(channelId); }
 					else { userToServer[listType] = userToServer[listType].filter(cid => cid !== channelId); }
-					userToServer = await userToServer.update({ [listType]: userToServer[listType] });
+					await userToServer.update({ [listType]: userToServer[listType] });
 				}
 
 				// This is always an update to the message with the select menu

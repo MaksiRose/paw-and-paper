@@ -111,8 +111,8 @@ export async function sendDrinkMessage(
 			const thirstPoints = getSmallerNumber(quidToServer.maxThirst - quidToServer.thirst, getRandomNumber(3, collected.size));
 			const currentRegion = quidToServer.currentRegion;
 
-			quidToServer = await quidToServer.update({ currentRegion: CurrentRegionType.Lake, thirst: quidToServer.thirst + thirstPoints });
-			user = await user.update({ advice_drinking: true });
+			await quidToServer.update({ currentRegion: CurrentRegionType.Lake, thirst: quidToServer.thirst + thirstPoints });
+			await user.update({ advice_drinking: true });
 
 			// This is an editReply
 			await respond(interaction, {
