@@ -38,7 +38,7 @@ export const command: SlashCommand = {
 
 			await interaction
 				.showModal(new ModalBuilder()
-					.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, customId.args))
+					.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, quid._id, customId.args))
 					.setTitle(`${capitalize(customId.args[0])} a group`)
 					.addComponents(
 						new ActionRowBuilder<TextInputBuilder>()
@@ -97,7 +97,7 @@ export const command: SlashCommand = {
 			if (group === undefined) { throw TypeError('group is undefined'); }
 			await interaction
 				.showModal(new ModalBuilder()
-					.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, customId.args))
+					.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, quid._id, customId.args))
 					.setTitle('Set group tag')
 					.addComponents(
 						new ActionRowBuilder<TextInputBuilder>()
@@ -117,12 +117,12 @@ export const command: SlashCommand = {
 
 		if (interaction.isButton() && customId.args[0] === 'join') {
 
-			const hasMainGroup = userData.quid.mainGroup !== null;
+			const hasMainGroup = quid.mainGroup !== null;
 			const groupId = customId.args[1];
 			userData.update(
 				u => {
-					if (!hasMainGroup) { getMapData(u.quids, userData.quid._id).mainGroup = groupId; }
-					u.group_quid.push({ groupId: groupId, quidId: userData.quid._id });
+					if (!hasMainGroup) { getMapData(u.quids, quid._id).mainGroup = groupId; }
+					u.group_quid.push({ groupId: groupId, quidId: quid._id });
 				},
 			);
 			const group = userData.groups.get(groupId);
@@ -134,12 +134,12 @@ export const command: SlashCommand = {
 			// This is always a followUp
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
-					.setColor(userData.quid.color)
+					.setColor(quid.color)
 					.setAuthor({
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
-					.setTitle(`${userData.quid.name} joined the group ${group.name}!`)
+					.setTitle(`${quid.name} joined the group ${group.name}!`)
 					.setDescription(!hasMainGroup ? 'This is now this quids main group. The main group determines which groups tag is going to displayed. If your quid has an individual tag, it will overwrite the group tag. To change the quids main group, just select another group from the command and click "Make this the main group".' : null)],
 				ephemeral: true,
 			});
@@ -149,11 +149,11 @@ export const command: SlashCommand = {
 		if (interaction.isButton() && customId.args[0] === 'leave') {
 
 			const groupId = customId.args[1];
-			const isMainGroup = userData.quid.mainGroup === customId.args[1];
+			const isMainGroup = quid.mainGroup === customId.args[1];
 			userData.update(
 				u => {
-					u.group_quid = u.group_quid.filter(g => (g.groupId === groupId && g.quidId === userData.quid._id) === false);
-					if (isMainGroup) { getMapData(u.quids, userData.quid._id).mainGroup = u.group_quid.find(g => g.quidId === userData.quid._id)?.groupId ?? null; }
+					u.group_quid = u.group_quid.filter(g => (g.groupId === groupId && g.quidId === quid._id) === false);
+					if (isMainGroup) { getMapData(u.quids, quid._id).mainGroup = u.group_quid.find(g => g.quidId === quid._id)?.groupId ?? null; }
 				},
 			);
 			const group = userData.groups.get(groupId);
@@ -165,13 +165,13 @@ export const command: SlashCommand = {
 			// This is always a followUp
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
-					.setColor(userData.quid.color)
+					.setColor(quid.color)
 					.setAuthor({
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
-					.setTitle(`${userData.quid.name} left the group ${group.name}!`)
-					.setDescription((isMainGroup && userData.quid.mainGroup !== null) ? `This was this quids main group, so the main group has been changed to ${userData.groups.get(userData.quid.mainGroup)?.name}. The main group determines which groups tag is going to displayed. If your quid has an individual tag, it will overwrite the group tag. To change the quids main group, just select another group from the command and click "Make this the main group".` : null)],
+					.setTitle(`${quid.name} left the group ${group.name}!`)
+					.setDescription((isMainGroup && quid.mainGroup !== null) ? `This was this quids main group, so the main group has been changed to ${userData.groups.get(quid.mainGroup)?.name}. The main group determines which groups tag is going to displayed. If your quid has an individual tag, it will overwrite the group tag. To change the quids main group, just select another group from the command and click "Make this the main group".` : null)],
 				ephemeral: true,
 			});
 			return;
@@ -182,7 +182,7 @@ export const command: SlashCommand = {
 			const groupId = customId.args[1];
 			userData.update(
 				u => {
-					getMapData(u.quids, userData.quid._id).mainGroup = groupId;
+					getMapData(u.quids, quid._id).mainGroup = groupId;
 				},
 			);
 			const group = userData.groups.get(groupId);
@@ -194,12 +194,12 @@ export const command: SlashCommand = {
 			// This is always a followUp
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
-					.setColor(userData.quid.color)
+					.setColor(quid.color)
 					.setAuthor({
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
-					.setTitle(`${group.name} is now the main group for ${userData.quid.name}!`)
+					.setTitle(`${group.name} is now the main group for ${quid.name}!`)
 					.setDescription('The main group determines which groups tag is going to displayed. If your quid has an individual tag, it will overwrite the group tag.')],
 				ephemeral: true,
 			});
@@ -284,7 +284,7 @@ export const command: SlashCommand = {
 			// This is always a followUp
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
-					.setColor(userData.quid.color)
+					.setColor(quid.color)
 					.setAuthor({
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
@@ -309,7 +309,7 @@ export function getGroupMessage(
 	currentGroupId?: string,
 ): InteractionReplyOptions {
 
-	const currentGroup = userData.groups.get(currentGroupId ?? userData.quid.mainGroup ?? '');
+	const currentGroup = userData.groups.get(currentGroupId ?? quid.mainGroup ?? '');
 	const _userData = (() => {
 		try { return userModel.findOne(u => u._id === userData._id); }
 		catch { return null; }
@@ -339,19 +339,19 @@ export function getGroupMessage(
 		});
 	}
 
-	const quidInGroup = currentGroup === undefined ? false : userData.group_quid.find(g => g.groupId === currentGroup._id && g.quidId === userData.quid._id) !== undefined;
+	const quidInGroup = currentGroup === undefined ? false : userData.group_quid.find(g => g.groupId === currentGroup._id && g.quidId === quid._id) !== undefined;
 
 	return {
 		content: currentGroup === undefined ? 'You are on an Empty Slot. Select a group to view below.' : '',
 		embeds: currentGroup === undefined ? [] : [new EmbedBuilder()
-			.setColor(userData.quid.color)
+			.setColor(quid.color)
 			.setAuthor({
 				name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 				iconURL: quid.avatarURL,
 			})
 			.setTitle(currentGroup.name)
 			.setFields([
-				{ name: '**🏷️ Tag**', value: currentGroup.tag.servers[userData.quid.profile?.serverId ?? ''] || currentGroup.tag.global || '/' },
+				{ name: '**🏷️ Tag**', value: currentGroup.tag.servers[quidToServer?.serverId ?? ''] || currentGroup.tag.global || '/' },
 				{
 					name: '**☂️ Members**',
 					value: userData.group_quid
@@ -394,7 +394,7 @@ export function getGroupMessage(
 					.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, [!quidInGroup ? 'join' : 'leave', currentGroup._id]))
 					.setLabel(`${!quidInGroup ? 'Join' : 'Leave'} group`)
 					.setStyle(ButtonStyle.Primary),
-				...(currentGroup._id === userData.quid.mainGroup || userData.group_quid.find(g => g.quidId === userData.quid._id) === undefined || !quidInGroup) ? [] : [new ButtonBuilder()
+				...(currentGroup._id === quid.mainGroup || userData.group_quid.find(g => g.quidId === quid._id) === undefined || !quidInGroup) ? [] : [new ButtonBuilder()
 					.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['maingroup', currentGroup._id]))
 					.setLabel('Make this the main group')
 					.setStyle(ButtonStyle.Secondary),

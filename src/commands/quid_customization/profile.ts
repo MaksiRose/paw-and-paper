@@ -34,13 +34,13 @@ export const command: SlashCommand = {
 	modifiesServerProfile: false,
 	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
 
-		/* Getting userData and userData.quid either for mentionedUser if there is one or for interaction user otherwise */
+		/* Getting userData and quid either for mentionedUser if there is one or for interaction user otherwise */
 		const mentionedUser = interaction.options.getUser('user');
 		const _userData = (() => {
 			try { return userModel.findOne(u => Object.keys(u.userIds).includes(!mentionedUser ? interaction.user.id : mentionedUser.id)); }
 			catch { return null; }
 		})();
-		userData = _userData === null ? null : getUserData(_userData, interaction.guildId || 'DMs', _userData.quids[_userData.servers[interaction.guildId || 'DMs']?.currentQuid ?? '']);
+		userData = _userData === null ? null : getUserData(_userData, interaction.guildId || 'DMs', _quids[_userData.servers[interaction.guildId || 'DMs']?.currentQuid ?? '']);
 
 		/* Responding if there is no userData */
 		if (!userData) {
@@ -80,7 +80,7 @@ export const command: SlashCommand = {
 
 		/* Getting the userData from the customId */
 		let _userData = await userModel.findOne(u => Object.keys(u.userIds).includes(customId.args[1]));
-		let userData = getUserData(_userData, interaction.guildId || 'DMs', _userData.quids[_userData.servers[interaction.guildId || 'DMs']?.currentQuid ?? '']);
+		let userData = getUserData(_userData, interaction.guildId || 'DMs', _quids[_userData.servers[interaction.guildId || 'DMs']?.currentQuid ?? '']);
 
 		/* Checking if the user clicked the "Learn more" button, and if they did, copy the message to their DMs, but with the select Menu as a component instead of the button. */
 		if (interaction.isButton() && customId.args[0] === 'learnabout') {
@@ -108,7 +108,7 @@ export const command: SlashCommand = {
 
 			/* Getting the quidsPage from the value Id, incrementing it by one or setting it to zero if the page number is bigger than the total amount of pages. */
 			let quidsPage = Number(selectOptionId[1]) + 1;
-			if (quidsPage >= Math.ceil((userData.quids.size + 1) / 24)) { quidsPage = 0; }
+			if (quidsPage >= Math.ceil((quids.size + 1) / 24)) { quidsPage = 0; }
 
 			// This is always an update to the message with the select menu
 			await respond(interaction, {
@@ -137,7 +137,7 @@ export const command: SlashCommand = {
 			await disableCommandComponent(userData);
 
 			/* Checking if the user is resting, and if they are, it will stop the resting. */
-			const oldRoles = [...userData.quid?.profile?.roles || []];
+			const oldRoles = [...quid?.profile?.roles || []];
 			if (interaction.inCachedGuild() && hasNameAndSpecies(userData)) {
 
 				await checkResting(interaction, userData);
@@ -160,7 +160,7 @@ export const command: SlashCommand = {
 					else { delete u.currentQuid[interaction.guildId || 'DMs']; }
 				},
 			);
-			userData = getUserData(_userData, interaction.guildId || 'DMs', _userData.quids[quidId]);
+			userData = getUserData(_userData, interaction.guildId || 'DMs', _quids[quidId]);
 
 			/* Getting the new quid data, and then it is checking if the user has clicked on an account, and if they have, it will add the roles of the account to the user. */
 
@@ -218,7 +218,7 @@ export const command: SlashCommand = {
 					/* Checking if the user does not have roles from the new profile, and if they don't, it will add them. */
 					try {
 
-						for (const role of (userData.quid.profile?.roles ?? [])) {
+						for (const role of (quidToServer?.roles ?? [])) {
 
 							if (await hasPermission(interaction.guild.members.me ?? interaction.client.user.id, interaction.channelId, 'ManageRoles') === false) { break; }
 							if (!member.roles.cache.has(role.roleId)) { await member.roles.add(role.roleId); }
@@ -235,7 +235,7 @@ export const command: SlashCommand = {
 					for (const role of oldRoles) {
 
 						if (await hasPermission(interaction.guild.members.me ?? interaction.client.user.id, interaction.channelId, 'ManageRoles') === false) { break; }
-						const isInNewRoles = userData.quid?.profile?.roles.some(r => r.roleId === role.roleId && r.wayOfEarning === role.wayOfEarning && r.requirement === role.requirement) || false;
+						const isInNewRoles = quid?.profile?.roles.some(r => r.roleId === role.roleId && r.wayOfEarning === role.wayOfEarning && r.requirement === role.requirement) || false;
 						if (!isInNewRoles && member.roles.cache.has(role.roleId)) { await member.roles.remove(role.roleId); }
 					}
 				}
@@ -251,7 +251,7 @@ export const command: SlashCommand = {
 
 			// This is always a followUp
 			await respond(interaction, {
-				content: `You successfully switched to \`${userData.quid?.name || 'Empty Slot'}\`!`,
+				content: `You successfully switched to \`${quid?.name || 'Empty Slot'}\`!`,
 				ephemeral: true,
 			});
 			return;
@@ -262,7 +262,7 @@ export const command: SlashCommand = {
 
 			/* Getting the userData from the customId */
 			const quidId = selectOptionId[1];
-			userData = getUserData(_userData, interaction.guildId || 'DMs', _userData.quids[quidId]);
+			userData = getUserData(_userData, interaction.guildId || 'DMs', _quids[quidId]);
 
 			// This is always an update to the message with the select menu
 			await respond(interaction, {
@@ -344,10 +344,10 @@ function getQuidSelectMenu(
 	isYourself: boolean,
 ): StringSelectMenuBuilder {
 
-	let quidOptions: RestOrArray<SelectMenuComponentOptionData> = userData.quids.map(quid => ({
+	let quidOptions: RestOrArray<SelectMenuComponentOptionData> = quids.map(quid => ({
 		label: quid.name,
 		value: constructSelectOptions<SelectOptionArgs>([isYourself ? 'switchto' : 'view', quid._id]),
-		default: userData.quid?._id === quid._id ? true : false,
+		default: quid?._id === quid._id ? true : false,
 	}));
 
 	if (isYourself) {
@@ -355,7 +355,7 @@ function getQuidSelectMenu(
 		quidOptions.push({
 			label: 'Empty Slot',
 			value: constructSelectOptions<SelectOptionArgs>(['switchto', '']),
-			default: userData.quid === undefined ? true : false,
+			default: quid === undefined ? true : false,
 		});
 	}
 

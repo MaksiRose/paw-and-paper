@@ -77,12 +77,12 @@ async function executeAttacking(
 			embeds: [
 				...restEmbed,
 				new EmbedBuilder()
-					.setColor(userData.quid.color)
+					.setColor(quid.color)
 					.setAuthor({
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
-					.setDescription(`*${userData.quid.name} is ready to attack any intruder. But no matter how far ${userData.quid.pronounAndPlural(0, 'look')}, ${userData.quid.pronoun(0)} can't see anyone. It seems that the pack is not under attack at the moment.*`),
+					.setDescription(`*${quid.name} is ready to attack any intruder. But no matter how far ${pronounAndPlural(quid, 0, 'look')}, ${pronoun(quid, 0)} can't see anyone. It seems that the pack is not under attack at the moment.*`),
 			],
 		});
 		return;
@@ -95,12 +95,12 @@ async function executeAttacking(
 			embeds: [
 				...restEmbed,
 				new EmbedBuilder()
-					.setColor(userData.quid.color)
+					.setColor(quid.color)
 					.setAuthor({
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
-					.setDescription(`*${userData.quid.name} looks around, searching for a human to attack. It looks like everyone is already being attacked by other pack members. The ${userData.quid.getDisplayspecies()} better not interfere before ${userData.quid.pronounAndPlural(0, 'hurt')} ${userData.quid.pronoun(2)} friends.*`),
+					.setDescription(`*${quid.name} looks around, searching for a human to attack. It looks like everyone is already being attacked by other pack members. The ${quid.getDisplayspecies()} better not interfere before ${pronounAndPlural(quid, 0, 'hurt')} ${pronoun(quid, 2)} friends.*`),
 			],
 		});
 		return;
@@ -110,11 +110,11 @@ async function executeAttacking(
 	serverAttackInfo.idleHumans -= 1;
 	serverAttackInfo.ongoingFights += 1;
 
-	const experiencePoints = userData.quid.profile.rank === RankType.Youngling ? 0 : getRandomNumber(5, userData.quid.profile.levels + 8);
+	const experiencePoints = quidToServer.rank === RankType.Youngling ? 0 : getRandomNumber(5, quidToServer.levels + 8);
 	const changedCondition = await changeCondition(userData, experiencePoints);
 
 	const embed = new EmbedBuilder()
-		.setColor(userData.quid.color)
+		.setColor(quid.color)
 		.setAuthor({
 			name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 			iconURL: quid.avatarURL,
@@ -141,17 +141,17 @@ async function executeAttacking(
 
 		if (fightGame.cycleKind === '_attack') {
 
-			embed.setDescription(`⏫ *The human gets ready to attack. ${userData.quid.name} must think quickly about how ${userData.quid.pronounAndPlural(0, 'want')} to react.*`);
+			embed.setDescription(`⏫ *The human gets ready to attack. ${quid.name} must think quickly about how ${pronounAndPlural(quid, 0, 'want')} to react.*`);
 			embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (⏫ Attack).' });
 		}
 		else if (fightGame.cycleKind === 'dodge') {
 
-			embed.setDescription(`↪️ *Looks like the human is preparing a maneuver for ${userData.quid.name}'s next move. The ${userData.quid.getDisplayspecies()} must think quickly about how ${userData.quid.pronounAndPlural(0, 'want')} to react.*`);
+			embed.setDescription(`↪️ *Looks like the human is preparing a maneuver for ${quid.name}'s next move. The ${quid.getDisplayspecies()} must think quickly about how ${pronounAndPlural(quid, 0, 'want')} to react.*`);
 			embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (↪️ Dodge).' });
 		}
 		else if (fightGame.cycleKind === 'defend') {
 
-			embed.setDescription(`⏺️ *The human gets into position to oppose an attack. ${userData.quid.name} must think quickly about how ${userData.quid.pronounAndPlural(0, 'want')} to react.*`);
+			embed.setDescription(`⏺️ *The human gets into position to oppose an attack. ${quid.name} must think quickly about how ${pronounAndPlural(quid, 0, 'want')} to react.*`);
 			embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (⏺️ Defend).' });
 		}
 		else { throw new Error('cycleKind is not attack, dodge or defend'); }
@@ -170,7 +170,7 @@ async function executeAttacking(
 			.awaitMessageComponent({
 				componentType: ComponentType.Button,
 				filter: i => i.user.id === interaction.user.id,
-				time: userData.quid.profile.rank === RankType.Elderly ? 3_000 : userData.quid.profile.rank === RankType.Hunter || userData.quid.profile.rank === RankType.Healer ? 4_000 : userData.quid.profile.rank === RankType.Apprentice ? 5_000 : 10_000,
+				time: quidToServer.rank === RankType.Elderly ? 3_000 : quidToServer.rank === RankType.Hunter || quidToServer.rank === RankType.Healer ? 4_000 : quidToServer.rank === RankType.Apprentice ? 5_000 : 10_000,
 			})
 			.then(async i => {
 
@@ -219,7 +219,7 @@ async function executeAttacking(
 
 		if (winLoseRatio === 2) {
 
-			embed.setDescription(`*For a moment it looks like the human might get the upper hand before ${userData.quid.name} jumps on them with a big hop. The human falls to the ground and crawls away with a terrified look on their face. It looks like they're not coming back.*`);
+			embed.setDescription(`*For a moment it looks like the human might get the upper hand before ${quid.name} jumps on them with a big hop. The human falls to the ground and crawls away with a terrified look on their face. It looks like they're not coming back.*`);
 		}
 		else {
 
@@ -240,32 +240,32 @@ async function executeAttacking(
 				);
 			}
 
-			embed.setDescription(`*The battle between the human and ${userData.quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${userData.quid.getDisplayspecies()} tries to jump at them, but the human manages to dodge. ${winLoseRatio < 1 ? `Quickly they run in the direction of the food den. They escaped from ${userData.quid.pronoun(1)}!*` : 'Quickly they back off from the tricky situation.*'}`);
+			embed.setDescription(`*The battle between the human and ${quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${quid.getDisplayspecies()} tries to jump at them, but the human manages to dodge. ${winLoseRatio < 1 ? `Quickly they run in the direction of the food den. They escaped from ${pronoun(quid, 1)}!*` : 'Quickly they back off from the tricky situation.*'}`);
 
 			if (winLoseRatio === -1) {
 
-				const healthPoints = getSmallerNumber(userData.quid.profile.health, getRandomNumber(5, 3));
+				const healthPoints = getSmallerNumber(quidToServer.health, getRandomNumber(5, 3));
 
 				if (pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
 
-					userData.quid.profile.injuries.wounds += 1;
+					quidToServer.injuries.wounds += 1;
 
-					embed.setDescription(`*The battle between the human and ${userData.quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${userData.quid.getDisplayspecies()} tries to jump at them, but the human manages to dodge. Unfortunately, a rock is directly in ${userData.quid.name}'s jump line. A sharp pain runs through ${userData.quid.pronoun(2)} hip. A red spot slowly spreads where ${userData.quid.pronoun(0)} hit the rock. Meanwhile, the human runs into the food den.*`);
+					embed.setDescription(`*The battle between the human and ${quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${quid.getDisplayspecies()} tries to jump at them, but the human manages to dodge. Unfortunately, a rock is directly in ${quid.name}'s jump line. A sharp pain runs through ${pronoun(quid, 2)} hip. A red spot slowly spreads where ${pronoun(quid, 0)} hit the rock. Meanwhile, the human runs into the food den.*`);
 					injuryText = `-${healthPoints} HP (from wound)\n`;
 				}
 				else {
 
-					userData.quid.profile.injuries.sprains += 1;
+					quidToServer.injuries.sprains += 1;
 
-					embed.setDescription(`*The battle between the human and ${userData.quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${userData.quid.getDisplayspecies()} tries to jump at them, but the human manages to dodge. ${userData.quid.name} is not prepared for the fall. A sharp pain runs through ${userData.quid.pronoun(2)} arm as it bends in the fall. Meanwhile, the human runs into the food den.*`);
+					embed.setDescription(`*The battle between the human and ${quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${quid.getDisplayspecies()} tries to jump at them, but the human manages to dodge. ${quid.name} is not prepared for the fall. A sharp pain runs through ${pronoun(quid, 2)} arm as it bends in the fall. Meanwhile, the human runs into the food den.*`);
 					injuryText = `-${healthPoints} HP (from sprain)\n`;
 				}
 
 				await userData.update(
 					(u) => {
-						const p = getMapData(getMapData(u.quids, userData.quid._id).profiles, interaction.guildId);
+						const p = getMapData(getMapData(u.quids, quid._id).profiles, interaction.guildId);
 						p.health -= healthPoints;
-						p.injuries = userData.quid.profile.injuries;
+						p.injuries = quidToServer.injuries;
 					},
 				);
 			}
