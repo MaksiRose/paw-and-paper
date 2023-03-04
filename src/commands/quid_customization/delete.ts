@@ -100,12 +100,12 @@ export const command: SlashCommand = {
 					new ActionRowBuilder<ButtonBuilder>()
 						.setComponents([
 							new ButtonBuilder()
-								.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['confirm', 'all']))
+								.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.id, ['confirm', 'all']))
 								.setLabel('Confirm')
 								.setEmoji('✔')
 								.setStyle(ButtonStyle.Danger),
 							new ButtonBuilder()
-								.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['cancel']))
+								.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.id, ['cancel']))
 								.setLabel('Cancel')
 								.setEmoji('✖')
 								.setStyle(ButtonStyle.Secondary),
@@ -187,7 +187,7 @@ export const command: SlashCommand = {
 			/* Deleting all the data of the user. */
 			if (type === 'all') {
 
-				await userModel.findOneAndDelete(u => u._id === userData?._id);
+				await userModel.findOneAndDelete(u => u.id === userData?.id);
 
 				// This is always an update to the message with the button
 				await respond(interaction, {
@@ -250,12 +250,12 @@ export const command: SlashCommand = {
 					new ActionRowBuilder<ButtonBuilder>()
 						.setComponents([
 							new ButtonBuilder()
-								.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['confirm', 'individual', quidId]))
+								.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.id, ['confirm', 'individual', quidId]))
 								.setLabel('Confirm')
 								.setEmoji('✔')
 								.setStyle(ButtonStyle.Danger),
 							new ButtonBuilder()
-								.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['cancel']))
+								.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.id, ['cancel']))
 								.setLabel('Cancel')
 								.setEmoji('✖')
 								.setStyle(ButtonStyle.Secondary),
@@ -302,12 +302,12 @@ export const command: SlashCommand = {
 					new ActionRowBuilder<ButtonBuilder>()
 						.setComponents([
 							new ButtonBuilder()
-								.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['confirm', 'server', serverId]))
+								.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.id, ['confirm', 'server', serverId]))
 								.setLabel('Confirm')
 								.setEmoji('✔')
 								.setStyle(ButtonStyle.Danger),
 							new ButtonBuilder()
-								.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['cancel']))
+								.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.id, ['cancel']))
 								.setLabel('Cancel')
 								.setEmoji('✖')
 								.setStyle(ButtonStyle.Secondary),
@@ -338,17 +338,17 @@ function getOriginalComponents(
 	const allServers = getServersPage(0, userData);
 	return new ActionRowBuilder<ButtonBuilder>()
 		.setComponents([new ButtonBuilder()
-			.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['individual']))
+			.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.id, ['individual']))
 			.setLabel('A quid')
 			.setDisabled(getQuidsPage(0, userData).options.length <= 0)
 			.setStyle(ButtonStyle.Danger),
 		new ButtonBuilder()
-			.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['server']))
+			.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.id, ['server']))
 			.setLabel('All information on one server')
 			.setDisabled(allServers.options.length <= 0)
 			.setStyle(ButtonStyle.Danger),
 		new ButtonBuilder()
-			.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['all']))
+			.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.id, ['all']))
 			.setLabel('Everything')
 			.setStyle(ButtonStyle.Danger)]);
 }
@@ -363,7 +363,7 @@ function getQuidsPage(
 
 	let accountsMenuOptions: RestOrArray<SelectMenuComponentOptionData> = quids.map(quid => ({
 		label: quid.name,
-		value: constructSelectOptions<SelectOptionArgs>([quid._id]),
+		value: constructSelectOptions<SelectOptionArgs>([quid.id]),
 	}));
 
 	if (accountsMenuOptions.length > 25) {
@@ -378,7 +378,7 @@ function getQuidsPage(
 	}
 
 	return new StringSelectMenuBuilder()
-		.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['individual', 'options']))
+		.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.id, ['individual', 'options']))
 		.setPlaceholder('Select a quid')
 		.setOptions(accountsMenuOptions);
 }
@@ -419,7 +419,7 @@ function getServersPage(
 	}
 
 	return new StringSelectMenuBuilder()
-		.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['server', 'options']))
+		.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.id, ['server', 'options']))
 		.setPlaceholder('Select a server')
 		.setOptions(accountsMenuOptions);
 }

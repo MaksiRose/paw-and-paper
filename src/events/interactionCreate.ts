@@ -80,9 +80,9 @@ export const event: DiscordEvent = {
 				}) : undefined;
 
 			/* It's updating the info for the quid in the server, if it exists */
-			const quidToServer = userToServer?.activeQuidId
+			const quidToServer = (quid && interaction.inGuild())
 				? await QuidToServer.findOne({
-					where: { quidId: userToServer.activeQuidId, serverId: userToServer.serverId },
+					where: { quidId: quid.id, serverId: interaction.guildId },
 				}).then((row) => {
 					if (row) { return row.update({ lastActiveTimestamp: Date.now() }, { logging: false }); }
 					else { return QuidToServer.create({ id: generateId(), quidId: userToServer!.activeQuidId!, serverId: userToServer!.serverId, lastActiveTimestamp: Date.now() }); }

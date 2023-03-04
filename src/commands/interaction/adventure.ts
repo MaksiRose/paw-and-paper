@@ -82,7 +82,7 @@ export const command: SlashCommand = {
 
 		/* Check how many friendship hearts the players have and if it is less than the required amount, send an error message. */
 		await checkOldMentions(userData1, userData2);
-		const friendshipPoints = getFriendshipPoints(userData1.quid.mentions[userData2.quid._id] || [], userData2.quid.mentions[userData1.quid._id] || []);
+		const friendshipPoints = getFriendshipPoints(userData1.quid.mentions[userData2.quid.id] || [], userData2.quid.mentions[userData1.quid.id] || []);
 		const friendshipHearts = getFriendshipHearts(friendshipPoints);
 		const requiredFriendshipHearts = 6;
 		if (friendshipHearts < requiredFriendshipHearts) {

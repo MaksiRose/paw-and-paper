@@ -221,11 +221,11 @@ export async function getHealResponse(
 	const hurtQuids = await (async function(
 	): Promise<UserData<never, never>[]> {
 
-		const users = (await userModel.find()).map(u => Object.values(u.quids).map(q => getUserData(u, interaction.guildId, u.quids[q._id]))).flat();
+		const users = (await userModel.find()).map(u => Object.values(u.quids).map(q => getUserData(u, interaction.guildId, u.quids[q.id]))).flat();
 		return users.filter((u): u is UserData<never, never> => quidNeedsHealing(u));
 	})();
 
-	let quidsSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = hurtQuids.map(u => ({ label: u.quid.name, value: u.quid._id }));
+	let quidsSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = hurtQuids.map(u => ({ label: u.quid.name, value: u.quid.id }));
 	if (quidsSelectMenuOptions.length > 25) {
 
 		const totalQuidPages = Math.ceil(quidsSelectMenuOptions.length / 24);
@@ -237,7 +237,7 @@ export async function getHealResponse(
 
 	const quidsSelectMenu = new ActionRowBuilder<StringSelectMenuBuilder>()
 		.setComponents(new StringSelectMenuBuilder()
-			.setCustomId(`heal_quids_options_@${userData._id}`)
+			.setCustomId(`heal_quids_options_@${userData.id}`)
 			.setPlaceholder('Select a quid to heal')
 			.setOptions(quidsSelectMenuOptions));
 
@@ -266,12 +266,12 @@ export async function getHealResponse(
 
 		const pagesButtons = new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
-				.setCustomId(`heal_page_1_${userToHeal.quid._id}_@${userData._id}`)
+				.setCustomId(`heal_page_1_${userToHeal.quid.id}_@${userData.id}`)
 				.setLabel('Page 1')
 				.setEmoji('🌱')
 				.setStyle(ButtonStyle.Secondary),
 			new ButtonBuilder()
-				.setCustomId(`heal_page_2_${userToHeal.quid._id}_@${userData._id}`)
+				.setCustomId(`heal_page_2_${userToHeal.quid.id}_@${userData.id}`)
 				.setLabel('Page 2')
 				.setEmoji('🍀')
 				.setStyle(ButtonStyle.Secondary)]);
@@ -314,7 +314,7 @@ export async function getHealResponse(
 				name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 				iconURL: quid.avatarURL,
 			})
-			.setDescription(userToHeal._id === userData._id
+			.setDescription(userToHeal.id === userData.id
 				? `*${userToHeal.quid.name} pushes aside the leaves acting as the entrance to the healer's den. With tired eyes ${userToHeal.quid.pronounAndPlural(0, 'inspect')} the rows of herbs, hoping to find one that can ease ${userToHeal.quid.pronoun(2)} pain.*`
 				: userToHeal.quidToServer.energy <= 0 || userToHeal.quidToServer.health <= 0 || userToHeal.quidToServer.hunger <= 0 || userToHeal.quidToServer.thirst <= 0
 					? `*${quid.name} runs towards the pack borders, where ${userToHeal.quid.name} lies, only barely conscious. The ${quidToServer.rank} immediately looks for the right herbs to help the ${userToHeal.quid.getDisplayspecies()}.*`
@@ -334,7 +334,7 @@ export async function getHealResponse(
 			.setDescription(embedDescription || null);
 		const inventorySelectMenu = new ActionRowBuilder<StringSelectMenuBuilder>()
 			.setComponents(new StringSelectMenuBuilder()
-				.setCustomId(`heal_inventory_options_${userToHeal.quid._id}_@${userData._id}`)
+				.setCustomId(`heal_inventory_options_${userToHeal.quid.id}_@${userData.id}`)
 				.setPlaceholder('Select an item')
 				.setOptions(selectMenuOptions));
 
@@ -352,7 +352,7 @@ export async function getHealResponse(
 
 	// This part of the code is only executed if a herb has been given
 
-	if (!hurtQuids.some(user => user.quid._id === userToHeal.quid._id)) {
+	if (!hurtQuids.some(user => user.quid.id === userToHeal.quid.id)) {
 
 		// If this is a ChatInputCommand, this is a reply, else this is an update to the message with the component
 		const botReply = await respond(interaction, {
@@ -388,7 +388,7 @@ export async function getHealResponse(
 		else if (keyInObject(serverData.inventory.specialPlants, item)) { serverData.inventory.specialPlants[item] -= 1; }
 		else { throw new Error('item does not exist in serverData.inventory'); }
 		serverData = await serverModel.findOneAndUpdate(
-			s => s._id === serverData._id,
+			s => s.id === serverData.id,
 			(s) => { s.inventory = serverData.inventory; },
 		);
 
@@ -489,7 +489,7 @@ export async function getHealResponse(
 
 		await userToHeal.update(
 			(u) => {
-				const p = getMapData(getMapData(u.quids, userToHeal.quid._id).profiles, interaction.guildId);
+				const p = getMapData(getMapData(u.quids, userToHeal.quid.id).profiles, interaction.guildId);
 				p.thirst += chosenUserPlus.thirst;
 				p.hunger += chosenUserPlus.hunger;
 				p.energy += chosenUserPlus.energy;
@@ -507,7 +507,7 @@ export async function getHealResponse(
 
 			embedDescription = `*${quid.name} takes ${userToHeal.quid.name}'s body, drags it over to the river, and positions ${userToHeal.quid.pronoun(2)} head right over the water. The ${userToHeal.quid.getDisplayspecies()} sticks ${userToHeal.quid.pronoun(2)} tongue out and slowly starts drinking. Immediately you can observe how the newfound energy flows through ${userToHeal.quid.pronoun(2)} body.*`;
 		}
-		else if (quid._id === userToHeal.quid._id) {
+		else if (quid.id === userToHeal.quid.id) {
 
 			embedDescription = `*${quid.name} takes a ${item}. After a bit of preparation, the ${quid.getDisplayspecies()} can apply it correctly. Immediately you can see the effect. ${capitalize(pronounAndPlural(quid, 0, 'feel'))} much better!*`;
 		}
@@ -518,7 +518,7 @@ export async function getHealResponse(
 	}
 	else if (item === 'water') {
 
-		if (quid._id === userToHeal.quid._id) {
+		if (quid.id === userToHeal.quid.id) {
 
 			embedDescription = `*${quid.name} thinks about just drinking some water, but that won't help with ${pronoun(quid, 2)} issues...*`;
 		}
@@ -531,7 +531,7 @@ export async function getHealResponse(
 			embedDescription = `*${quid.name} takes ${userToHeal.quid.name}'s body and tries to drag it over to the river. The ${quid.getDisplayspecies()} attempts to position the ${userToHeal.quid.getDisplayspecies()}'s head right over the water, but every attempt fails miserably. ${capitalize(pronounAndPlural(quid, 0, 'need'))} to concentrate and try again.*`;
 		}
 	}
-	else if (quid._id === userToHeal.quid._id) {
+	else if (quid.id === userToHeal.quid.id) {
 
 		embedDescription = `*${quid.name} holds the ${item} in ${pronoun(quid, 2)} mouth, trying to find a way to apply it. After a few attempts, the herb breaks into little pieces, rendering it useless. Guess ${pronounAndPlural(quid, 0, 'has', 'have')} to try again...*`;
 	}
@@ -541,11 +541,11 @@ export async function getHealResponse(
 	}
 
 	const experiencePoints = isSuccessful === false ? 0 : getRandomNumber(5, quidToServer.levels + 8);
-	const changedCondition = await changeCondition(userData._id === userToHeal._id ? userToHeal : userData, experiencePoints); // userToHeal is used here when a user is healing themselves to take into account the changes to the injuries & health
-	const infectedEmbed = userData._id === userToHeal._id ? await infectWithChance(userData, userToHeal) : [];
+	const changedCondition = await changeCondition(userData.id === userToHeal.id ? userToHeal : userData, experiencePoints); // userToHeal is used here when a user is healing themselves to take into account the changes to the injuries & health
+	const infectedEmbed = userData.id === userToHeal.id ? await infectWithChance(userData, userToHeal) : [];
 	const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
 
-	const content = (userData._id !== userToHeal._id && isSuccessful === true ? `<@${Object.keys(userToHeal.userIds)[0]}>\n` : '') + messageContent;
+	const content = (userData.id !== userToHeal.id && isSuccessful === true ? `<@${Object.keys(userToHeal.userIds)[0]}>\n` : '') + messageContent;
 
 	// This is always a reply
 	const botReply = await respond(interaction, {
@@ -570,7 +570,7 @@ export async function getHealResponse(
 	/* If the interaction is a message component, delete the message it comes from. Tries to delete it by getting the componentDisablingInteraction and calling the webhook.deleteMessage function, which saves an API call. As a backup, it will try to delete it by getting the message directly. */
 	if (interaction.isMessageComponent()) {
 
-		const disablingInteraction = componentDisablingInteractions.get(userData._id + interaction.guildId);
+		const disablingInteraction = componentDisablingInteractions.get(userData.id + interaction.guildId);
 		const fifteenMinutesInMs = 900_000;
 		if (disablingInteraction !== undefined && userData.serverInfo?.componentDisablingMessageId != null && SnowflakeUtil.deconstruct(disablingInteraction.id).timestamp > Date.now() - fifteenMinutesInMs) {
 
@@ -593,7 +593,7 @@ export async function getHealResponse(
 
 	const channel = interaction.channel ?? await interaction.client.channels.fetch(interaction.channelId);
 	if (channel === null || !channel.isTextBased()) { throw new TypeError('interaction.channel is null or not text based'); }
-	if (userToHeal._id !== userData._id) { await addFriendshipPoints({ createdTimestamp: SnowflakeUtil.timestampFrom(botReply.id), channel: channel }, userData, userToHeal); } // I have to call SnowflakeUtil since InteractionResponse wrongly misses the createdTimestamp which is hopefully added in the future
+	if (userToHeal.id !== userData.id) { await addFriendshipPoints({ createdTimestamp: SnowflakeUtil.timestampFrom(botReply.id), channel: channel }, userData, userToHeal); } // I have to call SnowflakeUtil since InteractionResponse wrongly misses the createdTimestamp which is hopefully added in the future
 
 	return;
 }
@@ -632,4 +632,4 @@ export function isUnlucky(
 	userToHeal: UserData<never, never>,
 	userData: UserData<never, never>,
 	serverData: ServerSchema,
-): boolean { return (userToHeal._id === userData._id && pullFromWeightedTable({ 0: 75, 1: 25 + quidToServer.sapling.waterCycles - decreaseSuccessChance(serverData) }) === 0) || (userToHeal._id !== userData._id && (quidToServer.rank === RankType.Apprentice || quidToServer.rank === RankType.Hunter) && pullFromWeightedTable({ 0: quidToServer.rank === RankType.Hunter ? 90 : 40, 1: 60 + quidToServer.sapling.waterCycles - decreaseSuccessChance(serverData) }) === 0); }
+): boolean { return (userToHeal.id === userData.id && pullFromWeightedTable({ 0: 75, 1: 25 + quidToServer.sapling.waterCycles - decreaseSuccessChance(serverData) }) === 0) || (userToHeal.id !== userData.id && (quidToServer.rank === RankType.Apprentice || quidToServer.rank === RankType.Hunter) && pullFromWeightedTable({ 0: quidToServer.rank === RankType.Hunter ? 90 : 40, 1: 60 + quidToServer.sapling.waterCycles - decreaseSuccessChance(serverData) }) === 0); }

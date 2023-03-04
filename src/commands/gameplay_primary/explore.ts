@@ -121,7 +121,7 @@ async function executeExploring(
 			components: [
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['new', ...(stringInput ? [stringInput] : []) as [string]]))
+						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.id, ['new', ...(stringInput ? [stringInput] : []) as [string]]))
 						.setLabel('I understand, let\'s explore!')
 						.setStyle(ButtonStyle.Success)),
 			],
@@ -129,7 +129,7 @@ async function executeExploring(
 
 		await userData.update(
 			(u) => {
-				const p = getMapData(getMapData(u.quids, userData!.quid!._id).profiles, interaction.guildId);
+				const p = getMapData(getMapData(u.quids, userData!.quid!.id).profiles, interaction.guildId);
 				p.tutorials.explore = true;
 			},
 		);
@@ -358,7 +358,7 @@ async function executeExploring(
 			foundSapling = true;
 			await userData.update(
 				(u) => {
-					const p = getMapData(getMapData(u.quids, userData!.quid!._id).profiles, interaction.guildId);
+					const p = getMapData(getMapData(u.quids, userData!.quid!.id).profiles, interaction.guildId);
 					p.sapling = {
 						exists: true,
 						health: 50,
@@ -381,7 +381,7 @@ async function executeExploring(
 
 			await userData.update(
 				(u) => {
-					const p = getMapData(getMapData(u.quids, userData!.quid!._id).profiles, interaction.guildId);
+					const p = getMapData(getMapData(u.quids, userData!.quid!.id).profiles, interaction.guildId);
 					p.inventory.materials[foundMaterial] += 1;
 				},
 			);
@@ -535,7 +535,7 @@ async function executeExploring(
 
 					await userData.update(
 						(u) => {
-							const p = getMapData(getMapData(u.quids, userData!.quid!._id).profiles, interaction.guildId);
+							const p = getMapData(getMapData(u.quids, userData!.quid!.id).profiles, interaction.guildId);
 							if (keyInObject(p.inventory.commonPlants, foundItem)) { p.inventory.commonPlants[foundItem] += 1; }
 							else if (keyInObject(p.inventory.uncommonPlants, foundItem)) { p.inventory.uncommonPlants[foundItem] += 1; }
 							else { p.inventory.rarePlants[foundItem] += 1; }
@@ -637,7 +637,7 @@ async function executeExploring(
 
 					await userData.update(
 						(u) => {
-							const p = getMapData(getMapData(u.quids, quid._id).profiles, interaction.guildId);
+							const p = getMapData(getMapData(u.quids, quid.id).profiles, interaction.guildId);
 							p.health -= healthPoints;
 							p.injuries = quidToServer.injuries;
 						},
@@ -822,7 +822,7 @@ async function executeExploring(
 
 					await userData.update(
 						(u) => {
-							const p = getMapData(getMapData(u.quids, quid._id).profiles, interaction.guildId);
+							const p = getMapData(getMapData(u.quids, quid.id).profiles, interaction.guildId);
 							p.inventory.meat[opponentSpecies] += 1;
 						},
 					);
@@ -906,7 +906,7 @@ async function executeExploring(
 
 					await userData.update(
 						(u) => {
-							const p = getMapData(getMapData(u.quids, quid._id).profiles, interaction.guildId);
+							const p = getMapData(getMapData(u.quids, quid.id).profiles, interaction.guildId);
 							p.health -= healthPoints;
 							p.injuries = quidToServer.injuries;
 						},
@@ -923,7 +923,7 @@ async function executeExploring(
 
 		await userData.update(
 			(u) => {
-				const p = getMapData(getMapData(u.quids, userData!.quid!._id).profiles, interaction.guildId);
+				const p = getMapData(getMapData(u.quids, userData!.quid!.id).profiles, interaction.guildId);
 				p.hasQuest = true;
 			},
 		);
@@ -946,7 +946,7 @@ async function executeExploring(
 				...(exploreComponent ? [exploreComponent] : []),
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['new', ...(stringInput ? [stringInput] : []) as [string]]))
+						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.id, ['new', ...(stringInput ? [stringInput] : []) as [string]]))
 						.setLabel('Explore again')
 						.setStyle(ButtonStyle.Primary)),
 			],

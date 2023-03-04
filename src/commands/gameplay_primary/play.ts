@@ -81,7 +81,7 @@ export async function executePlaying(
 
 	if (await hasFullInventory(interaction, userData1, restEmbed, messageContent)) { return; }
 
-	const tutorialMapEntry = tutorialMap.get(userData1.quid._id + userData1.quidToServer.serverId);
+	const tutorialMapEntry = tutorialMap.get(userData1.quid.id + userData1.quidToServer.serverId);
 	const mentionedUserId = tutorialMapEntry === 2 ? undefined : interaction.isChatInputCommand() ? interaction.options.getUser('user')?.id : deconstructCustomId<CustomIdArgs>(interaction.customId)?.args[1];
 	if (userData1.quidToServer.tutorials.play === false && userData1.quidToServer.rank === RankType.Youngling && (tutorialMapEntry === undefined || tutorialMapEntry === 0)) {
 
@@ -94,12 +94,12 @@ export async function executePlaying(
 			components: [
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData1._id, ['new', ...(mentionedUserId ? [mentionedUserId] : []) as [string]]))
+						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData1.id, ['new', ...(mentionedUserId ? [mentionedUserId] : []) as [string]]))
 						.setLabel('I understand, let\'s try it out!')
 						.setStyle(ButtonStyle.Success)),
 			],
 		}, forceEdit ? 'update' : 'reply', (forceEdit && interaction.isMessageComponent()) ? interaction.message.id : undefined);
-		tutorialMap.set(userData1.quid._id + userData1.quidToServer.serverId, 1);
+		tutorialMap.set(userData1.quid.id + userData1.quidToServer.serverId, 1);
 		return;
 	}
 
@@ -126,7 +126,7 @@ export async function executePlaying(
 			.find(
 				u => Object.values(u.quids).filter(q => isEligableForPlaying(u, q, interaction.guildId)).length > 0,
 			))
-			.filter(u => u._id !== userData1?._id);
+			.filter(u => u.id !== userData1?.id);
 
 		if (usersEligibleForPlaying.length > 0) {
 
@@ -138,7 +138,7 @@ export async function executePlaying(
 
 					_userData2.servers[interaction.guildId] = {
 						...userDataServersObject(_userData2, interaction.guildId),
-						currentQuid: newCurrentQuid._id,
+						currentQuid: newCurrentQuid.id,
 					};
 				}
 			}
@@ -188,7 +188,7 @@ export async function executePlaying(
 
 				await userData2.update(
 					(u) => {
-						const p = getMapData(getMapData(u.quids, userData2!.quid!._id).profiles, interaction.guildId);
+						const p = getMapData(getMapData(u.quids, userData2!.quid!.id).profiles, interaction.guildId);
 						p.health += partnerHealthPoints;
 					},
 				);
@@ -255,12 +255,12 @@ export async function executePlaying(
 
 					await userData1.update(
 						(u) => {
-							const p = getMapData(getMapData(u.quids, userData1!.quid!._id).profiles, interaction.guildId);
+							const p = getMapData(getMapData(u.quids, userData1!.quid!.id).profiles, interaction.guildId);
 							p.tutorials.play = true;
 						},
 					);
 
-					tutorialMap.delete(userData1.quid._id + userData1.quidToServer.serverId);
+					tutorialMap.delete(userData1.quid.id + userData1.quidToServer.serverId);
 
 					whoWinsChance = 0;
 
@@ -382,7 +382,7 @@ export async function executePlaying(
 				/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
 				playComponent = plantGame.chosenRightButtonOverwrite(i.customId);
 
-				if (tutorialMapEntry === 1) { tutorialMap.set(userData1.quid._id + userData1.quidToServer.serverId, 2); }
+				if (tutorialMapEntry === 1) { tutorialMap.set(userData1.quid.id + userData1.quidToServer.serverId, 2); }
 
 				await userData1.update(
 					(u) => {
@@ -417,7 +417,7 @@ export async function executePlaying(
 
 		await userData1.update(
 			(u) => {
-				const p = getMapData(getMapData(u.quids, userData1.quid._id).profiles, interaction.guildId);
+				const p = getMapData(getMapData(u.quids, userData1.quid.id).profiles, interaction.guildId);
 				p.hasQuest = true;
 			},
 		);
@@ -427,7 +427,7 @@ export async function executePlaying(
 	}
 	else {
 
-		const tutorialMapEntry_ = tutorialMap.get(userData1.quid._id + userData1.quidToServer.serverId);
+		const tutorialMapEntry_ = tutorialMap.get(userData1.quid.id + userData1.quidToServer.serverId);
 		// This is an update when forceEdit is true, which it is only for the travel-regions command, else this is a reply
 		({ id: responseId } = await respond(buttonInteraction ?? interaction, {
 			content: messageContent,
@@ -442,7 +442,7 @@ export async function executePlaying(
 				...(playComponent ? [playComponent] : []),
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData1._id, ['new', ...(mentionedUserId ? [mentionedUserId] : []) as [string]]))
+						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData1.id, ['new', ...(mentionedUserId ? [mentionedUserId] : []) as [string]]))
 						.setLabel((tutorialMapEntry === 1 && tutorialMapEntry_ === 1) || (tutorialMapEntry === 2 && tutorialMapEntry_ === 2) ? 'Try again' : tutorialMapEntry === 1 && tutorialMapEntry_ === 2 ? 'Try another game' : 'Play again')
 						.setStyle(ButtonStyle.Primary)),
 			],

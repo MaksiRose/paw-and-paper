@@ -71,7 +71,7 @@ export async function hasCooldown(
 	user: User,
 	userToServer: UserToServer | undefined,
 	quid: Quid,
-	quidToServer: QuidToServer,
+	quidToServer: QuidToServer | undefined,
 ): Promise<boolean> {
 
 	if (userToServer?.hasCooldown === true) {

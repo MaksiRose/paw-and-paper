@@ -118,7 +118,7 @@ async function sendTravelMessage(
 		});
 	const travelComponent = new ActionRowBuilder<StringSelectMenuBuilder>()
 		.setComponents(new StringSelectMenuBuilder()
-			.setCustomId(`travel-regions_options_@${userData._id}`)
+			.setCustomId(`travel-regions_options_@${userData.id}`)
 			.setPlaceholder('Select a region to travel to')
 			.setOptions([
 				{ label: CurrentRegionType.SleepingDens, value: CurrentRegionType.SleepingDens, emoji: '💤' },
@@ -134,7 +134,7 @@ async function sendTravelMessage(
 
 		await userData.update(
 			(u) => {
-				const p = getMapData(getMapData(u.quids, quid._id).profiles, interaction.guildId);
+				const p = getMapData(getMapData(u.quids, quid.id).profiles, interaction.guildId);
 				p.currentRegion = chosenRegion;
 			},
 		);
@@ -149,7 +149,7 @@ async function sendTravelMessage(
 			embeds: [...restEmbed, embed],
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
-					.setCustomId(`travel-regions_rest_@${userData._id}`)
+					.setCustomId(`travel-regions_rest_@${userData.id}`)
 					.setLabel('Rest')
 					.setStyle(ButtonStyle.Primary))],
 		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original')).id;
@@ -173,11 +173,11 @@ async function sendTravelMessage(
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([
 					new ButtonBuilder()
-						.setCustomId(`travel-regions_inventory_@${userData._id}`)
+						.setCustomId(`travel-regions_inventory_@${userData.id}`)
 						.setLabel('View inventory')
 						.setStyle(ButtonStyle.Primary),
 					new ButtonBuilder()
-						.setCustomId(`travel-regions_store_@${userData._id}`)
+						.setCustomId(`travel-regions_store_@${userData.id}`)
 						.setLabel('Store items away')
 						.setStyle(ButtonStyle.Primary),
 				])],
@@ -212,7 +212,7 @@ async function sendTravelMessage(
 				travelComponent,
 				...(quidToServer.rank === RankType.Youngling ? [] : [new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(`travel-regions_heal_@${userData._id}`)
+						.setCustomId(`travel-regions_heal_@${userData.id}`)
 						.setLabel('Heal')
 						.setStyle(ButtonStyle.Primary))]),
 			],
@@ -246,7 +246,7 @@ async function sendTravelMessage(
 			embeds: [...restEmbed, embed],
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
-					.setCustomId(`travel-regions_drink_@${userData._id}`)
+					.setCustomId(`travel-regions_drink_@${userData.id}`)
 					.setLabel('Drink')
 					.setStyle(ButtonStyle.Primary))],
 		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original')).id;
@@ -269,7 +269,7 @@ async function sendTravelMessage(
 			embeds: [...restEmbed, embed],
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
-					.setCustomId(`travel-regions_play_@${userData._id}`)
+					.setCustomId(`travel-regions_play_@${userData.id}`)
 					.setLabel('Play')
 					.setStyle(ButtonStyle.Primary))],
 		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original')).id;

@@ -93,7 +93,7 @@ export const command: SlashCommand = {
 					iconURL: quid.avatarURL,
 				})
 				.setDescription(`*${quid.name} roams around the pack, looking if any dens need to be repaired.*`)],
-			components: [getDenButtons(userData._id)],
+			components: [getDenButtons(userData.id)],
 			fetchReply: true,
 		} : getMaterials(userData, serverData, chosenDen, restEmbed, messageContent));
 
@@ -131,7 +131,7 @@ export const command: SlashCommand = {
 			const isSuccessful = repairAmount > 0 && !isUnlucky(userData);
 
 			serverData = await serverModel.findOneAndUpdate(
-				s => s._id === serverData?._id,
+				s => s.id === serverData?.id,
 				(s) => {
 					s.inventory.materials[chosenItem] -= 1;
 					if (isSuccessful) { s.dens[chosenDen][repairKind] += repairAmount; }
@@ -222,11 +222,11 @@ function getMaterials(
 				.setFooter({ text: 'Choose one of the materials above to repair the den with it!' }),
 		],
 		components: [
-			getDenButtons(userData._id),
+			getDenButtons(userData.id),
 			...selectMenuOptions.length > 0
 				? [new ActionRowBuilder<StringSelectMenuBuilder>()
 					.setComponents(new StringSelectMenuBuilder()
-						.setCustomId(`repair_options_${chosenDen}_@${userData._id}`)
+						.setCustomId(`repair_options_${chosenDen}_@${userData.id}`)
 						.setPlaceholder('Select an item to repair the den with')
 						.addOptions(selectMenuOptions))]
 				: [],

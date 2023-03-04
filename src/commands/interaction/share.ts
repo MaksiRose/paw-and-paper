@@ -50,7 +50,7 @@ export const command: SlashCommand = {
 		const messageContent = remindOfAttack(interaction.guildId);
 
 		/* Checks whether the user has shared within the last two hours. */
-		const sharingCooldown = sharingCooldownAccountsMap.get(userData1.quid._id + interaction.guildId);
+		const sharingCooldown = sharingCooldownAccountsMap.get(userData1.quid.id + interaction.guildId);
 		if (sharingCooldown && Date.now() - sharingCooldown < twoHoursInMs) {
 
 			// This is always a reply
@@ -111,7 +111,7 @@ export const command: SlashCommand = {
 				.find(
 					u => Object.values(u.quids).filter(q => isEligableForSharing(u, q, interaction.guildId)).length > 0,
 				))
-				.filter(u => u._id !== userData1._id);
+				.filter(u => u.id !== userData1.id);
 
 			if (usersEligibleForSharing.length <= 0) {
 
@@ -136,7 +136,7 @@ export const command: SlashCommand = {
 					userDataServersObject;
 					_userData2.servers[interaction.guildId] = {
 						...userDataServersObject(_userData2, interaction.guildId),
-						currentQuid: newCurrentQuid._id,
+						currentQuid: newCurrentQuid.id,
 					};
 				}
 			}
@@ -160,7 +160,7 @@ export const command: SlashCommand = {
 		}
 
 		/* Add the sharing cooldown to user */
-		sharingCooldownAccountsMap.set(userData1.quid._id + interaction.guildId, Date.now());
+		sharingCooldownAccountsMap.set(userData1.quid.id + interaction.guildId, Date.now());
 
 		/* Change the condition for user 1 */
 		const decreasedStatsData = await changeCondition(userData1, 0, CurrentRegionType.Ruins);
@@ -169,7 +169,7 @@ export const command: SlashCommand = {
 		const experienceIncrease = getRandomNumber(Math.round(userData2.quidToServer.levels * 7.5), Math.round(userData2.quidToServer.levels * 2.5));
 		await userData2.update(
 			(u) => {
-				const p = getMapData(getMapData(u.quids, userData2.quid._id).profiles, interaction.guildId);
+				const p = getMapData(getMapData(u.quids, userData2.quid.id).profiles, interaction.guildId);
 				p.experience += experienceIncrease;
 			},
 		);

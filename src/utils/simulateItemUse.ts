@@ -121,7 +121,7 @@ function getNeededMedicineItems(
 		let healerArray1 = users.filter(u => {
 			return u.quidToServer.rank !== RankType.Youngling && u.quidToServer.health > 0 && u.quidToServer.energy > 0 && u.quidToServer.hunger > 0 && u.quidToServer.thirst > 0;
 		});
-		if (healerArray1.length > 1) { healerArray1 = healerArray1.filter(u => u._id !== user._id); }
+		if (healerArray1.length > 1) { healerArray1 = healerArray1.filter(u => u.id !== user.id); }
 		const healerArray2 = healerArray1.filter(u => !quidNeedsHealing(u));
 		const healer = healerArray2.length > 0 ? getArrayElement(healerArray2, getRandomNumber(healerArray2.length)) : healerArray1.length > 0 ? getArrayElement(healerArray1, getRandomNumber(healerArray1.length)) : undefined;
 		if (healer === undefined) { break; }

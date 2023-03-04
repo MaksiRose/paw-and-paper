@@ -46,7 +46,7 @@ export const command: SlashCommand = {
 		const messageContent = remindOfAttack(interaction.guildId);
 
 		/* Checks whether the user has shared within the last two hours. */
-		const recoverCooldown = recoverCooldownProfilesMap.get(quid._id + interaction.guildId);
+		const recoverCooldown = recoverCooldownProfilesMap.get(quid.id + interaction.guildId);
 		if (recoverCooldown && Date.now() - recoverCooldown < twelveHoursInMs) {
 
 			// This is always a reply
@@ -316,7 +316,7 @@ export const command: SlashCommand = {
 						}
 						else {
 
-							recoverCooldownProfilesMap.set(quid._id + interaction.guildId, Date.now());
+							recoverCooldownProfilesMap.set(quid.id + interaction.guildId, Date.now());
 
 							let injuryText = '';
 

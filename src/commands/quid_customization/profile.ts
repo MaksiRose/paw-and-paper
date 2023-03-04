@@ -1,19 +1,21 @@
-import { ActionRowBuilder, EmbedBuilder, GuildMember, InteractionReplyOptions, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
-import { capitalize, respond, userDataServersObject } from '../../utils/helperFunctions';
+import { ActionRowBuilder, EmbedBuilder, InteractionReplyOptions, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
+import { capitalize, respond } from '../../utils/helperFunctions';
 import { hasName, hasNameAndSpecies } from '../../utils/checkUserState';
-import { checkRoleCatchBlock } from '../../utils/checkRoleRequirements';
 import { hasCooldown, checkResting } from '../../utils/checkValidity';
-import { getMapData } from '../../utils/helperFunctions';
 import { disableCommandComponent } from '../../utils/componentDisabling';
-import { hasPermission, missingPermissions } from '../../utils/permissionHandler';
-import { client, commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../..';
+import { missingPermissions } from '../../utils/permissionHandler';
+import { client } from '../..';
 import { SlashCommand } from '../../typings/handle';
-import { CurrentRegionType, RankType } from '../../typings/data/user';
 import { constructCustomId, constructSelectOptions, deconstructCustomId, deconstructSelectOptions } from '../../utils/customId';
 import Quid from '../../models/quid';
 import { getDisplayname, getDisplayspecies } from '../../utils/getQuidInfo';
 import Group from '../../models/group';
 import GroupToQuid from '../../models/groupToQuid';
+import DiscordUser from '../../models/discordUser';
+import User from '../../models/user';
+import UserToServer from '../../models/userToServer';
+import QuidToServer from '../../models/quidToServer';
+import { generateId } from 'crystalid';
 const { error_color } = require('../../../config.json');
 
 export type CustomIdArgs = ['accountselect' | 'learnabout', string]
@@ -32,20 +34,39 @@ export const command: SlashCommand = {
 	position: 9,
 	disablePreviousCommand: false, // This command has checks in place that only change something if no other command is active
 	modifiesServerProfile: false,
-	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, discordUser, server }) => {
 
 		/* Getting userData and quid either for mentionedUser if there is one or for interaction user otherwise */
 		const mentionedUser = interaction.options.getUser('user');
-		const _userData = (() => {
-			try { return userModel.findOne(u => Object.keys(u.userIds).includes(!mentionedUser ? interaction.user.id : mentionedUser.id)); }
-			catch { return null; }
-		})();
-		userData = _userData === null ? null : getUserData(_userData, interaction.guildId || 'DMs', _quids[_userData.servers[interaction.guildId || 'DMs']?.currentQuid ?? '']);
+
+		discordUser = (!mentionedUser || mentionedUser.id === interaction.user.id) ? discordUser : await DiscordUser.findByPk(interaction.user.id, {
+			include: [{ model: User, as: 'user' }],
+		}) ?? undefined;
+
+		const isYourself = (user?.id === discordUser?.user.id);
+		user = discordUser?.user;
+
+		userToServer = isYourself ? userToServer : (user && server)
+			? (await UserToServer.findOne({
+				where: { userId: user.id, serverId: server.id },
+				include: [{ model: Quid, as: 'activeQuid' }],
+			})) ?? undefined
+			: undefined;
+
+		quid = isYourself ? quid : (user && !server)
+			? (user.lastGlobalActiveQuidId ? ((await Quid.findByPk(user.lastGlobalActiveQuidId)) ?? undefined) : undefined)
+			: (userToServer?.activeQuid ?? undefined);
+
+		quidToServer = isYourself ? quidToServer : (quid && interaction.inGuild())
+			? (await QuidToServer.findOne({
+				where: { quidId: quid.id, serverId: interaction.guildId },
+			})) ?? undefined
+			: undefined;
 
 		/* Responding if there is no userData */
-		if (!userData) {
+		if (!user || !discordUser) {
 
-			if (!mentionedUser) { hasName(userData, interaction); } // This is always a reply
+			if (!mentionedUser) { hasName(undefined, { interaction, hasQuids: false }); } // This is always a reply
 			else {
 
 				// Thix is always a reply
@@ -58,10 +79,10 @@ export const command: SlashCommand = {
 			return;
 		}
 		/* Checking if the user has a cooldown. */
-		else if (hasNameAndSpecies(userData) && interaction.inCachedGuild() && await hasCooldown(interaction, userData)) { return; } // This is always a reply
+		else if (hasNameAndSpecies(quid) && interaction.inCachedGuild() && await hasCooldown(interaction, user, userToServer, quid, quidToServer)) { return; } // This is always a reply
 
-		const response = await getProfileMessageOptions(mentionedUser?.id || interaction.user.id, userData, Object.keys(userData.userIds).includes(interaction.user.id));
-		const selectMenu = getQuidSelectMenu(userData, mentionedUser?.id || interaction.user.id, interaction.user.id, 0, Object.keys(userData.userIds).includes(interaction.user.id));
+		const response = await getProfileMessageOptions(discordUser.id, quid, isYourself, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user });
+		const selectMenu = await getQuidSelectMenu(discordUser.id, interaction.user.id, 0, quid === undefined, isYourself);
 
 		// This is always a reply
 		await respond(interaction, {
@@ -69,7 +90,7 @@ export const command: SlashCommand = {
 			components: (selectMenu.options.length > 0) ? [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([selectMenu])] : [],
 		});
 	},
-	async sendMessageComponentResponse(interaction) {
+	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer, discordUser, server }) {
 
 		if (await missingPermissions(interaction, [
 			'ViewChannel', // Needed because of disableCommandComponent
@@ -78,14 +99,38 @@ export const command: SlashCommand = {
 		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
 		if (!customId) { return; }
 
-		/* Getting the userData from the customId */
-		let _userData = await userModel.findOne(u => Object.keys(u.userIds).includes(customId.args[1]));
-		let userData = getUserData(_userData, interaction.guildId || 'DMs', _quids[_userData.servers[interaction.guildId || 'DMs']?.currentQuid ?? '']);
+
+		/* Getting userData and quid either for mentionedUser if there is one or for interaction user otherwise */
+		const mentionedUserId = customId.args[1];
+		discordUser = mentionedUserId === interaction.user.id ? discordUser : await DiscordUser.findByPk(interaction.user.id, {
+			include: [{ model: User, as: 'user' }],
+		}) ?? undefined;
+
+		const isYourself = (user?.id === discordUser?.user.id);
+		user = discordUser?.user;
+
+		userToServer = isYourself ? userToServer : (user && server)
+			? (await UserToServer.findOne({
+				where: { userId: user.id, serverId: server.id },
+				include: [{ model: Quid, as: 'activeQuid' }],
+			})) ?? undefined
+			: undefined;
+
+		quid = isYourself ? quid : (user && !server)
+			? (user.lastGlobalActiveQuidId ? ((await Quid.findByPk(user.lastGlobalActiveQuidId)) ?? undefined) : undefined)
+			: (userToServer?.activeQuid ?? undefined);
+
+		quidToServer = isYourself ? quidToServer : (quid && interaction.inGuild())
+			? (await QuidToServer.findOne({
+				where: { quidId: quid.id, serverId: interaction.guildId },
+			})) ?? undefined
+			: undefined;
+
 
 		/* Checking if the user clicked the "Learn more" button, and if they did, copy the message to their DMs, but with the select Menu as a component instead of the button. */
 		if (interaction.isButton() && customId.args[0] === 'learnabout') {
 
-			const selectMenu = getQuidSelectMenu(userData, customId.args[1], interaction.user.id, 0, Object.keys(userData.userIds).includes(interaction.user.id));
+			const selectMenu = await getQuidSelectMenu(mentionedUserId, interaction.user.id, 0, quid === undefined, isYourself);
 
 			await Promise.all([
 				interaction.deferUpdate(),
@@ -106,13 +151,9 @@ export const command: SlashCommand = {
 		/* Checking if the user has clicked on the "Show more accounts" button, and if they have, it will increase the page number by 1, and if the page number is greater than the total number of pages, it will set the page number to 0. Then, it will edit the bot reply to show the next page of accounts. */
 		if (interaction.isStringSelectMenu() && selectOptionId[0] === 'nextpage') {
 
-			/* Getting the quidsPage from the value Id, incrementing it by one or setting it to zero if the page number is bigger than the total amount of pages. */
-			let quidsPage = Number(selectOptionId[1]) + 1;
-			if (quidsPage >= Math.ceil((quids.size + 1) / 24)) { quidsPage = 0; }
-
 			// This is always an update to the message with the select menu
 			await respond(interaction, {
-				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([getQuidSelectMenu(userData, customId.args[1], interaction.user.id, quidsPage, Object.keys(userData.userIds).includes(interaction.user.id))])],
+				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([await getQuidSelectMenu(mentionedUserId, interaction.user.id, Number(selectOptionId[1]) + 1, quid === undefined, isYourself)])],
 			}, 'update', interaction.message.id);
 			return;
 		}
@@ -122,8 +163,10 @@ export const command: SlashCommand = {
 
 			await interaction.deferUpdate();
 
+			if (!user) { throw new TypeError('user is undefined'); }
+
 			/* Checking if the user is on a cooldown, and if they are, it will respond that they can't switch quids. */
-			if (userData.serverInfo?.hasCooldown === true) {
+			if (userToServer?.hasCooldown === true) {
 
 				// This is always an editReply to the message with the select menu (due to deferUpdate)
 				await respond(interaction, {
@@ -134,119 +177,42 @@ export const command: SlashCommand = {
 			}
 
 			/* It's disabling all components of the previous message. */
-			await disableCommandComponent(userData);
+			if (userToServer) { await disableCommandComponent(userToServer); }
 
 			/* Checking if the user is resting, and if they are, it will stop the resting. */
-			const oldRoles = [...quid?.profile?.roles || []];
-			if (interaction.inCachedGuild() && hasNameAndSpecies(userData)) {
+			if (interaction.inCachedGuild() && hasNameAndSpecies(quid) && userToServer && quidToServer) {
 
-				await checkResting(interaction, userData);
+				await checkResting(interaction, user, userToServer, quid, quidToServer);
 			}
 
 			/* Getting the old quid and the id of the quid the user has clicked on. Then it is updating the user's current quid to the quid they have clicked on. Then it is getting the new quid and profile. */
 			const quidId = selectOptionId[1]; // this is either an id, an empty string if empty slot
-			_userData = await userModel.findOneAndUpdate(
-				u => u._id === _userData._id,
-				(u) => {
-					u.servers[interaction.guildId || 'DMs'] = {
-						...userDataServersObject(u, interaction.guildId || 'DMs'),
-						currentQuid: quidId || null,
-					};
-					if (quidId) {
-						// eslint-disable-next-line deprecation/deprecation
-						u.currentQuid[interaction.guildId || 'DMs'] = quidId;
-					}
-					// eslint-disable-next-line deprecation/deprecation
-					else { delete u.currentQuid[interaction.guildId || 'DMs']; }
-				},
-			);
-			userData = getUserData(_userData, interaction.guildId || 'DMs', _quids[quidId]);
+			if (interaction.inGuild()) {
+
+				if (!userToServer) { throw new TypeError('userToServer is undefined'); }
+				await userToServer.update({ activeQuidId: quidId || null });
+			}
+			else { await user.update({ lastGlobalActiveQuidId: quidId || null }); }
+
+			quid = quidId === '' ? undefined : await Quid.findByPk(quidId) ?? undefined;
+			quidToServer = (quid === undefined || !interaction.inGuild()) ? undefined : await QuidToServer.findOne({ where: { quidId: quid.id, serverId: interaction.guildId } }) ?? undefined;
 
 			/* Getting the new quid data, and then it is checking if the user has clicked on an account, and if they have, it will add the roles of the account to the user. */
-
-			if (interaction.inCachedGuild()) {
-
-				const member = (interaction.member instanceof GuildMember) ? interaction.member : (await interaction.guild.members.fetch(interaction.user.id));
+			if (interaction.inGuild()) {
 
 				/* If the new quid isn't empty, create a profile is necessary and add roles the user doesn't have from the new profile if necessary. */
-				if (hasName(userData)) {
+				if (hasName(quid) && !quidToServer) {
 
 					/* Checking if there is no profile, and if there isn't, create one. */
-					await userData.update(
-						(u) => {
-							const q = getMapData(u.quids, quidId);
-							const p = q.profiles[interaction.guildId];
-							if (!p) {
-								q.profiles[interaction.guildId] = {
-									serverId: interaction.guildId,
-									rank: RankType.Youngling,
-									levels: 1,
-									experience: 0,
-									health: 100,
-									energy: 100,
-									hunger: 100,
-									thirst: 100,
-									maxHealth: 100,
-									maxEnergy: 100,
-									maxHunger: 100,
-									maxThirst: 100,
-									temporaryStatIncrease: {},
-									isResting: false,
-									hasQuest: false,
-									currentRegion: CurrentRegionType.Ruins,
-									unlockedRanks: 0,
-									tutorials: { play: false, explore: false },
-									sapling: { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null, lastMessageChannelId: null, sentReminder: false, sentGentleReminder: false },
-									injuries: { wounds: 0, infections: 0, cold: false, sprains: 0, poison: false },
-									inventory: {
-										commonPlants: Object.fromEntries(Object.keys(commonPlantsInfo).map(k => [k, 0]).sort()) as Record<keyof typeof commonPlantsInfo, number>,
-										uncommonPlants: Object.fromEntries(Object.keys(uncommonPlantsInfo).map(k => [k, 0]).sort()) as Record<keyof typeof uncommonPlantsInfo, number>,
-										rarePlants: Object.fromEntries(Object.keys(rarePlantsInfo).map(k => [k, 0]).sort()) as Record<keyof typeof rarePlantsInfo, number>,
-										specialPlants: Object.fromEntries(Object.keys(specialPlantsInfo).map(k => [k, 0]).sort()) as Record<keyof typeof specialPlantsInfo, number>,
-										meat: Object.fromEntries(Object.keys(speciesInfo).map(k => [k, 0]).sort()) as Record<keyof typeof speciesInfo, number>,
-										materials: Object.fromEntries(Object.keys(materialsInfo).map(k => [k, 0]).sort()) as Record<keyof typeof materialsInfo, number>,
-									},
-									roles: [],
-									skills: { global: {}, personal: {} },
-									lastActiveTimestamp: 0,
-									passedOutTimestamp: 0,
-								};
-							}
-						},
-					);
-
-					/* Checking if the user does not have roles from the new profile, and if they don't, it will add them. */
-					try {
-
-						for (const role of (quidToServer?.roles ?? [])) {
-
-							if (await hasPermission(interaction.guild.members.me ?? interaction.client.user.id, interaction.channelId, 'ManageRoles') === false) { break; }
-							if (!member.roles.cache.has(role.roleId)) { await member.roles.add(role.roleId); }
-						}
-					}
-					catch (error) {
-						await checkRoleCatchBlock(error, interaction, member);
-					}
+					quidToServer = await QuidToServer.create({ id: generateId(), serverId: interaction.guildId, quidId: quid.id });
 				}
-
-				/* Checking if the user has any roles from the old profile, and if they do, it will remove them. */
-				try {
-
-					for (const role of oldRoles) {
-
-						if (await hasPermission(interaction.guild.members.me ?? interaction.client.user.id, interaction.channelId, 'ManageRoles') === false) { break; }
-						const isInNewRoles = quid?.profile?.roles.some(r => r.roleId === role.roleId && r.wayOfEarning === role.wayOfEarning && r.requirement === role.requirement) || false;
-						if (!isInNewRoles && member.roles.cache.has(role.roleId)) { await member.roles.remove(role.roleId); }
-					}
-				}
-				catch (error) { await checkRoleCatchBlock(error, interaction, member); }
 			}
 
 			// This is always an editReply to the message with the select menu (due to deferUpdate)
 			await respond(interaction, {
 				// we can interaction.user.id because the "switchto" option is only available to yourself
-				...await getProfileMessageOptions(interaction.user.id, userData, Object.keys(userData.userIds).includes(interaction.user.id)),
-				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([getQuidSelectMenu(userData, customId.args[1], interaction.user.id, 0, Object.keys(userData.userIds).includes(interaction.user.id))])],
+				...await getProfileMessageOptions(interaction.user.id, quid, isYourself, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user }),
+				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([await getQuidSelectMenu(mentionedUserId, interaction.user.id, 0, quid === undefined, isYourself)])],
 			}, 'update', interaction.message.id);
 
 			// This is always a followUp
@@ -262,11 +228,17 @@ export const command: SlashCommand = {
 
 			/* Getting the userData from the customId */
 			const quidId = selectOptionId[1];
-			userData = getUserData(_userData, interaction.guildId || 'DMs', _quids[quidId]);
+			quid = await Quid.findByPk(quidId, { rejectOnEmpty: true });
+
+			quidToServer = interaction.inGuild()
+				? (await QuidToServer.findOne({
+					where: { quidId: quid.id, serverId: interaction.guildId },
+				})) ?? undefined
+				: undefined;
 
 			// This is always an update to the message with the select menu
 			await respond(interaction, {
-				...await getProfileMessageOptions(customId.args[1], userData, Object.keys(userData.userIds).includes(interaction.user.id)),
+				...await getProfileMessageOptions(interaction.user.id, quid, isYourself, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user }),
 				components: interaction.message.components,
 			}, 'update', interaction.message.id);
 			return;
@@ -284,10 +256,10 @@ export const command: SlashCommand = {
  */
 export async function getProfileMessageOptions(
 	userId: string,
-	quid: Quid | null,
+	quid: Quid | undefined,
 	isYourself: boolean,
-	embedArray: Array<EmbedBuilder> = [],
 	options: Parameters<typeof getDisplayname>[1],
+	embedArray: Array<EmbedBuilder> = [],
 ): Promise<InteractionReplyOptions> {
 
 	const pronouns = quid ? JSON.parse(JSON.stringify(quid.pronouns_en)) as string[][] : [];
@@ -332,22 +304,24 @@ export async function getProfileMessageOptions(
  * @param userData - The database entry of the user whose profile is displayed.
  * @param userId - The user ID of the user whose profile is displayed. This is used to get the database entry again when something is selected
  * @param executorId - The user ID of the user who executed the command. This is used to know who whether the person selecting from the select menu can do so.
- * @param quidsPage - The current page of quids the user is on.
+ * @param page - The current page of quids the user is on.
  * @param isYourself - Whether the profile belongs to the person requesting the info.
  * @returns A StringSelectMenuBuilder object
  */
-function getQuidSelectMenu(
-	userData: UserData<undefined, ''>,
+async function getQuidSelectMenu(
 	userId: string,
 	executorId: string,
-	quidsPage: number,
+	page: number,
+	hasNoSelectedQuid: boolean,
 	isYourself: boolean,
-): StringSelectMenuBuilder {
+): Promise<StringSelectMenuBuilder> {
+
+	const quids = await Quid.findAll({ where: { userId: userId } });
 
 	let quidOptions: RestOrArray<SelectMenuComponentOptionData> = quids.map(quid => ({
 		label: quid.name,
-		value: constructSelectOptions<SelectOptionArgs>([isYourself ? 'switchto' : 'view', quid._id]),
-		default: quid?._id === quid._id ? true : false,
+		value: constructSelectOptions<SelectOptionArgs>([isYourself ? 'switchto' : 'view', quid.id]),
+		default: quid?.id === quid.id ? true : false,
 	}));
 
 	if (isYourself) {
@@ -355,17 +329,21 @@ function getQuidSelectMenu(
 		quidOptions.push({
 			label: 'Empty Slot',
 			value: constructSelectOptions<SelectOptionArgs>(['switchto', '']),
-			default: quid === undefined ? true : false,
+			default: hasNoSelectedQuid,
 		});
 	}
 
 	if (quidOptions.length > 25) {
 
-		quidOptions = quidOptions.splice(quidsPage * 24, 24);
+		const pageCount = Math.ceil(quidOptions.length / 24);
+		page = page % pageCount;
+		if (page < 0) { page += pageCount; }
+
+		quidOptions = quidOptions.splice(page * 24, 24);
 		quidOptions.push({
 			label: 'Show more quids',
-			value: constructSelectOptions<SelectOptionArgs>(['nextpage', `${quidsPage}`]),
-			description: `You are currently on page ${quidsPage + 1}`,
+			value: constructSelectOptions<SelectOptionArgs>(['nextpage', `${page}`]),
+			description: `You are currently on page ${page + 1}`,
 			emoji: '📋',
 		});
 	}

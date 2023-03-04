@@ -64,7 +64,7 @@ async function getFriendshipTexts(
 	const allFriendedUsersList = await userModel.find(
 		u => {
 			return Object.values(u.quids).filter(q => {
-				return Object.keys(quid.mentions).includes(q._id) || Object.keys(q.mentions).includes(quid._id);
+				return Object.keys(quid.mentions).includes(q.id) || Object.keys(q.mentions).includes(quid.id);
 			}).length > 0;
 		},
 	);
@@ -72,7 +72,7 @@ async function getFriendshipTexts(
 	/** An array of quids who are friends with the user who executed the command by their quid ID. */
 	const friendshipList = [...new Set([
 		...Object.keys(quid.mentions),
-		...allFriendedUsersList.map(u => Object.values(u.quids).filter(q => Object.keys(q.mentions).includes(quid._id)).map(q => q._id)).flat(),
+		...allFriendedUsersList.map(u => Object.values(u.quids).filter(q => Object.keys(q.mentions).includes(quid.id)).map(q => q.id)).flat(),
 	])];
 
 	const friendshipTexts: string[] = [];
@@ -85,8 +85,8 @@ async function getFriendshipTexts(
 
 		/* Updating the mentions and extracting them from the new userData. */
 		await checkOldMentions(userData, otherUserData);
-		const userDataMentions = quids.get(quid._id)?.mentions[_id] ?? [];
-		const otherUserDataMentions = otherUserData.quids.get(_id)?.mentions[quid._id] ?? [];
+		const userDataMentions = quids.get(quid.id)?.mentions[_id] ?? [];
+		const otherUserDataMentions = otherUserData.quids.get(_id)?.mentions[quid.id] ?? [];
 
 		/* Getting the current friendship points and hearts. Skips to the next iteration if there is no friendship hearts. */
 		const friendshipPoints = getFriendshipPoints(userDataMentions, otherUserDataMentions);
@@ -135,11 +135,11 @@ async function getFriendshipMessage(
 			[new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([
 					new ButtonBuilder()
-						.setCustomId(`friendships_left_${page}_@${userData._id}`)
+						.setCustomId(`friendships_left_${page}_@${userData.id}`)
 						.setEmoji('⬅️')
 						.setStyle(ButtonStyle.Secondary),
 					new ButtonBuilder()
-						.setCustomId(`friendships_right_${page}_@${userData._id}`)
+						.setCustomId(`friendships_right_${page}_@${userData.id}`)
 						.setEmoji('➡️')
 						.setStyle(ButtonStyle.Secondary),
 				])] :

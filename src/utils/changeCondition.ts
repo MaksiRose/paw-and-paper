@@ -203,7 +203,7 @@ export function addExperience(
 
 	userData.update(
 		(u) => {
-			const p = getMapData(getMapData(u.quids, quid._id).profiles, quidToServer.serverId);
+			const p = getMapData(getMapData(u.quids, quid.id).profiles, quidToServer.serverId);
 			p.experience += experienceIncrease;
 		},
 	);
@@ -249,7 +249,7 @@ export async function changeCondition(
 
 		await userData.update(
 			(u) => {
-				const p = getMapData(getMapData(u.quids, quid._id).profiles, quidToServer.serverId);
+				const p = getMapData(getMapData(u.quids, quid.id).profiles, quidToServer.serverId);
 				p.health -= totalHealthDecrease;
 				p.injuries = modifiedInjuryObject;
 				p.energy -= energyDecrease;
@@ -291,7 +291,7 @@ export async function infectWithChance(
 
 		await userData1.update(
 			(u) => {
-				const p = getMapData(getMapData(u.quids, userData1.quid._id).profiles, userData1.quidToServer.serverId);
+				const p = getMapData(getMapData(u.quids, userData1.quid.id).profiles, userData1.quidToServer.serverId);
 				p.health -= healthPoints;
 				p.injuries.cold = true;
 			},

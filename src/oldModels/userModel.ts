@@ -340,7 +340,7 @@
 // ): UserData<U extends QuidSchema<T> ? never : undefined, T> {
 
 // 	const user: UserData<U extends QuidSchema<T> ? never : undefined, T> = {
-// 		_id: userData._id,
+// 		_id: userData.id,
 // 		userIds: userData.userIds,
 // 		tag: {
 // 			global: userData.tag.global,
@@ -356,7 +356,7 @@
 // 			accessibility: userData.settings.accessibility,
 // 		},
 // 		quid: (quidData === undefined ? undefined : {
-// 			_id: quidData._id,
+// 			_id: quidData.id,
 // 			name: quidData.name,
 // 			nickname: {
 // 				global: quidData.nickname.global,
@@ -416,11 +416,11 @@
 // 		): void {
 
 // 			userData = userModel.findOneAndUpdate(
-// 				u => u._id === userData._id,
+// 				u => u.id === userData.id,
 // 				updateFunction,
 // 				options,
 // 			);
-// 			const player = getUserData(userData, server_id, quids[quidData?._id ?? '']);
+// 			const player = getUserData(userData, server_id, quids[quidData?.id ?? '']);
 // 			Object.assign(this, player);
 // 		},
 // 	};

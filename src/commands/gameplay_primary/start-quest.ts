@@ -183,7 +183,7 @@ async function startQuest(
 
 	await userData.update(
 		(u) => {
-			const p = getMapData(getMapData(u.quids, quid._id).profiles, interaction.guildId);
+			const p = getMapData(getMapData(u.quids, quid.id).profiles, interaction.guildId);
 			p.hasQuest = false;
 		},
 	);
@@ -339,7 +339,7 @@ async function startQuest(
 
 				await userData.update(
 					(u) => {
-						const p = getMapData(getMapData(u.quids, quid._id).profiles, interaction.guildId);
+						const p = getMapData(getMapData(u.quids, quid.id).profiles, interaction.guildId);
 						p.unlockedRanks += 1;
 					},
 				);
@@ -421,7 +421,7 @@ async function startQuest(
 
 				await userData.update(
 					(u) => {
-						const p = getMapData(getMapData(u.quids, quid._id).profiles, interaction.guildId);
+						const p = getMapData(getMapData(u.quids, quid.id).profiles, interaction.guildId);
 						p.maxHealth += maxHealthPoints;
 						p.maxEnergy += maxEnergyPoints;
 						p.maxHunger += maxHungerPoints;

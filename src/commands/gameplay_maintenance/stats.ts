@@ -105,7 +105,7 @@ async function sendStatsMessage(
 
 	const components = new ActionRowBuilder<ButtonBuilder>()
 		.setComponents([new ButtonBuilder()
-			.setCustomId(`stats_refresh_${quid._id}_@${creatorUserId}`)
+			.setCustomId(`stats_refresh_${quid.id}_@${creatorUserId}`)
 			.setEmoji('🔁')
 			.setStyle(ButtonStyle.Secondary),
 		new ButtonBuilder()

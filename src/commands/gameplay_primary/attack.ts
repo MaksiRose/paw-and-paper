@@ -235,7 +235,7 @@ async function executeAttacking(
 				}
 
 				serverData = await serverModel.findOneAndUpdate(
-					s => s._id === serverData._id,
+					s => s.id === serverData.id,
 					(s) => s.inventory = inventory_,
 				);
 			}
@@ -263,7 +263,7 @@ async function executeAttacking(
 
 				await userData.update(
 					(u) => {
-						const p = getMapData(getMapData(u.quids, quid._id).profiles, interaction.guildId);
+						const p = getMapData(getMapData(u.quids, quid.id).profiles, interaction.guildId);
 						p.health -= healthPoints;
 						p.injuries = quidToServer.injuries;
 					},
@@ -287,7 +287,7 @@ async function executeAttacking(
 			components: [fightGame.fightComponent,
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['new']))
+						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.id, ['new']))
 						.setLabel('Attack again')
 						.setStyle(ButtonStyle.Primary))],
 		}, 'update', newInteraction?.message.id ?? getMessageId(botReply));
@@ -319,7 +319,7 @@ async function executeAttacking(
 		serverMap.delete(interaction.guild.id);
 
 		serverData = await serverModel.findOneAndUpdate(
-			s => s._id === serverData?._id,
+			s => s.id === serverData?.id,
 			(s) => s.nextPossibleAttack = Date.now() + 86_400_000, // 24 hours
 		);
 	}
@@ -397,7 +397,7 @@ export async function startAttack(
 					if (footerText.length > 0) { embed.setFooter({ text: footerText }); }
 
 					serverData = await serverModel.findOneAndUpdate(
-						s => s._id === serverData._id,
+						s => s.id === serverData.id,
 						(s) => { s.inventory = inventory_; },
 					);
 
@@ -505,7 +505,7 @@ async function remainingHumans(
 	serverMap.delete(interaction.guild.id);
 
 	serverData = await serverModel.findOneAndUpdate(
-		s => s._id === serverData._id,
+		s => s.id === serverData.id,
 		(s) => {
 			s.inventory = inventory_,
 			s.nextPossibleAttack = Date.now() + 86_400_000; // 24 hours

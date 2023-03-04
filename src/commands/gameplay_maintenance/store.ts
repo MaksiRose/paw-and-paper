@@ -73,7 +73,7 @@ export const command: SlashCommand = {
 
 				const amountSelectMenu = new ActionRowBuilder<StringSelectMenuBuilder>()
 					.setComponents(new StringSelectMenuBuilder()
-						.setCustomId(`store_amount_@${userData._id}`)
+						.setCustomId(`store_amount_@${userData.id}`)
 						.setPlaceholder('Select the amount to store away')
 						.setOptions(amountSelectMenuOptions));
 
@@ -109,7 +109,7 @@ export const command: SlashCommand = {
 				);
 
 				serverData = await serverModel.findOneAndUpdate(
-					s => s._id === serverData?._id,
+					s => s.id === serverData?.id,
 					(s) => {
 						s.inventory = serverInventory;
 					},
@@ -220,13 +220,13 @@ function getOriginalComponents(
 
 	const itemSelectMenu = new ActionRowBuilder<StringSelectMenuBuilder>()
 		.setComponents(new StringSelectMenuBuilder()
-			.setCustomId(`store_options_@${userData._id}`)
+			.setCustomId(`store_options_@${userData.id}`)
 			.setPlaceholder('Select an item to store away')
 			.setOptions(itemSelectMenuOptions));
 
 	const storeAllButton = new ActionRowBuilder<ButtonBuilder>()
 		.setComponents(new ButtonBuilder()
-			.setCustomId(`store_all_@${userData._id}`)
+			.setCustomId(`store_all_@${userData.id}`)
 			.setLabel('Store everything')
 			.setStyle(ButtonStyle.Success));
 	return { itemSelectMenu, storeAllButton };
@@ -269,7 +269,7 @@ async function storeAll(
 	);
 
 	serverData = await serverModel.findOneAndUpdate(
-		s => s._id === serverData._id,
+		s => s.id === serverData.id,
 		(s) => {
 			s.inventory = serverInventory;
 		},

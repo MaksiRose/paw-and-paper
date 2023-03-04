@@ -98,7 +98,7 @@ export async function startResting(
 
 	const component = new ActionRowBuilder<ButtonBuilder>()
 		.setComponents(new ButtonBuilder()
-			.setCustomId(`user-settings_reminders_resting_${userData.settings.reminders.resting === true ? 'off' : 'on'}_@${userData._id}`)
+			.setCustomId(`user-settings_reminders_resting_${userData.settings.reminders.resting === true ? 'off' : 'on'}_@${userData.id}`)
 			.setLabel(`Turn automatic resting pings ${userData.settings.reminders.resting === true ? 'off' : 'on'}`)
 			.setStyle(ButtonStyle.Secondary));
 	const prePreviousRegionText = 'You are now at the ';
@@ -168,8 +168,8 @@ export async function startResting(
 	}
 
 	// This is just a safety net to make absolutely sure that no two restingIntervals are running at the same time
-	clearInterval(restingIntervalMap.get(userData._id + quidToServer.serverId));
-	restingIntervalMap.delete(userData._id + quidToServer.serverId);
+	clearInterval(restingIntervalMap.get(userData.id + quidToServer.serverId));
+	restingIntervalMap.delete(userData.id + quidToServer.serverId);
 
 	const intervalId = setInterval(async function(): Promise<void> {
 		try {
@@ -222,7 +222,7 @@ export async function startResting(
 			else { console.error(error); }
 		}
 	}, 30_000 + await getExtraRestingTime(serverData.serverId));
-	restingIntervalMap.set(userData._id + quidToServer.serverId, intervalId);
+	restingIntervalMap.set(userData.id + quidToServer.serverId, intervalId);
 }
 
 /**

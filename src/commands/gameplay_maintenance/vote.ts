@@ -59,7 +59,7 @@ export const command: SlashCommand = {
 					]),
 				new ActionRowBuilder<StringSelectMenuBuilder>()
 					.setComponents(new StringSelectMenuBuilder()
-						.setCustomId(`vote_options_@${userData._id}`)
+						.setCustomId(`vote_options_@${userData.id}`)
 						.setPlaceholder('Select the site on which you voted')
 						.setOptions([
 							{ label: 'top.gg', value: 'top.gg' },

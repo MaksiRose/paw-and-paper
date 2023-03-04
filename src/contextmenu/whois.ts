@@ -53,7 +53,7 @@ export const command: ContextMenuCommand = {
 		const targetQuid = webhookQuid ?? (targetUser ? (await UserToServer.findOne({
 			where: { serverId: interaction.guildId, userId: targetUser.id },
 			include: [{ model: Quid, as: 'activeQuid' }],
-		}))?.activeQuid ?? null : null);
+		}))?.activeQuid ?? undefined : undefined);
 		const targetDiscordUserId = webhookDiscordUserId ?? interaction.targetMessage.author.id;
 
 		if (targetUser === undefined) {
@@ -83,7 +83,7 @@ export const command: ContextMenuCommand = {
 			}])
 			.setTimestamp(new Date())];
 
-		const response = await getProfileMessageOptions(targetDiscordUserId, targetQuid, targetDiscordUserId === interaction.user.id, embedArray, { serverId: interaction.guildId, user: targetUser });
+		const response = await getProfileMessageOptions(targetDiscordUserId, targetQuid, targetDiscordUserId === interaction.user.id, { serverId: interaction.guildId, user: targetUser }, embedArray);
 
 		// This is always a reply
 		await respond(interaction, {

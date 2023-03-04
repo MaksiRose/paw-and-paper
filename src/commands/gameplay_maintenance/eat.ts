@@ -269,7 +269,7 @@ export async function sendEatMessage(
 	);
 
 	serverData = await serverModel.findOneAndUpdate(
-		s => s._id === serverData._id,
+		s => s.id === serverData.id,
 		(s) => {
 			s.inventory = inventory_;
 		},

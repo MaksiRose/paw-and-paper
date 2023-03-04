@@ -40,9 +40,9 @@ export async function execute(): Promise<void> {
 						if (Number(timestamp) < Date.now() - 604_800_000) {
 
 							userModel.findOneAndUpdate(
-								u => u._id === userData._id,
+								u => u.id === userData.id,
 								(u) => {
-									const p = getMapData(getMapData(u.quids, quidData._id).profiles, profileData.serverId);
+									const p = getMapData(getMapData(u.quids, quidData.id).profiles, profileData.serverId);
 									p[statKind] -= 10;
 									const stat = (statKind.replace('max', '').toLowerCase()) as 'health' | 'energy' | 'hunger' | 'thirst';
 									if (p[stat] > p[statKind]) { p[stat] = p[statKind]; }
@@ -86,14 +86,14 @@ export async function execute(): Promise<void> {
 				const hasNoCooldown = userData.serverInfo?.hasCooldown !== true;
 				if (lastInteractionIsTenMinutesAgo && isResting(userData) === false && hasLessThanMaxEnergy && isConscious && hasNoCooldown) {
 
-					const lastInteraction = lastInteractionMap.get(userData._id + guildId);
+					const lastInteraction = lastInteractionMap.get(userData.id + guildId);
 					await startResting(lastInteraction, userData, serverData, '', true)
 						.catch(async (error) => {
 							if (lastInteraction !== undefined) {
 
 								await sendErrorMessage(lastInteraction, error)
 									.catch(e => { console.error(e); });
-								lastInteractionMap.delete(userData._id + guildId); // This is to avoid sending repeating error messages every 10 seconds
+								lastInteractionMap.delete(userData.id + guildId); // This is to avoid sending repeating error messages every 10 seconds
 							}
 							else {
 

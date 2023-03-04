@@ -90,7 +90,7 @@ export async function showInventoryMessage(
 
 	const inventorySelectMenu = new ActionRowBuilder<StringSelectMenuBuilder>()
 		.setComponents(new StringSelectMenuBuilder()
-			.setCustomId(`inventory_pages_${showMaterialsPage}_@${userData._id}`)
+			.setCustomId(`inventory_pages_${showMaterialsPage}_@${userData.id}`)
 			.setPlaceholder('Select a page')
 			.setOptions([
 				{ label: 'Page 1', value: '1', description: 'common herbs', emoji: '🌱' },
@@ -124,7 +124,7 @@ export async function showInventoryMessage(
 			...quidToServer.hunger < quidToServer.maxHunger && foodSelectMenuOptions.length > 0
 				? [new ActionRowBuilder<StringSelectMenuBuilder>()
 					.setComponents(new StringSelectMenuBuilder()
-						.setCustomId(`inventory_eat_@${userData._id}`)
+						.setCustomId(`inventory_eat_@${userData.id}`)
 						.setPlaceholder('Select an item to eat')
 						.setOptions(foodSelectMenuOptions))]
 				: [],

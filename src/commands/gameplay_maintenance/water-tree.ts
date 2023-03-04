@@ -83,7 +83,7 @@ export const command: SlashCommand = {
 		else if (usesRedClover) {
 
 			serverData = serverModel.findOneAndUpdate(
-				s => s._id === serverData!._id,
+				s => s.id === serverData!.id,
 				(s) => {
 					s.inventory.specialPlants['red clover'] -= 1;
 				},
@@ -169,7 +169,7 @@ export const command: SlashCommand = {
 			embeds: [...restEmbed, embed, ...levelUpEmbed],
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
-					.setCustomId(`user-settings_reminders_water_${userData.settings.reminders.water === true ? 'off' : 'on'}_@${userData._id}`)
+					.setCustomId(`user-settings_reminders_water_${userData.settings.reminders.water === true ? 'off' : 'on'}_@${userData.id}`)
 					.setLabel(`Turn water reminders ${userData.settings.reminders.water === true ? 'off' : 'on'}`)
 					.setStyle(ButtonStyle.Secondary))],
 		});
@@ -205,7 +205,7 @@ export async function sendReminder(
 ): Promise<void> {
 
 	// This makes sure no reminders are running and are repeated
-	stopReminder(quid._id, quidToServer.serverId);
+	stopReminder(quid.id, quidToServer.serverId);
 
 	if (typeof quidToServer.sapling.lastMessageChannelId !== 'string') {
 
@@ -213,11 +213,11 @@ export async function sendReminder(
 		return;
 	}
 
-	userMap.set(quid._id + quidToServer.serverId, setTimeout(async () => {
+	userMap.set(quid.id + quidToServer.serverId, setTimeout(async () => {
 		try {
 
-			const _userData = await userModel.findOne(u => u._id === userData._id);
-			const newUserData = getUserData(_userData, quidToServer.serverId, getMapData(_quids, quid._id));
+			const _userData = await userModel.findOne(u => u.id === userData.id);
+			const newUserData = getUserData(_userData, quidToServer.serverId, getMapData(_quids, quid.id));
 			if (!hasNameAndSpecies(newUserData)) { return; }
 			userData = newUserData;
 
@@ -231,7 +231,7 @@ export async function sendReminder(
 
 				userData.update(
 					(u) => {
-						const p = getMapData(getMapData(u.quids, quid._id).profiles, quidToServer.serverId);
+						const p = getMapData(getMapData(u.quids, quid.id).profiles, quidToServer.serverId);
 						p.sapling.sentReminder = true;
 					},
 				);
@@ -244,7 +244,7 @@ export async function sendReminder(
 				if (await hasPermission(member || channel.client.user.id, channel.id, 'ViewChannel') === false || await hasPermission(member || channel.client.user.id, channel.id, channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages') === false || await hasPermission(member || channel.client.user.id, channel.id, 'EmbedLinks') === false) { return; } // Needed for channel.send call
 
 				/* This has to be changed when multiple users are introduced. First idea is to also store, as part of the sapling object, which user last watered. Then, if that user fails, try again for all the other users. */
-				const isInactive = _userData.servers[quidToServer.serverId]?.currentQuid !== quid._id;
+				const isInactive = _userData.servers[quidToServer.serverId]?.currentQuid !== quid.id;
 
 				await channel.send({
 					content: `<@${Object.keys(userData.userIds)[0]}>`,
@@ -283,7 +283,7 @@ function removeChannel(
 
 		userData.update(
 			(u) => {
-				const p = getMapData(getMapData(u.quids, quid._id).profiles, quidToServer.serverId);
+				const p = getMapData(getMapData(u.quids, quid.id).profiles, quidToServer.serverId);
 				p.sapling.lastMessageChannelId = null;
 			},
 		);

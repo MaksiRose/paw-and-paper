@@ -16,20 +16,20 @@ export async function addFriendshipPoints(
 ): Promise<void> {
 
 	/* Based on current friendship, the friendship points are calculated. */
-	const previousFriendshipPoints = getFriendshipPoints(userData1.quid.mentions[userData2.quid._id] || [], userData2.quid.mentions[userData1.quid._id] || []);
+	const previousFriendshipPoints = getFriendshipPoints(userData1.quid.mentions[userData2.quid.id] || [], userData2.quid.mentions[userData1.quid.id] || []);
 
 	/* It's updating the database with the new mention, and then grabbing the updated data from the database. */
 	await userData1.update(
 		(u) => {
-			const q = getMapData(u.quids, userData1.quid._id);
-			const cmentions = q.mentions[userData2.quid._id];
-			if (!cmentions) { q.mentions[userData2.quid._id] = [message.createdTimestamp]; }
+			const q = getMapData(u.quids, userData1.quid.id);
+			const cmentions = q.mentions[userData2.quid.id];
+			if (!cmentions) { q.mentions[userData2.quid.id] = [message.createdTimestamp]; }
 			else { cmentions.push(message.createdTimestamp); }
 		},
 	);
 
 	await checkOldMentions(userData1, userData2);
-	const newFriendshipPoints = getFriendshipPoints(userData1.quid.mentions[userData2.quid._id] || [], userData2.quid.mentions[userData1.quid._id] || []);
+	const newFriendshipPoints = getFriendshipPoints(userData1.quid.mentions[userData2.quid.id] || [], userData2.quid.mentions[userData1.quid.id] || []);
 
 	/* A message is sent to the users if the friendship has more hearts now than it had before. */
 	if (getFriendshipHearts(previousFriendshipPoints) < getFriendshipHearts(newFriendshipPoints)) {
@@ -74,14 +74,14 @@ export async function checkOldMentions(
 	const oneWeekInMs = 604_800_000;
 	await userData1.update(
 		(u) => {
-			let cmentions = getMapData(u.quids, userData1.quid._id).mentions[userData2.quid._id];
+			let cmentions = getMapData(u.quids, userData1.quid.id).mentions[userData2.quid.id];
 			if (cmentions) { cmentions = cmentions.filter(ts => ts > Date.now() - oneWeekInMs); }
 		},
 	);
 
 	await userData2.update(
 		(u) => {
-			let cmentions = getMapData(u.quids, userData2.quid._id).mentions[userData1.quid._id];
+			let cmentions = getMapData(u.quids, userData2.quid.id).mentions[userData1.quid.id];
 			if (cmentions) { cmentions = cmentions.filter(ts => ts > Date.now() - oneWeekInMs); }
 		},
 	);

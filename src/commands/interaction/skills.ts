@@ -52,7 +52,7 @@ export const command: SlashCommand = {
 			for (const skill of serverData.skills) { newGlobalSkills[skill] = userData?.quid?.profile.skills.global[skill] ?? 0; }
 			await userData.update(
 				(u) => {
-					const p = getMapData(getMapData(u.quids, userData!.quid!._id).profiles, userData!.quid!.profile!.serverId);
+					const p = getMapData(getMapData(u.quids, userData!.quid!.id).profiles, userData!.quid!.profile!.serverId);
 					p.skills.global = newGlobalSkills;
 				},
 			);
@@ -114,7 +114,7 @@ export const command: SlashCommand = {
 			await respond(interaction, {
 				components: [
 					getOriginalComponents(userData, serverData, interaction.member),
-					type === 'edit' ? getEditMenu(userData?._id ?? interaction.user.id, userData, serverData, category, 0) : getRemoveMenu(userData?._id ?? interaction.user.id, userData, serverData, category, 0),
+					type === 'edit' ? getEditMenu(userData?.id ?? interaction.user.id, userData, serverData, category, 0) : getRemoveMenu(userData?.id ?? interaction.user.id, userData, serverData, category, 0),
 				],
 			}, 'update', interaction.message.id);
 			return;
@@ -152,7 +152,7 @@ export const command: SlashCommand = {
 			await respond(interaction, {
 				components: [
 					getOriginalComponents(userData, serverData, interaction.member),
-					getModifyMenu(userData?._id ?? interaction.user.id, userData, 0),
+					getModifyMenu(userData?.id ?? interaction.user.id, userData, 0),
 				],
 			}, 'update', interaction.message.id);
 			return;
@@ -170,7 +170,7 @@ export const command: SlashCommand = {
 				await respond(interaction, {
 					components: [
 						getOriginalComponents(userData, serverData, interaction.member),
-						getModifyMenu(userData?._id ?? interaction.user.id, userData, page),
+						getModifyMenu(userData?.id ?? interaction.user.id, userData, page),
 					],
 				}, 'update', interaction.message.id);
 				return;
@@ -187,7 +187,7 @@ export const command: SlashCommand = {
 				await respond(interaction, {
 					components: [
 						getOriginalComponents(userData, serverData, interaction.member),
-						getEditMenu(userData?._id ?? interaction.user.id, userData, serverData, category, page),
+						getEditMenu(userData?.id ?? interaction.user.id, userData, serverData, category, page),
 					],
 				}, 'update', interaction.message.id);
 				return;
@@ -204,7 +204,7 @@ export const command: SlashCommand = {
 				await respond(interaction, {
 					components: [
 						getOriginalComponents(userData, serverData, interaction.member),
-						getRemoveMenu(userData?._id ?? interaction.user.id, userData, serverData, category, page),
+						getRemoveMenu(userData?.id ?? interaction.user.id, userData, serverData, category, page),
 					],
 				}, 'update', interaction.message.id);
 				return;
@@ -258,7 +258,7 @@ export const command: SlashCommand = {
 
 				for (const _user of allServerUsers) {
 
-					const user = userData && _user._id === userData._id ? userData : getUserData(_user, interaction.guildId, undefined);
+					const user = userData && _user.id === userData.id ? userData : getUserData(_user, interaction.guildId, undefined);
 					await user.update(
 						(u) => {
 							for (const q of Object.values(u.quids)) {
@@ -272,7 +272,7 @@ export const command: SlashCommand = {
 				}
 
 				serverData = await serverModel.findOneAndUpdate(
-					s => s._id === serverData?._id,
+					s => s.id === serverData?.id,
 					(s) => {
 						s.skills = s.skills.filter(n => n !== skillName);
 					},
@@ -345,7 +345,7 @@ export const command: SlashCommand = {
 
 				for (const _user of allServerUsers) {
 
-					const user = userData && _user._id === userData._id ? userData : getUserData(_user, interaction.guildId, undefined);
+					const user = userData && _user.id === userData.id ? userData : getUserData(_user, interaction.guildId, undefined);
 					await user.update(
 						(u) => {
 							for (const q of Object.values(u.quids)) {
@@ -359,7 +359,7 @@ export const command: SlashCommand = {
 				}
 
 				serverData = await serverModel.findOneAndUpdate(
-					s => s._id === serverData?._id,
+					s => s.id === serverData?.id,
 					(s) => {
 						s.skills.push(newName);
 					},
@@ -422,7 +422,7 @@ export const command: SlashCommand = {
 
 				for (const _user of allServerUsers) {
 
-					const user = userData && _user._id === userData._id ? userData : getUserData(_user, interaction.guildId, undefined);
+					const user = userData && _user.id === userData.id ? userData : getUserData(_user, interaction.guildId, undefined);
 					await user.update(
 						(u) => {
 							for (const q of Object.values(u.quids)) {
@@ -437,7 +437,7 @@ export const command: SlashCommand = {
 				}
 
 				serverData = await serverModel.findOneAndUpdate(
-					s => s._id === serverData?._id,
+					s => s.id === serverData?.id,
 					(s) => {
 						s.skills.push(newName);
 						s.skills = s.skills.filter(n => n !== skillName);
