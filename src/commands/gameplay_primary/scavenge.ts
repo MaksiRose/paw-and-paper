@@ -1,8 +1,15 @@
 import { AsyncQueue } from '@sapphire/async-queue';
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, GuildMember, InteractionResponse, Message, SlashCommandBuilder } from 'discord.js';
+import { Op } from 'sequelize';
 import { speciesInfo } from '../..';
-import { ServerSchema } from '../../typings/data/server';
-import { RankType, UserData } from '../../typings/data/user';
+import DiscordUser from '../../models/discordUser';
+import DiscordUserToServer from '../../models/discordUserToServer';
+import Quid from '../../models/quid';
+import QuidToServer from '../../models/quidToServer';
+import Server from '../../models/server';
+import User from '../../models/user';
+import UserToServer from '../../models/userToServer';
+import { RankType } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { addExperience, changeCondition } from '../../utils/changeCondition';
@@ -10,7 +17,8 @@ import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
-import { capitalize, getArrayElement, getMapData, getMessageId, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
+import { getDisplayname, pronoun, getDisplayspecies, pronounAndPlural } from '../../utils/getQuidInfo';
+import { capitalize, getArrayElement, getMessageId, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { pickMaterial, pickMeat, simulateMaterialUse, simulateMeatUse } from '../../utils/simulateItemUse';
@@ -30,27 +38,33 @@ export const command: SlashCommand = {
 	modifiesServerProfile: true,
 	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
 
-		await executeScavenging(interaction, userData, serverData);
+		await executeScavenging(interaction, user, quid, userToServer, quidToServer, server);
 	},
 	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer, server }) {
 
 		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
 		if (interaction.isButton() && customId?.args[0] === 'new') {
 
-			await executeScavenging(interaction, userData, serverData);
+			await executeScavenging(interaction, user, quid, userToServer, quidToServer, server);
 		}
 	},
 };
 
 async function executeScavenging(
 	interaction: ChatInputCommandInteraction | ButtonInteraction,
-	userData: UserData<undefined, ''> | null,
-	serverData: ServerSchema | null,
+	user: User | undefined,
+	quid: Quid | undefined,
+	userToServer: UserToServer | undefined,
+	quidToServer: QuidToServer | undefined,
+	server: Server | undefined,
 ): Promise<void> {
 
 	/* This ensures that the user is in a guild and has a completed account. */
-	if (serverData === null) { throw new Error('serverData is null'); }
+	if (server === undefined) { throw new Error('server is null'); }
+	if (!user) { throw new TypeError('user is undefined'); }
+	if (!userToServer) { throw new TypeError('userToServer is undefined'); }
 	if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
+	if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
 	/* It's disabling all components if userData exists and the command is set to disable a previous command. */
 	if (command.disablePreviousCommand) { await disableCommandComponent(userToServer); }
@@ -135,12 +149,15 @@ async function executeScavenging(
 		components: componentArray,
 	});
 
-	await interactionCollector(interaction, userData, serverData, false);
+	await interactionCollector(interaction, user, quid, userToServer, quidToServer, server, false);
 
 	async function interactionCollector(
 		interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
-		userData: UserData<never, never>,
-		serverData: ServerSchema,
+		user: User,
+		quid: Quid<true>,
+		userToServer: UserToServer,
+		quidToServer: QuidToServer,
+		server: Server,
 		isHumanTrap: boolean,
 	): Promise<void> {
 
@@ -180,14 +197,14 @@ async function executeScavenging(
 						const playingField = componentArray.map(c => c.components.map(b => b.data.emoji?.name ?? unclickedField).join('')).join('\n');
 						componentArray = [];
 
-						const meatCount = Math.round((await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, false)) / 3);
-						const materialCount = Math.round((await simulateMaterialUse(serverData, true) + await simulateMaterialUse(serverData, true) + await simulateMaterialUse(serverData, false)) / 3);
+						const meatCount = Math.round((await simulateMeatUse(server, true) + await simulateMeatUse(server, true) + await simulateMeatUse(server, false)) / 3);
+						const materialCount = Math.round((await simulateMaterialUse(server, true) + await simulateMaterialUse(server, true) + await simulateMaterialUse(server, false)) / 3);
 
 						/* Checking if the server has enough meat, if it doesn't, give the user meat. If it does, check if the server has enough materials, if it doesn't, give the user material. If it does, do nothing. */
 						if (meatCount < 0 && pullFromWeightedTable({ 0: -meatCount, 1: -materialCount }) === 0) {
 
 							const carcassArray = [...speciesInfo[quid.species].biome1OpponentArray];
-							const foundCarcass = pickMeat(carcassArray, serverData.inventory);
+							const foundCarcass = await pickMeat(carcassArray, server);
 							if (!foundCarcass) {
 								await sendErrorMessage(interaction, new Error('foundCarcass is undefined'))
 									.catch((error) => { console.error(error); });
@@ -197,16 +214,12 @@ async function executeScavenging(
 							embed.setDescription(`*After a while, ${quid.name} can indeed find something useful: On the floor is a ${foundCarcass} that seems to have recently lost a fight fatally. Although the animal has a few injuries, it can still serve as great nourishment. What a success!*\n${playingField}`);
 							embed.setFooter({ text: `${await addExperience(quidToServer, experiencePoints)}\n${changedCondition.statsUpdateText}\n\n+1 ${foundCarcass}` });
 
-							await userData.update(
-								(u) => {
-									const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
-									p.inventory.meat[foundCarcass] += 1;
-								},
-							);
+							quidToServer.inventory.push(foundCarcass);
+							await quidToServer.update({ inventory: quidToServer.inventory });
 						}
 						else if (materialCount < 0) {
 
-							const foundMaterial = pickMaterial(serverData.inventory);
+							const foundMaterial = pickMaterial(server);
 							if (!foundMaterial) {
 								await sendErrorMessage(interaction, new Error('foundMaterial is undefined'))
 									.catch((error) => { console.error(error); });
@@ -216,12 +229,8 @@ async function executeScavenging(
 							embed.setDescription(`*${quid.name} searches in vain for edible remains of deceased animals. But the expedition is not without success: the ${getDisplayspecies(quid)} sees a ${foundMaterial}, which can serve as a great material for repairs and work in the pack. ${capitalize(pronoun(quid, 0))} happily takes it home with ${pronoun(quid, 1)}.*\n${playingField}`);
 							embed.setFooter({ text: `${await addExperience(quidToServer, experiencePoints)}\n${changedCondition.statsUpdateText}\n\n+1 ${foundMaterial}` });
 
-							await userData.update(
-								(u) => {
-									const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
-									p.inventory.materials[foundMaterial] += 1;
-								},
-							);
+							quidToServer.inventory.push(foundMaterial);
+							await quidToServer.update({ inventory: quidToServer.inventory });
 						}
 						else {
 
@@ -229,7 +238,7 @@ async function executeScavenging(
 							if (changedCondition.statsUpdateText) { embed.setFooter({ text: `${await addExperience(quidToServer, experiencePoints)}\n${changedCondition.statsUpdateText}` }); }
 						}
 
-						await sendFinalMessage(int, userData, serverData);
+						await sendFinalMessage(int, user, quid, userToServer, quidToServer);
 						collector.stop('win');
 					}
 					else {
@@ -244,7 +253,7 @@ async function executeScavenging(
 					/* It's checking if the customId of the button includes the correct emoji. If it does, it will add 1 to the `correctButtonPresses` variable. It will then call the `changeComponents` function. */
 					if (int.customId.includes(humanTrapCorrectEmoji)) { correctButtonPresses += 1; }
 					if (correctButtonPresses >= 10) { collector.stop(); }
-					else { await changeComponents(int); }
+					else { await changeComponents(int, quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }); }
 				}
 			}
 			catch (error) {
@@ -282,7 +291,7 @@ async function executeScavenging(
 
 							case 0:
 
-								quidToServer.injuries.infections += 1;
+								quidToServer.injuries_infections += 1;
 
 								embed.setDescription(`*${quid.name} is still shocked for a while, but finally manages to free ${pronoun(quid, 4)}. Not long after, however, ${pronounAndPlural(quid, 0, 'feel')} a shock wave run through ${pronoun(quid, 2)} body. Something sharp must have pressed into the ${getDisplayspecies(quid)}. It looks infected.*`);
 								embed.setFooter({ text: `-${healthPoints} HP (from infection)\n${changedCondition.statsUpdateText}` });
@@ -291,30 +300,28 @@ async function executeScavenging(
 
 							default:
 
-								quidToServer.injuries.sprains += 1;
+								quidToServer.injuries_sprains += 1;
 
 								embed.setDescription(`*${quid.name} is still shocked for a while, but finally manages to free ${pronoun(quid, 4)}. But the escape was not perfect: while the ${getDisplayspecies(quid)} was untangling ${pronoun(quid, 4)} from the net, ${pronoun(quid, 0)} got entangled and stuck. It looks sprained.*`);
 								embed.setFooter({ text: `-${healthPoints} HP (from sprain)\n${changedCondition.statsUpdateText}` });
 						}
 
-						await userData.update(
-							(u) => {
-								const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
-								p.health -= healthPoints;
-								p.injuries = quidToServer.injuries;
-							},
-						);
+						await quidToServer.update({
+							health: quidToServer.health - healthPoints,
+							injuries_infections: quidToServer.injuries_infections,
+							injuries_sprains: quidToServer.injuries_sprains,
+						});
 					}
 
-					await sendFinalMessage(interactions.last() || interaction, userData, serverData);
+					await sendFinalMessage(interactions.last() || interaction, user, quid, userToServer, quidToServer);
 				}
 				else if (reason !== 'win') {
 
 					setTimeout(async () => {
 						try {
 
-							await changeComponents(interactions.last() || interaction);
-							await interactionCollector(interaction, userData, serverData, true);
+							await changeComponents(interactions.last() || interaction, quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user });
+							await interactionCollector(interaction, user, quid, userToServer, quidToServer, server, true);
 						}
 						catch (error) {
 
@@ -337,18 +344,35 @@ async function executeScavenging(
 	 */
 	async function sendFinalMessage(
 		int: ButtonInteraction<'cached'> | ChatInputCommandInteraction<'cached'>,
-		userData: UserData<never, never>,
-		serverData: ServerSchema,
+		user: User,
+		quid: Quid,
+		userToServer: UserToServer,
+		quidToServer: QuidToServer,
 	) {
 
-		await setCooldown(userData, int.guildId, false);
+		await setCooldown(userToServer, false);
 
-		const levelUpEmbed = await checkLevelUp(int, userData, serverData);
+		const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
+		const discordUserToServer = await DiscordUserToServer.findAll({
+			where: {
+				serverId: int.guildId,
+				isMember: true,
+				discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
+			},
+		});
+
+		const members = (await Promise.all(discordUserToServer
+			.map(async (duts) => (await int.guild.members.fetch(duts.discordUserId).catch(() => {
+				duts.update({ isMember: false });
+				return null;
+			}))))).filter(function(v): v is GuildMember { return v !== null; });
+
+		const levelUpEmbed = await checkLevelUp(int, quid, quidToServer, members);
 
 		const newComponents = disableAllComponents(componentArray);
 		newComponents.push(new ActionRowBuilder<ButtonBuilder>()
 			.setComponents(new ButtonBuilder()
-				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.id, ['new']))
+				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, user.id, ['new']))
 				.setLabel('Scavenge again')
 				.setStyle(ButtonStyle.Primary)));
 
@@ -363,11 +387,11 @@ async function executeScavenging(
 			components: newComponents,
 		}, 'update', int.isMessageComponent() ? int.message.id : getMessageId(botReply));
 
-		await isPassedOut(int, userData, true);
+		await isPassedOut(int, user, userToServer, quid, quidToServer, true);
 
-		await restAdvice(int, userData);
-		await drinkAdvice(int, userData);
-		await eatAdvice(int, userData);
+		await restAdvice(int, user, quidToServer);
+		await drinkAdvice(int, user, quidToServer);
+		await eatAdvice(int, user, quidToServer);
 	}
 
 	/**
@@ -375,6 +399,8 @@ async function executeScavenging(
 	 */
 	async function changeComponents(
 		int: ButtonInteraction<'cached'> | ChatInputCommandInteraction<'cached'>,
+		quid: Quid,
+		displaynameOptions: Parameters<typeof getDisplayname>[1],
 	) {
 
 		const trapActionRow = new ActionRowBuilder<ButtonBuilder>();
@@ -400,9 +426,12 @@ async function executeScavenging(
 		// This is only a reply if the user never pressed a button, else this is an update
 		await respond(int, {
 			embeds: [...(restEmbed as EmbedBuilder[]), new EmbedBuilder()
-				.setColor(userData!.quid!.color)
-				.setAuthor({ name: userData!.quid!.getDisplayname(), iconURL: userData!.quid!.avatarURL })
-				.setDescription(`*${userData!.quid!.name} has been searching for quite some time now, when a mishap happens to ${userData!.quid!.pronoun(1)}. ${capitalize(userData!.quid!.pronounAndPlural(0, '\'s', '\'re'))} not paying attention for only a moment, and suddenly everything happens very quickly. The ${userData!.quid!.getDisplayspecies()} has fallen into a trap that a human must have set here! Now ${userData!.quid!.pronoun(0)} must catch ${userData!.quid!.pronoun(4)} again quickly and try to get free before there is an accident.*`)
+				.setColor(quid.color)
+				.setAuthor({
+					name: await getDisplayname(quid, displaynameOptions),
+					iconURL: quid.avatarURL,
+				})
+				.setDescription(`*${quid.name} has been searching for quite some time now, when a mishap happens to ${pronoun(quid, 1)}. ${capitalize(pronounAndPlural(quid, 0, '\'s', '\'re'))} not paying attention for only a moment, and suddenly everything happens very quickly. The ${getDisplayspecies(quid)} has fallen into a trap that a human must have set here! Now ${pronoun(quid, 0)} must catch ${pronoun(quid, 4)} again quickly and try to get free before there is an accident.*`)
 				.setFooter({ text: `Click the "${humanTrapCorrectEmoji}" as many times as you can!` })],
 			components: componentArray,
 		}, 'update', int.isMessageComponent() ? int.message.id : getMessageId(botReply));

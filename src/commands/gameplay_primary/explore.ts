@@ -627,7 +627,7 @@ async function executeExploring(
 					}
 
 					await quidToServer.update({
-						health: healthPoints,
+						health: quidToServer.health - healthPoints,
 						injuries_poison: quidToServer.injuries_poison,
 						injuries_cold: quidToServer.injuries_cold,
 						injuries_infections: quidToServer.injuries_infections,
@@ -889,7 +889,7 @@ async function executeExploring(
 					}
 
 					await quidToServer.update({
-						health: healthPoints,
+						health: quidToServer.health - healthPoints,
 						injuries_wounds: quidToServer.injuries_wounds,
 						injuries_sprains: quidToServer.injuries_sprains,
 					});
