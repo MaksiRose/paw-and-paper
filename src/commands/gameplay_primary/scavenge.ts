@@ -32,7 +32,7 @@ export const command: SlashCommand = {
 
 		await executeScavenging(interaction, userData, serverData);
 	},
-	async sendMessageComponentResponse(interaction, userData, serverData) {
+	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer, server }) {
 
 		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
 		if (interaction.isButton() && customId?.args[0] === 'new') {
@@ -130,7 +130,7 @@ async function executeScavenging(
 				name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 				iconURL: quid.avatarURL,
 			})
-			.setDescription(`*${quid.name} carefully examines the terrain around the pack, hoping to find useful materials or carcasses. The ${quid.getDisplayspecies()} must now prove prudence and a keen eye...*`)
+			.setDescription(`*${quid.name} carefully examines the terrain around the pack, hoping to find useful materials or carcasses. The ${getDisplayspecies(quid)} must now prove prudence and a keen eye...*`)
 			.setFooter({ text: 'Click the fields to reveal what\'s underneath. Based on how close you are to the correct field, a color on a scale from green (closest) to red (farthest) is going to appear. You can click 4 times and have 2 minutes to win.' })],
 		components: componentArray,
 	});
@@ -213,7 +213,7 @@ async function executeScavenging(
 								return;
 							}
 
-							embed.setDescription(`*${quid.name} searches in vain for edible remains of deceased animals. But the expedition is not without success: the ${quid.getDisplayspecies()} sees a ${foundMaterial}, which can serve as a great material for repairs and work in the pack. ${capitalize(pronoun(quid, 0))} happily takes it home with ${pronoun(quid, 1)}.*\n${playingField}`);
+							embed.setDescription(`*${quid.name} searches in vain for edible remains of deceased animals. But the expedition is not without success: the ${getDisplayspecies(quid)} sees a ${foundMaterial}, which can serve as a great material for repairs and work in the pack. ${capitalize(pronoun(quid, 0))} happily takes it home with ${pronoun(quid, 1)}.*\n${playingField}`);
 							embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}\n\n+1 ${foundMaterial}` });
 
 							await userData.update(
@@ -225,7 +225,7 @@ async function executeScavenging(
 						}
 						else {
 
-							embed.setDescription(`*Although ${quid.name} searches everything very thoroughly, there doesn't seem to be anything in the area that can be used at the moment. Probably everything has already been found. The ${quid.getDisplayspecies()} decides to look again later.*\n${playingField}`);
+							embed.setDescription(`*Although ${quid.name} searches everything very thoroughly, there doesn't seem to be anything in the area that can be used at the moment. Probably everything has already been found. The ${getDisplayspecies(quid)} decides to look again later.*\n${playingField}`);
 							if (changedCondition.statsUpdateText) { embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}` }); }
 						}
 
@@ -271,7 +271,7 @@ async function executeScavenging(
 					if (isHurt == 0) {
 
 						experiencePoints = Math.round(experiencePoints / 2);
-						embed.setDescription(`*After ${quid.name} gets over the initial shock, the ${quid.getDisplayspecies()} quickly manages to free ${pronoun(quid, 4)} from the net. That was close!*`);
+						embed.setDescription(`*After ${quid.name} gets over the initial shock, the ${getDisplayspecies(quid)} quickly manages to free ${pronoun(quid, 4)} from the net. That was close!*`);
 						embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}` });
 					}
 					else {
@@ -284,7 +284,7 @@ async function executeScavenging(
 
 								quidToServer.injuries.infections += 1;
 
-								embed.setDescription(`*${quid.name} is still shocked for a while, but finally manages to free ${pronoun(quid, 4)}. Not long after, however, ${pronounAndPlural(quid, 0, 'feel')} a shock wave run through ${pronoun(quid, 2)} body. Something sharp must have pressed into the ${quid.getDisplayspecies()}. It looks infected.*`);
+								embed.setDescription(`*${quid.name} is still shocked for a while, but finally manages to free ${pronoun(quid, 4)}. Not long after, however, ${pronounAndPlural(quid, 0, 'feel')} a shock wave run through ${pronoun(quid, 2)} body. Something sharp must have pressed into the ${getDisplayspecies(quid)}. It looks infected.*`);
 								embed.setFooter({ text: `-${healthPoints} HP (from infection)\n${changedCondition.statsUpdateText}` });
 
 								break;
@@ -293,7 +293,7 @@ async function executeScavenging(
 
 								quidToServer.injuries.sprains += 1;
 
-								embed.setDescription(`*${quid.name} is still shocked for a while, but finally manages to free ${pronoun(quid, 4)}. But the escape was not perfect: while the ${quid.getDisplayspecies()} was untangling ${pronoun(quid, 4)} from the net, ${pronoun(quid, 0)} got entangled and stuck. It looks sprained.*`);
+								embed.setDescription(`*${quid.name} is still shocked for a while, but finally manages to free ${pronoun(quid, 4)}. But the escape was not perfect: while the ${getDisplayspecies(quid)} was untangling ${pronoun(quid, 4)} from the net, ${pronoun(quid, 0)} got entangled and stuck. It looks sprained.*`);
 								embed.setFooter({ text: `-${healthPoints} HP (from sprain)\n${changedCondition.statsUpdateText}` });
 						}
 

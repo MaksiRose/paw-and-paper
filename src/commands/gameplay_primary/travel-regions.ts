@@ -58,7 +58,7 @@ export const command: SlashCommand = {
 		const id = await sendTravelMessage(interaction, userData, messageContent, restEmbed, chosenRegion);
 		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, id, interaction);
 	},
-	async sendMessageComponentResponse(interaction, userData, serverData) {
+	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer, server }) {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
@@ -142,7 +142,7 @@ async function sendTravelMessage(
 
 	if (chosenRegion === CurrentRegionType.SleepingDens) {
 
-		embed.setDescription(`*${quid.name} slowly trots to the sleeping dens, tired from all the hard work ${pronoun(quid, 0)} did. For a moment, the ${quid.getDisplayspecies()} thinks about if ${pronounAndPlural(quid, 0, 'want')} to rest or just a break.*`);
+		embed.setDescription(`*${quid.name} slowly trots to the sleeping dens, tired from all the hard work ${pronoun(quid, 0)} did. For a moment, the ${getDisplayspecies(quid)} thinks about if ${pronounAndPlural(quid, 0, 'want')} to rest or just a break.*`);
 
 		return (await respond(interaction, {
 			content: messageContent,
@@ -239,7 +239,7 @@ async function sendTravelMessage(
 	}
 	else if (chosenRegion === CurrentRegionType.Lake) {
 
-		embed.setDescription(`*${quid.name} looks at ${pronoun(quid, 2)} reflection as ${pronounAndPlural(quid, 0, 'passes', 'pass')} the lake. Suddenly the ${quid.getDisplayspecies()} remembers how long ${pronounAndPlural(quid, 0, 'has', 'have')}n't drunk anything.*`);
+		embed.setDescription(`*${quid.name} looks at ${pronoun(quid, 2)} reflection as ${pronounAndPlural(quid, 0, 'passes', 'pass')} the lake. Suddenly the ${getDisplayspecies(quid)} remembers how long ${pronounAndPlural(quid, 0, 'has', 'have')}n't drunk anything.*`);
 
 		return (await respond(interaction, {
 			content: messageContent,
@@ -253,7 +253,7 @@ async function sendTravelMessage(
 	}
 	else if (chosenRegion === CurrentRegionType.Prairie) {
 
-		embed.setDescription(`*${quid.name} approaches the prairie, watching younger packmates testing their strength in playful fights. Maybe the ${quid.getDisplayspecies()} could play with them!*`);
+		embed.setDescription(`*${quid.name} approaches the prairie, watching younger packmates testing their strength in playful fights. Maybe the ${getDisplayspecies(quid)} could play with them!*`);
 		const allPrairieUsersList = (await userModel.find(
 			(u) => {
 				return Object.values(u.quids).filter(q => {

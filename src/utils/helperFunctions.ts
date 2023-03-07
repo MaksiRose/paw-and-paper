@@ -384,26 +384,6 @@ export function keyInObject<T extends Record<PropertyKey, any>, K extends keyof 
 function isObject(val: any): val is Record<string | number | symbol, unknown> { return typeof val === 'object' && val !== null; }
 
 /**
- * Return the bigger of two numbers
- * @param number1 - number
- * @param number2 - number - This is the second parameter, and it's a number.
- */
-export function getBiggerNumber(
-	number1: number,
-	number2: number,
-): number { return number1 > number2 ? number1 : number2; }
-
-/**
- * Return the smaller of two numbers
- * @param number1 - number
- * @param number2 - number - This is the second parameter, and it's a number.
- */
-export function getSmallerNumber(
-	number1: number,
-	number2: number,
-): number { return number1 > number2 ? number2 : number1; }
-
-/**
  * Given a string, return a new string with the first letter capitalized.
  * @param {string} string - The string to capitalize.
  * @returns The first character of the string is being capitalized and then the rest of the string is being added to it.

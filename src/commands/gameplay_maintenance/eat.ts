@@ -1,6 +1,7 @@
 import { ChatInputCommandInteraction, EmbedBuilder, FormattingPatterns, AnySelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import Fuse from 'fuse.js';
 import { commonPlantsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../..';
+import Den from '../../models/den';
 import serverModel from '../../oldModels/serverModel';
 import { userModel, getUserData } from '../../oldModels/userModel';
 import { ServerSchema } from '../../typings/data/server';
@@ -10,7 +11,7 @@ import { PlantEdibilityType, SpeciesDietType } from '../../typings/main';
 import { hasName, hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { disableAllComponents } from '../../utils/componentDisabling';
-import { capitalize, getBiggerNumber, getMapData, getSmallerNumber, keyInObject, respond, unsafeKeys, widenValues } from '../../utils/helperFunctions';
+import { capitalize, getBiggestNumber, getMapData, getSmallestNumber, keyInObject, respond, unsafeKeys, widenValues } from '../../utils/helperFunctions';
 import { getRandomNumber } from '../../utils/randomizers';
 import { wearDownDen } from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -79,7 +80,7 @@ export const command: SlashCommand = {
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
-					.setDescription(`*${quid.name}'s stomach bloats as ${pronounAndPlural(quid, 0, 'roll')} around camp, stuffing food into ${pronoun(quid, 2)} mouth. The ${quid.getDisplayspecies()} might need to take a break from food before ${pronounAndPlural(quid, 0, 'goes', 'go')} into a food coma.*`)],
+					.setDescription(`*${quid.name}'s stomach bloats as ${pronounAndPlural(quid, 0, 'roll')} around camp, stuffing food into ${pronoun(quid, 2)} mouth. The ${getDisplayspecies(quid)} might need to take a break from food before ${pronounAndPlural(quid, 0, 'goes', 'go')} into a food coma.*`)],
 			});
 			return;
 		}
@@ -114,7 +115,7 @@ export async function sendEatMessage(
 
 		if (hasName(taggedUserData)) {
 
-			embed.setDescription(`*${taggedUserData.quid.name} looks down at ${taggedUserData.quid.name} as ${taggedUserData.quid.pronounAndPlural(0, 'nom')} on the ${taggedUserData.quid.getDisplayspecies()}'s leg.* "No eating packmates here!" *${taggedUserData.quid.name} chuckled, shaking off ${taggedUserData.quid.name}.*`);
+			embed.setDescription(`*${taggedUserData.quid.name} looks down at ${taggedUserData.quid.name} as ${taggedUserData.pronounAndPlural(quid, 0, 'nom')} on the ${taggedUserData.getDisplayspecies(quid)}'s leg.* "No eating packmates here!" *${taggedUserData.quid.name} chuckled, shaking off ${taggedUserData.quid.name}.*`);
 
 			// If the interaction is a ChatInputCommand, this is a reply, else this is an update to the message with the component
 			await respond(interaction, {
@@ -185,45 +186,45 @@ export async function sendEatMessage(
 
 		if (allPlantsInfo[chosenFood].edibility === PlantEdibilityType.Toxic) {
 
-			finalHungerPoints = getBiggerNumber(-quidToServer.hunger, getRandomNumber(3, -5) - removeHungerPoints(serverData));
-			finalHealthPoints = getBiggerNumber(-quidToServer.health, getRandomNumber(3, -10));
+			finalHungerPoints = getBiggestNumber(-quidToServer.hunger, getRandomNumber(3, -5) - removeHungerPoints(serverData));
+			finalHealthPoints = getBiggestNumber(-quidToServer.health, getRandomNumber(3, -10));
 
 			embed.setDescription(`*A yucky feeling drifts down ${quid.name}'s throat. ${capitalize(pronounAndPlural(quid, 0, 'shakes and spits', 'shake and spit'))} it out, trying to rid ${pronoun(quid, 2)} mouth of the taste. The plant is poisonous!*`);
 		}
 
 		if (allPlantsInfo[chosenFood].edibility === PlantEdibilityType.Inedible) {
 
-			finalHungerPoints = getBiggerNumber(-quidToServer.hunger, getRandomNumber(3, -3) - removeHungerPoints(serverData));
+			finalHungerPoints = getBiggestNumber(-quidToServer.hunger, getRandomNumber(3, -3) - removeHungerPoints(serverData));
 
-			embed.setDescription(`*${quid.name} slowly opens ${pronoun(quid, 2)} mouth and chomps onto the ${chosenFood}. The ${quid.getDisplayspecies()} swallows it, but ${pronoun(quid, 2)} face has a look of disgust. That wasn't very tasty!*`);
+			embed.setDescription(`*${quid.name} slowly opens ${pronoun(quid, 2)} mouth and chomps onto the ${chosenFood}. The ${getDisplayspecies(quid)} swallows it, but ${pronoun(quid, 2)} face has a look of disgust. That wasn't very tasty!*`);
 		}
 
 		if (allPlantsInfo[chosenFood].edibility === PlantEdibilityType.Edible) {
 
 			if (speciesInfo[quid.species].diet === SpeciesDietType.Carnivore) {
 
-				finalHungerPoints = getBiggerNumber(-quidToServer.hunger, getSmallerNumber(quidToServer.maxHunger - quidToServer.hunger, addIncorrectDietHungerPoints() - removeHungerPoints(serverData)));
+				finalHungerPoints = getBiggestNumber(-quidToServer.hunger, getSmallestNumber(quidToServer.maxHunger - quidToServer.hunger, addIncorrectDietHungerPoints() - removeHungerPoints(serverData)));
 
-				embed.setDescription(`*${quid.name} plucks a ${chosenFood} from the pack storage and nibbles away at it. It has a bitter, foreign taste, not the usual meaty meal the ${quid.getDisplayspecies()} prefers.*`);
+				embed.setDescription(`*${quid.name} plucks a ${chosenFood} from the pack storage and nibbles away at it. It has a bitter, foreign taste, not the usual meaty meal the ${getDisplayspecies(quid)} prefers.*`);
 			}
 			else {
 
-				finalHungerPoints = getSmallerNumber(quidToServer.maxHunger - quidToServer.hunger, addCorrectDietHungerPoints() - removeHungerPoints(serverData));
+				finalHungerPoints = getSmallestNumber(quidToServer.maxHunger - quidToServer.hunger, addCorrectDietHungerPoints() - removeHungerPoints(serverData));
 
-				embed.setDescription(`*Leaves flutter into the storage den, landing near ${quid.name}'s feet. The ${quid.getDisplayspecies()} searches around the inventory determined to find the perfect meal, and that ${pronounAndPlural(quid, 0, 'does', 'do')}. ${quid.name} plucks a ${chosenFood} from the pile and eats until ${pronoun(quid, 2)} stomach is pleased.*`);
+				embed.setDescription(`*Leaves flutter into the storage den, landing near ${quid.name}'s feet. The ${getDisplayspecies(quid)} searches around the inventory determined to find the perfect meal, and that ${pronounAndPlural(quid, 0, 'does', 'do')}. ${quid.name} plucks a ${chosenFood} from the pile and eats until ${pronoun(quid, 2)} stomach is pleased.*`);
 			}
 		}
 
 		if (allPlantsInfo[chosenFood].givesEnergy === true) {
 
-			finalEnergyPoints = getSmallerNumber(quidToServer.maxEnergy - quidToServer.energy, 20);
+			finalEnergyPoints = getSmallestNumber(quidToServer.maxEnergy - quidToServer.energy, 20);
 		}
 
 		if (allPlantsInfo[chosenFood].increasesMaxCondition === true) {
 
 			if (finalHungerPoints < 0) { finalHungerPoints = 0; }
 
-			embed.setDescription(`*${quid.name} decides to have a special treat today. Slowly, ${pronounAndPlural(quid, 0, 'chew')} on the ${chosenFood}, enjoying the fresh taste. It doesn't take long for the ${quid.getDisplayspecies()} to feel a special effect kick in: It's as if ${pronoun(quid, 0)} can have much more ${increasedStatType} than before. What an enchanting sensation!*`);
+			embed.setDescription(`*${quid.name} decides to have a special treat today. Slowly, ${pronounAndPlural(quid, 0, 'chew')} on the ${chosenFood}, enjoying the fresh taste. It doesn't take long for the ${getDisplayspecies(quid)} to feel a special effect kick in: It's as if ${pronoun(quid, 0)} can have much more ${increasedStatType} than before. What an enchanting sensation!*`);
 		}
 	}
 	else if (keyInObject(speciesInfo, chosenFood)) {
@@ -238,15 +239,15 @@ export async function sendEatMessage(
 
 		if (speciesInfo[quid.species].diet === SpeciesDietType.Herbivore) {
 
-			finalHungerPoints = getBiggerNumber(-quidToServer.hunger, getSmallerNumber(quidToServer.maxHunger - quidToServer.hunger, addIncorrectDietHungerPoints() - removeHungerPoints(serverData)));
+			finalHungerPoints = getBiggestNumber(-quidToServer.hunger, getSmallestNumber(quidToServer.maxHunger - quidToServer.hunger, addIncorrectDietHungerPoints() - removeHungerPoints(serverData)));
 
-			embed.setDescription(`*${quid.name} stands by the storage den, eyeing the varieties of food. A ${chosenFood} catches ${pronoun(quid, 2)} attention. The ${quid.getDisplayspecies()} walks over to it and begins to eat.* "This isn't very good!" *${quid.name} whispers to ${pronoun(quid, 4)} and leaves the den, stomach still growling, and craving for plants to grow.*`);
+			embed.setDescription(`*${quid.name} stands by the storage den, eyeing the varieties of food. A ${chosenFood} catches ${pronoun(quid, 2)} attention. The ${getDisplayspecies(quid)} walks over to it and begins to eat.* "This isn't very good!" *${quid.name} whispers to ${pronoun(quid, 4)} and leaves the den, stomach still growling, and craving for plants to grow.*`);
 		}
 		else {
 
-			finalHungerPoints = getSmallerNumber(quidToServer.maxHunger - quidToServer.hunger, addCorrectDietHungerPoints() - removeHungerPoints(serverData));
+			finalHungerPoints = getSmallestNumber(quidToServer.maxHunger - quidToServer.hunger, addCorrectDietHungerPoints() - removeHungerPoints(serverData));
 
-			embed.setDescription(`*${quid.name} sits chewing maliciously on a ${chosenFood}. A dribble of blood escapes out of ${pronoun(quid, 2)} jaw as the ${quid.getDisplayspecies()} finishes off the meal. It was a delicious feast, but very messy!*`);
+			embed.setDescription(`*${quid.name} sits chewing maliciously on a ${chosenFood}. A dribble of blood escapes out of ${pronoun(quid, 2)} jaw as the ${getDisplayspecies(quid)} finishes off the meal. It was a delicious feast, but very messy!*`);
 		}
 	}
 	else {
@@ -321,10 +322,10 @@ export function addCorrectDietHungerPoints() { return getRandomNumber(4, 15); }
  * @returns the number of hunger points that will be removed from the user's character.
  */
 export function removeHungerPoints(
-	serverData: ServerSchema,
+	foodDen: Den,
 ): number {
 
-	const denStats = serverData.dens.foodDen.structure + serverData.dens.foodDen.bedding + serverData.dens.foodDen.thickness + serverData.dens.foodDen.evenness;
+	const denStats = foodDen.structure + foodDen.bedding + foodDen.thickness + foodDen.evenness;
 	const multiplier = denStats / 400;
 	return 10 - Math.round(10 * multiplier);
 }

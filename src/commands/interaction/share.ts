@@ -75,7 +75,7 @@ export const command: SlashCommand = {
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData1.quid.color)
 					.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-					.setDescription(`*${userData1.quid.name} is about to begin sharing a story when an elderly interrupts them.* "Oh, young ${userData1.quid.getDisplayspecies()}, you need to have a lot more adventures before you can start advising others!"`),
+					.setDescription(`*${userData1.quid.name} is about to begin sharing a story when an elderly interrupts them.* "Oh, young ${userData1.getDisplayspecies(quid)}, you need to have a lot more adventures before you can start advising others!"`),
 				],
 			});
 			return;
@@ -93,7 +93,7 @@ export const command: SlashCommand = {
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData1.quid.color)
 					.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-					.setDescription(`*${userData1.quid.name} is very wise from all the adventures ${userData1.quid.pronoun(0)} had, but also a little... quaint. Sometimes ${userData1.quid.pronounAndPlural(0, 'sit')} down at the fireplace, mumbling to ${userData1.quid.pronoun(4)} a story from back in the day. Busy packmates look at ${userData1.quid.pronoun(1)} in confusion as they pass by.*`),
+					.setDescription(`*${userData1.quid.name} is very wise from all the adventures ${userData1.pronoun(quid, 0)} had, but also a little... quaint. Sometimes ${userData1.pronounAndPlural(quid, 0, 'sit')} down at the fireplace, mumbling to ${userData1.pronoun(quid, 4)} a story from back in the day. Busy packmates look at ${userData1.pronoun(quid, 1)} in confusion as they pass by.*`),
 				],
 			});
 			return;
@@ -121,7 +121,7 @@ export const command: SlashCommand = {
 					embeds: [...restEmbed, new EmbedBuilder()
 						.setColor(userData1.quid.color)
 						.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-						.setDescription(`*${userData1.quid.name} sits on an old wooden trunk at the ruins, ready to tell a story to any willing listener. But to ${userData1.quid.pronoun(2)} disappointment, no one seems to be around.*`),
+						.setDescription(`*${userData1.quid.name} sits on an old wooden trunk at the ruins, ready to tell a story to any willing listener. But to ${userData1.pronoun(quid, 2)} disappointment, no one seems to be around.*`),
 					],
 				});
 				return;
@@ -153,7 +153,7 @@ export const command: SlashCommand = {
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData1.quid.color)
 					.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-					.setDescription(`*${userData1.quid.name} wants to share a story with ${userData2.quid.name}, but the ${userData2.quid.getDisplayspecies()} is too young to sit down and listen and runs away to play.*`),
+					.setDescription(`*${userData1.quid.name} wants to share a story with ${userData2.quid.name}, but the ${userData2.getDisplayspecies(quid)} is too young to sit down and listen and runs away to play.*`),
 				],
 			});
 			return;
@@ -186,7 +186,7 @@ export const command: SlashCommand = {
 				new EmbedBuilder()
 					.setColor(userData1.quid.color)
 					.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-					.setDescription(`*${userData2.quid.name} comes running to the old wooden trunk at the ruins where ${userData1.quid.name} sits, ready to tell an exciting story from long ago. ${capitalize(userData2.quid.pronoun(2))} eyes are sparkling as the ${userData1.quid.getDisplayspecies()} recounts great adventures and the lessons to be learned from them.*`)
+					.setDescription(`*${userData2.quid.name} comes running to the old wooden trunk at the ruins where ${userData1.quid.name} sits, ready to tell an exciting story from long ago. ${capitalize(userData2.pronoun(quid, 2))} eyes are sparkling as the ${userData1.getDisplayspecies(quid)} recounts great adventures and the lessons to be learned from them.*`)
 					.setFooter({ text: `${decreasedStatsData.statsUpdateText}\n\n+${experienceIncrease} XP (${userData2.quidToServer.experience}/${userData2.quidToServer.levels * 50}) for ${userData2.quid.name}` }),
 				...decreasedStatsData.injuryUpdateEmbed,
 				...infectedEmbed,

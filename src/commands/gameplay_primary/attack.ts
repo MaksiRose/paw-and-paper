@@ -12,7 +12,7 @@ import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { disableCommandComponent } from '../../utils/componentDisabling';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { createFightGame } from '../../utils/gameBuilder';
-import { getMapData, getMessageId, getSmallerNumber, KeyOfUnion, respond, sendErrorMessage, setCooldown, unsafeKeys, ValueOf, widenValues } from '../../utils/helperFunctions';
+import { getMapData, getMessageId, getSmallestNumber, KeyOfUnion, respond, sendErrorMessage, setCooldown, unsafeKeys, ValueOf, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -37,7 +37,7 @@ export const command: SlashCommand = {
 
 		await executeAttacking(interaction, userData, serverData);
 	},
-	async sendMessageComponentResponse(interaction, userData, serverData) {
+	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer, server }) {
 
 		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
 		if (interaction.isButton() && customId?.args[0] === 'new') {
@@ -100,7 +100,7 @@ async function executeAttacking(
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
-					.setDescription(`*${quid.name} looks around, searching for a human to attack. It looks like everyone is already being attacked by other pack members. The ${quid.getDisplayspecies()} better not interfere before ${pronounAndPlural(quid, 0, 'hurt')} ${pronoun(quid, 2)} friends.*`),
+					.setDescription(`*${quid.name} looks around, searching for a human to attack. It looks like everyone is already being attacked by other pack members. The ${getDisplayspecies(quid)} better not interfere before ${pronounAndPlural(quid, 0, 'hurt')} ${pronoun(quid, 2)} friends.*`),
 			],
 		});
 		return;
@@ -146,7 +146,7 @@ async function executeAttacking(
 		}
 		else if (fightGame.cycleKind === 'dodge') {
 
-			embed.setDescription(`↪️ *Looks like the human is preparing a maneuver for ${quid.name}'s next move. The ${quid.getDisplayspecies()} must think quickly about how ${pronounAndPlural(quid, 0, 'want')} to react.*`);
+			embed.setDescription(`↪️ *Looks like the human is preparing a maneuver for ${quid.name}'s next move. The ${getDisplayspecies(quid)} must think quickly about how ${pronounAndPlural(quid, 0, 'want')} to react.*`);
 			embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (↪️ Dodge).' });
 		}
 		else if (fightGame.cycleKind === 'defend') {
@@ -240,24 +240,24 @@ async function executeAttacking(
 				);
 			}
 
-			embed.setDescription(`*The battle between the human and ${quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${quid.getDisplayspecies()} tries to jump at them, but the human manages to dodge. ${winLoseRatio < 1 ? `Quickly they run in the direction of the food den. They escaped from ${pronoun(quid, 1)}!*` : 'Quickly they back off from the tricky situation.*'}`);
+			embed.setDescription(`*The battle between the human and ${quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${getDisplayspecies(quid)} tries to jump at them, but the human manages to dodge. ${winLoseRatio < 1 ? `Quickly they run in the direction of the food den. They escaped from ${pronoun(quid, 1)}!*` : 'Quickly they back off from the tricky situation.*'}`);
 
 			if (winLoseRatio === -1) {
 
-				const healthPoints = getSmallerNumber(quidToServer.health, getRandomNumber(5, 3));
+				const healthPoints = getSmallestNumber(quidToServer.health, getRandomNumber(5, 3));
 
 				if (pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
 
 					quidToServer.injuries.wounds += 1;
 
-					embed.setDescription(`*The battle between the human and ${quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${quid.getDisplayspecies()} tries to jump at them, but the human manages to dodge. Unfortunately, a rock is directly in ${quid.name}'s jump line. A sharp pain runs through ${pronoun(quid, 2)} hip. A red spot slowly spreads where ${pronoun(quid, 0)} hit the rock. Meanwhile, the human runs into the food den.*`);
+					embed.setDescription(`*The battle between the human and ${quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${getDisplayspecies(quid)} tries to jump at them, but the human manages to dodge. Unfortunately, a rock is directly in ${quid.name}'s jump line. A sharp pain runs through ${pronoun(quid, 2)} hip. A red spot slowly spreads where ${pronoun(quid, 0)} hit the rock. Meanwhile, the human runs into the food den.*`);
 					injuryText = `-${healthPoints} HP (from wound)\n`;
 				}
 				else {
 
 					quidToServer.injuries.sprains += 1;
 
-					embed.setDescription(`*The battle between the human and ${quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${quid.getDisplayspecies()} tries to jump at them, but the human manages to dodge. ${quid.name} is not prepared for the fall. A sharp pain runs through ${pronoun(quid, 2)} arm as it bends in the fall. Meanwhile, the human runs into the food den.*`);
+					embed.setDescription(`*The battle between the human and ${quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${getDisplayspecies(quid)} tries to jump at them, but the human manages to dodge. ${quid.name} is not prepared for the fall. A sharp pain runs through ${pronoun(quid, 2)} arm as it bends in the fall. Meanwhile, the human runs into the food den.*`);
 					injuryText = `-${healthPoints} HP (from sprain)\n`;
 				}
 

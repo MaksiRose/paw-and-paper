@@ -11,7 +11,7 @@ import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents } from '../../utils/componentDisabling';
 import getInventoryElements from '../../utils/getInventoryElements';
-import { getArrayElement, getSmallerNumber, respond } from '../../utils/helperFunctions';
+import { getArrayElement, getSmallestNumber, respond } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -75,7 +75,7 @@ export const command: SlashCommand = {
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
-					.setDescription(`*${quid.name} goes to look if any dens need to be repaired. But it looks like the pack has nothing that can be used to repair dens in the first place. Looks like the ${quid.getDisplayspecies()} needs to go out and find materials first!*`)
+					.setDescription(`*${quid.name} goes to look if any dens need to be repaired. But it looks like the pack has nothing that can be used to repair dens in the first place. Looks like the ${getDisplayspecies(quid)} needs to go out and find materials first!*`)
 					.setFooter({ text: 'Materials can be found through scavenging and adventuring.' })],
 			});
 			return;
@@ -99,7 +99,7 @@ export const command: SlashCommand = {
 
 		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
 	},
-	async sendMessageComponentResponse(interaction, userData, serverData) {
+	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer, server }) {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
@@ -125,7 +125,7 @@ export const command: SlashCommand = {
 			const repairKind = materialsInfo[chosenItem].reinforcesStructure ? 'structure' : materialsInfo[chosenItem].improvesBedding ? 'bedding' : materialsInfo[chosenItem].thickensWalls ? 'thickness' : materialsInfo[chosenItem].removesOverhang ? 'evenness' : undefined;
 			if (repairKind === undefined) { throw new TypeError('repairKind is undefined'); }
 
-			const repairAmount = getSmallerNumber(addMaterialPoints(), 100 - serverData.dens[chosenDen][repairKind]);
+			const repairAmount = getSmallestNumber(addMaterialPoints(), 100 - serverData.dens[chosenDen][repairKind]);
 
 			/** True when the repairAmount is bigger than zero. If the user isn't of  rank Hunter or Elderly, a weighted table decided whether they are successful. */
 			const isSuccessful = repairAmount > 0 && !isUnlucky(userData);
@@ -153,7 +153,7 @@ export const command: SlashCommand = {
 							name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 							iconURL: quid.avatarURL,
 						})
-						.setDescription(`*${quid.name} takes a ${chosenItem} and tries to ${repairKind === 'structure' ? 'tuck it into parts of the walls and ceiling that look less stable.' : repairKind === 'bedding' ? 'spread it over parts of the floor that look harsh and rocky.' : repairKind === 'thickness' ? 'cover parts of the walls that look a little thin with it.' : 'drag it over parts of the walls with bumps and material sticking out.'} ` + (isSuccessful ? `Immediately you can see the ${repairKind} of the den improving. What a success!*` : `After a few attempts, the material breaks into little pieces, rendering it useless. Looks like the ${quid.getDisplayspecies()} has to try again...*`))
+						.setDescription(`*${quid.name} takes a ${chosenItem} and tries to ${repairKind === 'structure' ? 'tuck it into parts of the walls and ceiling that look less stable.' : repairKind === 'bedding' ? 'spread it over parts of the floor that look harsh and rocky.' : repairKind === 'thickness' ? 'cover parts of the walls that look a little thin with it.' : 'drag it over parts of the walls with bumps and material sticking out.'} ` + (isSuccessful ? `Immediately you can see the ${repairKind} of the den improving. What a success!*` : `After a few attempts, the material breaks into little pieces, rendering it useless. Looks like the ${getDisplayspecies(quid)} has to try again...*`))
 						.setFooter({ text: `${changedCondition.statsUpdateText}\n\n-1 ${chosenItem} for ${interaction.guild.name}\n${isSuccessful ? `+${repairAmount}% ${repairKind} for ${denName} (${serverData.dens[chosenDen][repairKind]}%  total)` : ''}` }),
 					...changedCondition.injuryUpdateEmbed,
 					...levelUpEmbed,

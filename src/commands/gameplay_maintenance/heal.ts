@@ -1,6 +1,9 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder, SnowflakeUtil } from 'discord.js';
 import Fuse from 'fuse.js';
 import { commonPlantsInfo, rarePlantsInfo, specialPlantsInfo, uncommonPlantsInfo } from '../..';
+import Den from '../../models/den';
+import Quid from '../../models/quid';
+import QuidToServer from '../../models/quidToServer';
 import serverModel from '../../oldModels/serverModel';
 import { userModel, getUserData } from '../../oldModels/userModel';
 import { CommonPlantNames, Inventory, RarePlantNames, SpecialPlantNames, UncommonPlantNames } from '../../typings/data/general';
@@ -15,7 +18,7 @@ import { isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidit
 import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo, componentDisablingInteractions } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import getInventoryElements from '../../utils/getInventoryElements';
-import { capitalize, getArrayElement, getMapData, getSmallerNumber, keyInObject, respond, unsafeKeys, widenValues } from '../../utils/helperFunctions';
+import { capitalize, getArrayElement, getMapData, getSmallestNumber, keyInObject, respond, unsafeKeys, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -108,7 +111,7 @@ export const command: SlashCommand = {
 
 		await getHealResponse(interaction, userData, serverData, messageContent, restEmbed, 0, chosenUserData, 1, chosenItem);
 	},
-	async sendMessageComponentResponse(interaction, userData, serverData) {
+	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer, server }) {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
@@ -168,22 +171,19 @@ export const command: SlashCommand = {
  * @returns A boolean value.
  */
 export function quidNeedsHealing(
-	u: UserData<undefined, ''>,
+	quidToServer: QuidToServer,
 	checkOnlyFor?: 'energy' | 'hunger' | 'wounds' | 'infections' | 'cold' | 'sprains' | 'poison',
-): u is UserData<never, never> {
+): boolean {
 
-	return hasNameAndSpecies(u)
-		&& (
-			((checkOnlyFor === undefined || checkOnlyFor === 'energy') && u.quidToServer.energy === 0)
-			|| (checkOnlyFor === undefined && u.quidToServer.health === 0)
-			|| ((checkOnlyFor === undefined || checkOnlyFor === 'hunger') && u.quidToServer.hunger === 0)
-			|| (checkOnlyFor === undefined && u.quidToServer.thirst === 0)
-			|| ((checkOnlyFor === undefined || checkOnlyFor === 'wounds') && u.quidToServer.injuries.wounds > 0)
-			|| ((checkOnlyFor === undefined || checkOnlyFor === 'infections') && u.quidToServer.injuries.infections > 0)
-			|| ((checkOnlyFor === undefined || checkOnlyFor === 'cold') && u.quidToServer.injuries.cold === true)
-			|| ((checkOnlyFor === undefined || checkOnlyFor === 'sprains') && u.quidToServer.injuries.sprains > 0)
-			|| ((checkOnlyFor === undefined || checkOnlyFor === 'poison') && u.quidToServer.injuries.poison === true)
-		);
+	return ((checkOnlyFor === undefined || checkOnlyFor === 'energy') && quidToServer.energy === 0) ||
+		(checkOnlyFor === undefined && quidToServer.health === 0) ||
+		((checkOnlyFor === undefined || checkOnlyFor === 'hunger') && quidToServer.hunger === 0) ||
+		(checkOnlyFor === undefined && quidToServer.thirst === 0) ||
+		((checkOnlyFor === undefined || checkOnlyFor === 'wounds') && quidToServer.injuries_wounds > 0) ||
+		((checkOnlyFor === undefined || checkOnlyFor === 'infections') && quidToServer.injuries_infections > 0) ||
+		((checkOnlyFor === undefined || checkOnlyFor === 'cold') && quidToServer.injuries_cold === true) ||
+		((checkOnlyFor === undefined || checkOnlyFor === 'sprains') && quidToServer.injuries_sprains > 0) ||
+		((checkOnlyFor === undefined || checkOnlyFor === 'poison') && quidToServer.injuries_poison === true);
 }
 
 /** This function is used to make item-string equal to undefined in getHealResponse if the string isn't a herb/water that is also available */
@@ -299,7 +299,7 @@ export async function getHealResponse(
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
-					.setDescription(`*${quid.name} approaches ${userToHeal.quid.name}, desperately searching for someone to help.*\n"Do you have any injuries or illnesses you know of?" *the ${quid.getDisplayspecies()} asks.\n${userToHeal.quid.name} shakes ${userToHeal.quid.pronoun(2)} head.* "Not that I know of, no."\n*Disappointed, ${quid.name} goes back to the medicine den.*`)],
+					.setDescription(`*${quid.name} approaches ${userToHeal.quid.name}, desperately searching for someone to help.*\n"Do you have any injuries or illnesses you know of?" *the ${getDisplayspecies(quid)} asks.\n${userToHeal.quid.name} shakes ${userToHeal.pronoun(quid, 2)} head.* "Not that I know of, no."\n*Disappointed, ${quid.name} goes back to the medicine den.*`)],
 				components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 				fetchReply: true,
 			}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
@@ -315,10 +315,10 @@ export async function getHealResponse(
 				iconURL: quid.avatarURL,
 			})
 			.setDescription(userToHeal.id === userData.id
-				? `*${userToHeal.quid.name} pushes aside the leaves acting as the entrance to the healer's den. With tired eyes ${userToHeal.quid.pronounAndPlural(0, 'inspect')} the rows of herbs, hoping to find one that can ease ${userToHeal.quid.pronoun(2)} pain.*`
+				? `*${userToHeal.quid.name} pushes aside the leaves acting as the entrance to the healer's den. With tired eyes ${userToHeal.pronounAndPlural(quid, 0, 'inspect')} the rows of herbs, hoping to find one that can ease ${userToHeal.pronoun(quid, 2)} pain.*`
 				: userToHeal.quidToServer.energy <= 0 || userToHeal.quidToServer.health <= 0 || userToHeal.quidToServer.hunger <= 0 || userToHeal.quidToServer.thirst <= 0
-					? `*${quid.name} runs towards the pack borders, where ${userToHeal.quid.name} lies, only barely conscious. The ${quidToServer.rank} immediately looks for the right herbs to help the ${userToHeal.quid.getDisplayspecies()}.*`
-					: `*${userToHeal.quid.name} enters the medicine den with tired eyes.* "Please help me!" *${userToHeal.quid.pronounAndPlural(0, 'say')}, ${userToHeal.quid.pronoun(2)} face contorted in pain. ${quid.name} looks up with worry.* "I'll see what I can do for you."`)
+					? `*${quid.name} runs towards the pack borders, where ${userToHeal.quid.name} lies, only barely conscious. The ${quidToServer.rank} immediately looks for the right herbs to help the ${userToHeal.getDisplayspecies(quid)}.*`
+					: `*${userToHeal.quid.name} enters the medicine den with tired eyes.* "Please help me!" *${userToHeal.pronounAndPlural(quid, 0, 'say')}, ${userToHeal.pronoun(quid, 2)} face contorted in pain. ${quid.name} looks up with worry.* "I'll see what I can do for you."`)
 			.setFooter({ text: `${userToHeal.quid.name}'s condition:${healUserConditionText}` });
 
 		let { embedDescription, selectMenuOptions } = getInventoryElements(serverData.inventory, inventoryPage);
@@ -505,15 +505,15 @@ export async function getHealResponse(
 
 		if (item === 'water') {
 
-			embedDescription = `*${quid.name} takes ${userToHeal.quid.name}'s body, drags it over to the river, and positions ${userToHeal.quid.pronoun(2)} head right over the water. The ${userToHeal.quid.getDisplayspecies()} sticks ${userToHeal.quid.pronoun(2)} tongue out and slowly starts drinking. Immediately you can observe how the newfound energy flows through ${userToHeal.quid.pronoun(2)} body.*`;
+			embedDescription = `*${quid.name} takes ${userToHeal.quid.name}'s body, drags it over to the river, and positions ${userToHeal.pronoun(quid, 2)} head right over the water. The ${userToHeal.getDisplayspecies(quid)} sticks ${userToHeal.pronoun(quid, 2)} tongue out and slowly starts drinking. Immediately you can observe how the newfound energy flows through ${userToHeal.pronoun(quid, 2)} body.*`;
 		}
 		else if (quid.id === userToHeal.quid.id) {
 
-			embedDescription = `*${quid.name} takes a ${item}. After a bit of preparation, the ${quid.getDisplayspecies()} can apply it correctly. Immediately you can see the effect. ${capitalize(pronounAndPlural(quid, 0, 'feel'))} much better!*`;
+			embedDescription = `*${quid.name} takes a ${item}. After a bit of preparation, the ${getDisplayspecies(quid)} can apply it correctly. Immediately you can see the effect. ${capitalize(pronounAndPlural(quid, 0, 'feel'))} much better!*`;
 		}
 		else {
 
-			embedDescription = `*${quid.name} takes a ${item}. After a bit of preparation, ${pronounAndPlural(quid, 0, 'give')} it to ${userToHeal.quid.name}. Immediately you can see the effect. ${capitalize(userToHeal.quid.pronounAndPlural(0, 'feel'))} much better!*`;
+			embedDescription = `*${quid.name} takes a ${item}. After a bit of preparation, ${pronounAndPlural(quid, 0, 'give')} it to ${userToHeal.quid.name}. Immediately you can see the effect. ${capitalize(userToHeal.pronounAndPlural(quid, 0, 'feel'))} much better!*`;
 		}
 	}
 	else if (item === 'water') {
@@ -528,7 +528,7 @@ export async function getHealResponse(
 		}
 		else {
 
-			embedDescription = `*${quid.name} takes ${userToHeal.quid.name}'s body and tries to drag it over to the river. The ${quid.getDisplayspecies()} attempts to position the ${userToHeal.quid.getDisplayspecies()}'s head right over the water, but every attempt fails miserably. ${capitalize(pronounAndPlural(quid, 0, 'need'))} to concentrate and try again.*`;
+			embedDescription = `*${quid.name} takes ${userToHeal.quid.name}'s body and tries to drag it over to the river. The ${getDisplayspecies(quid)} attempts to position the ${userToHeal.getDisplayspecies(quid)}'s head right over the water, but every attempt fails miserably. ${capitalize(pronounAndPlural(quid, 0, 'need'))} to concentrate and try again.*`;
 		}
 	}
 	else if (quid.id === userToHeal.quid.id) {
@@ -609,10 +609,10 @@ export function getStatsPoints(
 	userToHeal: UserData<never, never>,
 ): { health: number, energy: number, hunger: number, thirst: number; } {
 
-	const thirst = item === 'water' ? getSmallerNumber(getRandomNumber(10, 6), userToHeal.quidToServer.maxThirst - userToHeal.quidToServer.thirst) : 0;
-	const health = item === 'water' ? 0 : getSmallerNumber(getRandomNumber(10, 6), userToHeal.quidToServer.maxHealth - userToHeal.quidToServer.health);
-	const energy = (item !== 'water' && itemInfo[item].givesEnergy) ? getSmallerNumber(30, userToHeal.quidToServer.maxEnergy - userToHeal.quidToServer.energy) : 0;
-	const hunger = (item !== 'water' && itemInfo[item].edibility === PlantEdibilityType.Edible) ? getSmallerNumber(5, userToHeal.quidToServer.maxHunger - userToHeal.quidToServer.hunger) : 0;
+	const thirst = item === 'water' ? getSmallestNumber(getRandomNumber(10, 6), userToHeal.quidToServer.maxThirst - userToHeal.quidToServer.thirst) : 0;
+	const health = item === 'water' ? 0 : getSmallestNumber(getRandomNumber(10, 6), userToHeal.quidToServer.maxHealth - userToHeal.quidToServer.health);
+	const energy = (item !== 'water' && itemInfo[item].givesEnergy) ? getSmallestNumber(30, userToHeal.quidToServer.maxEnergy - userToHeal.quidToServer.energy) : 0;
+	const hunger = (item !== 'water' && itemInfo[item].edibility === PlantEdibilityType.Edible) ? getSmallestNumber(5, userToHeal.quidToServer.maxHunger - userToHeal.quidToServer.hunger) : 0;
 	return { thirst, hunger, energy, health };
 }
 
@@ -620,16 +620,36 @@ export function getStatsPoints(
  * It takes a message object and returns a number that represents the decreased success chance of a den
  */
 function decreaseSuccessChance(
-	serverData: ServerSchema,
+	medicineDen: Den,
 ): number {
 
-	const denStats = serverData.dens.medicineDen.structure + serverData.dens.medicineDen.bedding + serverData.dens.medicineDen.thickness + serverData.dens.medicineDen.evenness;
+	const denStats = medicineDen.structure + medicineDen.bedding + medicineDen.thickness + medicineDen.evenness;
 	const multiplier = denStats / 400;
 	return 20 - Math.round(20 * multiplier);
 }
 
 export function isUnlucky(
-	userToHeal: UserData<never, never>,
-	userData: UserData<never, never>,
-	serverData: ServerSchema,
-): boolean { return (userToHeal.id === userData.id && pullFromWeightedTable({ 0: 75, 1: 25 + quidToServer.sapling.waterCycles - decreaseSuccessChance(serverData) }) === 0) || (userToHeal.id !== userData.id && (quidToServer.rank === RankType.Apprentice || quidToServer.rank === RankType.Hunter) && pullFromWeightedTable({ 0: quidToServer.rank === RankType.Hunter ? 90 : 40, 1: 60 + quidToServer.sapling.waterCycles - decreaseSuccessChance(serverData) }) === 0); }
+	injuredUserId: string,
+	healingUserId: string,
+	healingQuidToServer: QuidToServer,
+	medicineDen: Den,
+): boolean {
+	return (
+		injuredUserId === healingUserId &&
+		pullFromWeightedTable({
+			0: 75,
+			1: 25 + healingQuidToServer.sapling_waterCycles - decreaseSuccessChance(medicineDen),
+		}) === 0
+	) ||
+		(
+			injuredUserId !== healingUserId &&
+			(
+				healingQuidToServer.rank === RankType.Apprentice ||
+				healingQuidToServer.rank === RankType.Hunter
+			) &&
+			pullFromWeightedTable({
+				0: healingQuidToServer.rank === RankType.Hunter ? 90 : 40,
+				1: 60 + healingQuidToServer.sapling_waterCycles - decreaseSuccessChance(medicineDen),
+			}) === 0
+		);
+}

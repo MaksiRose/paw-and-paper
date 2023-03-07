@@ -4,6 +4,9 @@ import path from 'path';
 import Quid from './models/quid';
 import User from './models/user';
 import DiscordUser from './models/discordUser';
+import QuidToServer from './models/quidToServer';
+import { Op } from 'sequelize';
+import { CurrentRegionType } from './typings/data/user';
 const { database_password } = require('../config.json');
 
 const tablePath = path.join(__dirname, './models/');
@@ -43,8 +46,15 @@ export const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 
 	await sequelize.sync();
 
-	const obj = await DiscordUser.findByPk('268402976844939266', { include: [{ model: User, as: 'user', include: [{ model: Quid, as: 'quids' }] }] });
-	const quid = obj?.user.quids[0];
-	await quid?.update({ nickname: 'hehehehehe!' });
-	console.log(quid?.nickname);
+	const quidsToServer = await QuidToServer.findAll({
+		include: [{
+			model: Quid,
+			where: {
+				name: { [Op.not]: '' },
+				species: { [Op.not]: null },
+			},
+		}],
+	});
+
+	console.log(quidsToServer.length);
 })();

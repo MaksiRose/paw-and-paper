@@ -153,7 +153,7 @@ export const command: SlashCommand = {
 			}
 			else if (fightGame.cycleKind === 'dodge') {
 
-				embed.setDescription(`↪️ *Looks like the Elderly is preparing a maneuver for ${quid.name}'s next move. The ${quid.getDisplayspecies()} must think quickly about how ${pronounAndPlural(quid, 0, 'want')} to react.*`);
+				embed.setDescription(`↪️ *Looks like the Elderly is preparing a maneuver for ${quid.name}'s next move. The ${getDisplayspecies(quid)} must think quickly about how ${pronounAndPlural(quid, 0, 'want')} to react.*`);
 				embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (↪️ Dodge).\nTip: Defending a maneuver blocks it effectively, which prevents your opponent from hurting you.' });
 			}
 			else if (fightGame.cycleKind === 'defend') {

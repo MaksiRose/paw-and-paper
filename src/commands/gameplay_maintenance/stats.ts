@@ -66,7 +66,7 @@ export const command: SlashCommand = {
 
 		await sendStatsMessage(interaction, userData, interaction.user.id);
 	},
-	async sendMessageComponentResponse(interaction, userData, serverData) {
+	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer, server }) {
 
 		if (!interaction.isButton()) { return; }
 		/* This ensures that the user is in a guild and has a completed account. */

@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, SlashCommandBuilder, Snowflake } from 'discord.js';
-import { delay, getArrayElement, getSmallerNumber, keyInObject, KeyOfUnion, respond, sendErrorMessage, setCooldown, widenValues } from '../../utils/helperFunctions';
+import { delay, getArrayElement, getSmallestNumber, keyInObject, KeyOfUnion, respond, sendErrorMessage, setCooldown, widenValues } from '../../utils/helperFunctions';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
@@ -67,7 +67,7 @@ export const command: SlashCommand = {
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData1.quid.color)
 					.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-					.setDescription(`*${userData1.quid.name} is looking to go on an adventure, but going alone is very dangerous. The ${userData1.quid.getDisplayspecies()} should find someone to take with ${userData1.quid.pronoun(1)}.*`)],
+					.setDescription(`*${userData1.quid.name} is looking to go on an adventure, but going alone is very dangerous. The ${userData1.getDisplayspecies(quid)} should find someone to take with ${userData1.pronoun(quid, 1)}.*`)],
 			});
 			return;
 		}
@@ -105,7 +105,7 @@ export const command: SlashCommand = {
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData1.quid.color)
 				.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-				.setDescription(`*${userData1.quid.name} impatiently paces at the pack borders, hoping for ${userData2.quid.name} to come and adventure with ${userData1.quid.pronoun(1)}.*`)
+				.setDescription(`*${userData1.quid.name} impatiently paces at the pack borders, hoping for ${userData2.quid.name} to come and adventure with ${userData1.pronoun(quid, 1)}.*`)
 				.setFooter({ text: 'The game that is being played is memory, meaning that a player has to uncover two cards, If the emojis match, the cards are left uncovered.' })],
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
@@ -120,7 +120,7 @@ export const command: SlashCommand = {
 		saveCommandDisablingInfo(userData1, interaction.guildId, interaction.channelId, botReply.id, interaction);
 		saveCommandDisablingInfo(userData2, interaction.guildId, interaction.channelId, botReply.id, interaction);
 	},
-	async sendMessageComponentResponse(interaction, userData, serverData) {
+	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer, server }) {
 
 		if (!interaction.isButton()) { return; }
 		if (await missingPermissions(interaction, [
@@ -344,7 +344,7 @@ export const command: SlashCommand = {
 							new EmbedBuilder()
 								.setColor(userData1.quid.color)
 								.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-								.setDescription(`*${userDataCurrent.quid.name} decides that ${userDataCurrent.quid.pronounAndPlural(0, 'has', 'have')} adventured enough and goes back to the pack.*`)
+								.setDescription(`*${userDataCurrent.quid.name} decides that ${userDataCurrent.pronounAndPlural(quid, 0, 'has', 'have')} adventured enough and goes back to the pack.*`)
 								.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}` }),
 							...decreasedStatsData1.injuryUpdateEmbed,
 							...decreasedStatsData2.injuryUpdateEmbed,
@@ -371,7 +371,7 @@ export const command: SlashCommand = {
 
 						let extraFooter = '';
 						let outcome: string | 1 | 2;
-						const losingHealthPoints = getSmallerNumber(maxHP, losingUserData.quidToServer.health);
+						const losingHealthPoints = getSmallestNumber(maxHP, losingUserData.quidToServer.health);
 
 						const { itemType, itemName } = getHighestItem(losingUserData.quidToServer.inventory);
 						const inventory_ = widenValues(losingUserData.quidToServer.inventory);
@@ -435,24 +435,24 @@ export const command: SlashCommand = {
 					else {
 						let desc1: string;
 						if (outcome1 === 1) {
-							desc1 = coldText({ name: userData1.quid.name, pronoun0: userData1.quid.pronounAndPlural(0, 'is', 'are'), pronoun1: userData1.quid.pronoun(1) });
+							desc1 = coldText({ name: userData1.quid.name, pronoun0: userData1.pronounAndPlural(quid, 0, 'is', 'are'), pronoun1: userData1.pronoun(quid, 1) });
 						}
 						else if (outcome1 === 2) {
-							desc1 = woundText({ name: userData1.quid.name, pronoun0: userData1.quid.pronoun(2), pronoun1: userData1.quid.pronoun(0) });
+							desc1 = woundText({ name: userData1.quid.name, pronoun0: userData1.pronoun(quid, 2), pronoun1: userData1.pronoun(quid, 0) });
 						}
 						else {
-							desc1 = losingItemText({ name: userData1.quid.name, item: outcome1 }, { type: 1, pronoun0: userData1.quid.pronoun(0), pronoun1: userData1.quid.pronoun(1) });
+							desc1 = losingItemText({ name: userData1.quid.name, item: outcome1 }, { type: 1, pronoun0: userData1.pronoun(quid, 0), pronoun1: userData1.pronoun(quid, 1) });
 						}
 
 						let desc2: string;
 						if (outcome2 === 1) {
-							desc2 = coldText({ name: userData2.quid.name, pronoun0: userData2.quid.pronounAndPlural(0, 'is', 'are'), pronoun1: userData2.quid.pronoun(1) });
+							desc2 = coldText({ name: userData2.quid.name, pronoun0: userData2.pronounAndPlural(quid, 0, 'is', 'are'), pronoun1: userData2.pronoun(quid, 1) });
 						}
 						else if (outcome2 === 2) {
-							desc2 = woundText({ name: userData2.quid.name, pronoun0: userData2.quid.pronoun(2), pronoun1: userData2.quid.pronoun(0) });
+							desc2 = woundText({ name: userData2.quid.name, pronoun0: userData2.pronoun(quid, 2), pronoun1: userData2.pronoun(quid, 0) });
 						}
 						else {
-							desc2 = losingItemText({ name: userData2.quid.name, item: outcome2 }, { type: 1, pronoun0: userData2.quid.pronoun(0), pronoun1: userData2.quid.pronoun(1) });
+							desc2 = losingItemText({ name: userData2.quid.name, item: outcome2 }, { type: 1, pronoun0: userData2.pronoun(quid, 0), pronoun1: userData2.pronoun(quid, 1) });
 						}
 
 						extraDescription = `${desc1} Also, ${desc2}`;
@@ -498,7 +498,7 @@ export const command: SlashCommand = {
 
 						if (winningUserData.quidToServer.health < winningUserData.quidToServer.maxHealth) {
 
-							extraHealthPoints = getSmallerNumber(maxHP, winningUserData.quidToServer.maxHealth - winningUserData.quidToServer.health);
+							extraHealthPoints = getSmallestNumber(maxHP, winningUserData.quidToServer.maxHealth - winningUserData.quidToServer.health);
 						}
 						else if (pullFromWeightedTable({ 0: 20 - finishedRounds, 1: finishedRounds - 10 }) === 0) {
 

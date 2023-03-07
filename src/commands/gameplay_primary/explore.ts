@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder } from 'discord.js';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { capitalize, getBiggerNumber, getMapData, getMessageId, getSmallerNumber, keyInObject, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
+import { capitalize, getBiggestNumber, getMapData, getMessageId, getSmallestNumber, keyInObject, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
 import { remindOfAttack, startAttack } from './attack';
 import Fuse from 'fuse.js';
 import { disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
@@ -59,7 +59,7 @@ export const command: SlashCommand = {
 
 		await executeExploring(interaction, userData, serverData);
 	},
-	async sendMessageComponentResponse(interaction, userData, serverData) {
+	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer, server }) {
 
 		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
 		if (interaction.isButton() && customId?.args[0] === 'new') {
@@ -345,7 +345,7 @@ async function executeExploring(
 		await startAttack(buttonInteraction ?? interaction, humanCount);
 
 		messageContent = serverActiveUsersMap.get(interaction.guildId)?.map(user => `<@${user}>`).join(' ') ?? '';
-		embed.setDescription(`*${quid.name} has just been looking around for food when ${pronounAndPlural(quid, 0, 'suddenly hear')} voices to ${pronoun(quid, 2)} right. Cautiously ${pronounAndPlural(quid, 0, 'creep')} up, and sure enough: a group of humans! It looks like it's around ${humanCount}. They seem to be discussing something, and keep pointing over towards where the pack is lying. Alarmed, the ${quid.getDisplayspecies()} runs away. **${capitalize(pronoun(quid, 0))} must gather as many packmates as possible to protect the pack!***`);
+		embed.setDescription(`*${quid.name} has just been looking around for food when ${pronounAndPlural(quid, 0, 'suddenly hear')} voices to ${pronoun(quid, 2)} right. Cautiously ${pronounAndPlural(quid, 0, 'creep')} up, and sure enough: a group of humans! It looks like it's around ${humanCount}. They seem to be discussing something, and keep pointing over towards where the pack is lying. Alarmed, the ${getDisplayspecies(quid)} runs away. **${capitalize(pronoun(quid, 0))} must gather as many packmates as possible to protect the pack!***`);
 		embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\nYou have two minutes to prepare before the humans will attack!` });
 	}
 	// If the user gets the right chance, find sapling or material or nothing
@@ -372,7 +372,7 @@ async function executeExploring(
 			);
 
 			embed.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/main/pictures/ginkgo_tree/Discovery.png');
-			embed.setDescription(`*${quid.name} is looking around for useful things around ${pronoun(quid, 1)} when ${pronounAndPlural(quid, 0, 'discover')} the sapling of a ginkgo tree. The ${quid.getDisplayspecies()} remembers that they bring good luck and health. Surely it can't hurt to bring it back to the pack!*`);
+			embed.setDescription(`*${quid.name} is looking around for useful things around ${pronoun(quid, 1)} when ${pronounAndPlural(quid, 0, 'discover')} the sapling of a ginkgo tree. The ${getDisplayspecies(quid)} remembers that they bring good luck and health. Surely it can't hurt to bring it back to the pack!*`);
 			embed.setFooter({ text: changedCondition.statsUpdateText + '\nWater the ginkgo sapling with \'/water-tree\'.' });
 		}
 		else if (serverMaterialsCount < 36) {
@@ -386,7 +386,7 @@ async function executeExploring(
 				},
 			);
 
-			embed.setDescription(`*${quid.name} is looking around for things around ${pronoun(quid, 1)} but there doesn't appear to be anything useful. The ${quid.getDisplayspecies()} decides to grab a ${foundMaterial} as to not go back with nothing to show.*`);
+			embed.setDescription(`*${quid.name} is looking around for things around ${pronoun(quid, 1)} but there doesn't appear to be anything useful. The ${getDisplayspecies(quid)} decides to grab a ${foundMaterial} as to not go back with nothing to show.*`);
 			embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${foundMaterial}` });
 		}
 		else {
@@ -400,7 +400,7 @@ async function executeExploring(
 
 		/* First we are calculating needed plants - existing plants through simulatePlantUse three times, of which two it is calculated for active users only. The results of these are added together and divided by 3 to get their average. This is then used to get a random number that can be between 1 higher and 1 lower than that. The user's level is added with this, and it is limited to not be below 1. */
 		const simAverage = Math.round((plantUse + await simulatePlantUse(serverData, true) + await simulatePlantUse(serverData, false)) / 3);
-		const environmentLevel = getBiggerNumber(1, quidToServer.levels + getRandomNumber(3, simAverage - 1));
+		const environmentLevel = getBiggestNumber(1, quidToServer.levels + getRandomNumber(3, simAverage - 1));
 
 		const foundItem = await pickPlant(chosenBiomeNumber, serverData);
 
@@ -551,22 +551,22 @@ async function executeExploring(
 					experiencePoints = Math.round(experiencePoints / 2);
 					if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm) {
 
-						embed.setDescription(`*${quid.name} tries really hard to pick up the ${foundItem} that ${pronoun(quid, 0)} discovered in a small, lone bush. But as the ${quid.getDisplayspecies()} tries to pick it up, it just breaks into little pieces.*`);
+						embed.setDescription(`*${quid.name} tries really hard to pick up the ${foundItem} that ${pronoun(quid, 0)} discovered in a small, lone bush. But as the ${getDisplayspecies(quid)} tries to pick it up, it just breaks into little pieces.*`);
 					}
 					else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Cold) {
 
-						embed.setDescription(`*${quid.name} tries really hard to pick up the ${foundItem} that ${pronoun(quid, 0)} discovered at the end of a tree trunk. But as the ${quid.getDisplayspecies()} tries to pick it up, it just breaks into little pieces.*`);
+						embed.setDescription(`*${quid.name} tries really hard to pick up the ${foundItem} that ${pronoun(quid, 0)} discovered at the end of a tree trunk. But as the ${getDisplayspecies(quid)} tries to pick it up, it just breaks into little pieces.*`);
 					}
 					else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Water) {
 
-						embed.setDescription(`*${quid.name} tries really hard to pick up the ${foundItem} that ${pronoun(quid, 0)} discovered among large algae. But as the ${quid.getDisplayspecies()} tries to pick it up, it just breaks into little pieces.*`);
+						embed.setDescription(`*${quid.name} tries really hard to pick up the ${foundItem} that ${pronoun(quid, 0)} discovered among large algae. But as the ${getDisplayspecies(quid)} tries to pick it up, it just breaks into little pieces.*`);
 					}
 					else { throw new Error('quid species habitat not found'); }
 					embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}` });
 				}
 				else {
 
-					const healthPoints = getSmallerNumber(quidToServer.health, getRandomNumber(5, 3));
+					const healthPoints = getSmallestNumber(quidToServer.health, getRandomNumber(5, 3));
 
 					const twoWeeksInMs = 1_209_600_000;
 					const activeElderlyAccounts = await userModel.find(
@@ -583,15 +583,15 @@ async function executeExploring(
 
 						if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm) {
 
-							embed.setDescription(`*Piles of sand and lone, scraggly bushes are dotting the landscape all around ${quid.name}. ${capitalize(pronounAndPlural(quid, 0, 'pad'))} through the scattered branches from long-dead trees, carefully avoiding the cacti, trying to reach the ${foundItem} ${pronoun(quid, 0)} saw. The ${quid.getDisplayspecies()} steps on a root but feels it twist and pulse before it leaps from its camouflage and latches onto ${pronoun(quid, 2)} body. The snake pumps poison into ${pronoun(quid, 1)} while ${pronounAndPlural(quid, 0, 'lashes', 'lash')} around, trying to throw it off, finally succeeding and rushing away.*`);
+							embed.setDescription(`*Piles of sand and lone, scraggly bushes are dotting the landscape all around ${quid.name}. ${capitalize(pronounAndPlural(quid, 0, 'pad'))} through the scattered branches from long-dead trees, carefully avoiding the cacti, trying to reach the ${foundItem} ${pronoun(quid, 0)} saw. The ${getDisplayspecies(quid)} steps on a root but feels it twist and pulse before it leaps from its camouflage and latches onto ${pronoun(quid, 2)} body. The snake pumps poison into ${pronoun(quid, 1)} while ${pronounAndPlural(quid, 0, 'lashes', 'lash')} around, trying to throw it off, finally succeeding and rushing away.*`);
 						}
 						else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Cold) {
 
-							embed.setDescription(`*Many sticks and roots are popping up all around ${quid.name}. ${capitalize(pronounAndPlural(quid, 0, 'shuffle'))} through the fallen branches and twisting vines, trying to reach the ${foundItem} ${pronoun(quid, 0)} found. The ${quid.getDisplayspecies()} steps on a root but feels it weave and pulse before it leaps from its camouflage and latches onto ${pronoun(quid, 2)} body. The snake pumps poison into ${pronoun(quid, 1)} while ${pronounAndPlural(quid, 0, 'lashes', 'lash')} around, trying to throw it off, finally succeeding and rushing away.*`);
+							embed.setDescription(`*Many sticks and roots are popping up all around ${quid.name}. ${capitalize(pronounAndPlural(quid, 0, 'shuffle'))} through the fallen branches and twisting vines, trying to reach the ${foundItem} ${pronoun(quid, 0)} found. The ${getDisplayspecies(quid)} steps on a root but feels it weave and pulse before it leaps from its camouflage and latches onto ${pronoun(quid, 2)} body. The snake pumps poison into ${pronoun(quid, 1)} while ${pronounAndPlural(quid, 0, 'lashes', 'lash')} around, trying to throw it off, finally succeeding and rushing away.*`);
 						}
 						else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Water) {
 
-							embed.setDescription(`*Many plants and jellyfish are popping up all around ${quid.name}. ${capitalize(pronounAndPlural(quid, 0, 'weave'))} through the jellyfish and twisting kelp, trying to reach the ${foundItem} ${pronoun(quid, 0)} found. The ${quid.getDisplayspecies()} pushes through a piece of kelp but feels it twist and pulse before it latches onto ${pronoun(quid, 2)} body. The jellyfish wraps ${pronoun(quid, 1)} with its stingers, poison flowing into ${pronoun(quid, 1)} while ${pronounAndPlural(quid, 0, 'thrashes', 'trash')} around trying to throw it off, finally succeeding and rushing away to the surface.*`);
+							embed.setDescription(`*Many plants and jellyfish are popping up all around ${quid.name}. ${capitalize(pronounAndPlural(quid, 0, 'weave'))} through the jellyfish and twisting kelp, trying to reach the ${foundItem} ${pronoun(quid, 0)} found. The ${getDisplayspecies(quid)} pushes through a piece of kelp but feels it twist and pulse before it latches onto ${pronoun(quid, 2)} body. The jellyfish wraps ${pronoun(quid, 1)} with its stingers, poison flowing into ${pronoun(quid, 1)} while ${pronounAndPlural(quid, 0, 'thrashes', 'trash')} around trying to throw it off, finally succeeding and rushing away to the surface.*`);
 						}
 						else { throw new Error('quid species habitat not found'); }
 						embed.setFooter({ text: `-${healthPoints} HP (from poison)\n${changedCondition.statsUpdateText}` });
@@ -602,15 +602,15 @@ async function executeExploring(
 
 						if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm) {
 
-							embed.setDescription(`*${quid.name} pads along the ground, dashing from bush to bush, inspecting every corner for something ${pronoun(quid, 0)} could add to the inventory. Suddenly, the ${quid.getDisplayspecies()} sways, feeling tired and feeble. A coughing fit grew louder, escaping ${pronoun(quid, 2)} throat.*`);
+							embed.setDescription(`*${quid.name} pads along the ground, dashing from bush to bush, inspecting every corner for something ${pronoun(quid, 0)} could add to the inventory. Suddenly, the ${getDisplayspecies(quid)} sways, feeling tired and feeble. A coughing fit grew louder, escaping ${pronoun(quid, 2)} throat.*`);
 						}
 						else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Cold) {
 
-							embed.setDescription(`*${quid.name} plots around the forest, dashing from tree to tree, inspecting every corner for something ${pronoun(quid, 0)} could add to the inventory. Suddenly, the ${quid.getDisplayspecies()} sways, feeling tired and feeble. A coughing fit grew louder, escaping ${pronoun(quid, 2)} throat.*`);
+							embed.setDescription(`*${quid.name} plots around the forest, dashing from tree to tree, inspecting every corner for something ${pronoun(quid, 0)} could add to the inventory. Suddenly, the ${getDisplayspecies(quid)} sways, feeling tired and feeble. A coughing fit grew louder, escaping ${pronoun(quid, 2)} throat.*`);
 						}
 						else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Water) {
 
-							embed.setDescription(`*${quid.name} flips around in the water, swimming from rock to rock, inspecting every nook for something ${pronoun(quid, 0)} could add to the inventory. Suddenly, the ${quid.getDisplayspecies()} falters in ${pronoun(quid, 2)} stroke, feeling tired and feeble. A coughing fit grew louder, bubbles escaping ${pronoun(quid, 2)} throat to rise to the surface.*`);
+							embed.setDescription(`*${quid.name} flips around in the water, swimming from rock to rock, inspecting every nook for something ${pronoun(quid, 0)} could add to the inventory. Suddenly, the ${getDisplayspecies(quid)} falters in ${pronoun(quid, 2)} stroke, feeling tired and feeble. A coughing fit grew louder, bubbles escaping ${pronoun(quid, 2)} throat to rise to the surface.*`);
 						}
 						else { throw new Error('quid species habitat not found'); }
 						embed.setFooter({ text: `-${healthPoints} HP (from cold)\n${changedCondition.statsUpdateText}` });
@@ -651,7 +651,7 @@ async function executeExploring(
 
 		/* First we are calculating needed meat - existing meat through simulateMeatUse three times, of which two it is calculated for active users only. The results of these are added together and divided by 3 to get their average. This is then used to get a random number that can be between 1 higher and 1 lower than that. The user's level is added with this, and it is limited to not be below 1. */
 		const simAverage = Math.round((meatUse + await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, false)) / 3);
-		const opponentLevel = getBiggerNumber(1, quidToServer.levels + getRandomNumber(3, simAverage - 1));
+		const opponentLevel = getBiggestNumber(1, quidToServer.levels + getRandomNumber(3, simAverage - 1));
 
 		const opponentsArray = speciesInfo[quid.species].biome1OpponentArray.concat([
 			...(chosenBiomeNumber > 0 ? speciesInfo[quid.species].biome2OpponentArray : []),
@@ -661,15 +661,15 @@ async function executeExploring(
 
 		if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm) {
 
-			embed.setDescription(`*${quid.name} creeps close to the ground, ${pronoun(quid, 2)} pelt blending with the sand surrounding ${pronoun(quid, 1)}. The ${quid.getDisplayspecies()} watches a pile of shrubs, ${pronoun(quid, 2)} eyes flitting around before catching a motion out of the corner of ${pronoun(quid, 2)} eyes. A particularly daring ${opponentSpecies} walks on the ground surrounding the bushes before sitting down and cleaning itself.*`);
+			embed.setDescription(`*${quid.name} creeps close to the ground, ${pronoun(quid, 2)} pelt blending with the sand surrounding ${pronoun(quid, 1)}. The ${getDisplayspecies(quid)} watches a pile of shrubs, ${pronoun(quid, 2)} eyes flitting around before catching a motion out of the corner of ${pronoun(quid, 2)} eyes. A particularly daring ${opponentSpecies} walks on the ground surrounding the bushes before sitting down and cleaning itself.*`);
 		}
 		else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Cold) {
 
-			embed.setDescription(`*${quid.name} pads silently to the clearing, stopping just shy of leaving the safety of the thick trees that housed ${pronoun(quid, 2)} pack, camp, and home. A lone ${opponentSpecies} stands in the clearing, snout in the stream that cuts the clearing in two, leaving it unaware of the ${quid.getDisplayspecies()} a few meters behind it, ready to pounce.*`);
+			embed.setDescription(`*${quid.name} pads silently to the clearing, stopping just shy of leaving the safety of the thick trees that housed ${pronoun(quid, 2)} pack, camp, and home. A lone ${opponentSpecies} stands in the clearing, snout in the stream that cuts the clearing in two, leaving it unaware of the ${getDisplayspecies(quid)} a few meters behind it, ready to pounce.*`);
 		}
 		else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Water) {
 
-			embed.setDescription(`*${quid.name} hides behind some kelp, looking around the clear water for any prey. A lone ${opponentSpecies} swims around aimlessly, not alarmed of any potential attacks. The ${quid.getDisplayspecies()} gets in position, contemplating an ambush.*`);
+			embed.setDescription(`*${quid.name} hides behind some kelp, looking around the clear water for any prey. A lone ${opponentSpecies} swims around aimlessly, not alarmed of any potential attacks. The ${getDisplayspecies(quid)} gets in position, contemplating an ambush.*`);
 		}
 		else { throw new Error('quid species habitat not found'); }
 		embed.setFooter({ text: `The ${opponentSpecies} is level ${opponentLevel}.\nYou will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response.` });
@@ -709,15 +709,15 @@ async function executeExploring(
 
 			if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm) {
 
-				embed.setDescription(`*${quid.name} eyes the ${opponentSpecies}, which is still unaware of the possible danger. The ${quid.getDisplayspecies()} paces, still unsure whether to attack. Suddenly, the ${quid.getDisplayspecies()}'s head shoots up as it tries to find the source of the sound before running away. Looks like this hunt was unsuccessful.*`);
+				embed.setDescription(`*${quid.name} eyes the ${opponentSpecies}, which is still unaware of the possible danger. The ${getDisplayspecies(quid)} paces, still unsure whether to attack. Suddenly, the ${getDisplayspecies(quid)}'s head shoots up as it tries to find the source of the sound before running away. Looks like this hunt was unsuccessful.*`);
 			}
 			else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Cold) {
 
-				embed.setDescription(`*The ${opponentSpecies} sits in the clearing, unaware of ${quid.name} hiding in the thicket behind it. The ${quid.getDisplayspecies()} watches as the animal gets up, shakes the loose water droplets from its mouth, and walks into the forest, its shadow fading from ${quid.name}'s sight. Looks like this hunt was unsuccessful.*`);
+				embed.setDescription(`*The ${opponentSpecies} sits in the clearing, unaware of ${quid.name} hiding in the thicket behind it. The ${getDisplayspecies(quid)} watches as the animal gets up, shakes the loose water droplets from its mouth, and walks into the forest, its shadow fading from ${quid.name}'s sight. Looks like this hunt was unsuccessful.*`);
 			}
 			else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Water) {
 
-				embed.setDescription(`*${quid.name} looks at the ${opponentSpecies}, which is still unaware of ${pronoun(quid, 1)} watching through the kelp. Subconsciously, the ${quid.getDisplayspecies()} starts swimming back and fourth, still unsure whether to attack. The ${opponentSpecies}'s head turns in a flash to eye the suddenly moving kelp before it frantically swims away. Looks like this hunt was unsuccessful.*`);
+				embed.setDescription(`*${quid.name} looks at the ${opponentSpecies}, which is still unaware of ${pronoun(quid, 1)} watching through the kelp. Subconsciously, the ${getDisplayspecies(quid)} starts swimming back and fourth, still unsure whether to attack. The ${opponentSpecies}'s head turns in a flash to eye the suddenly moving kelp before it frantically swims away. Looks like this hunt was unsuccessful.*`);
 			}
 			else { throw new Error('quid species habitat not found'); }
 			if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
@@ -747,7 +747,7 @@ async function executeExploring(
 				}
 				else if (fightGame.cycleKind === 'dodge') {
 
-					embed.setDescription(`↪️ *Looks like the ${opponentSpecies} is preparing a maneuver for ${quid.name}'s next move. The ${quid.getDisplayspecies()} must think quickly about how ${pronounAndPlural(quid, 0, 'want')} to react.*`);
+					embed.setDescription(`↪️ *Looks like the ${opponentSpecies} is preparing a maneuver for ${quid.name}'s next move. The ${getDisplayspecies(quid)} must think quickly about how ${pronounAndPlural(quid, 0, 'want')} to react.*`);
 					embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (↪️ Dodge).' });
 				}
 				else if (fightGame.cycleKind === 'defend') {
@@ -833,11 +833,11 @@ async function executeExploring(
 					}
 					else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Cold) {
 
-						embed.setDescription(`*${quid.name} licks ${pronoun(quid, 2)} paws, freeing the dirt that is under ${pronoun(quid, 2)} claws. The ${quid.getDisplayspecies()} turns to the dead ${opponentSpecies} behind ${pronoun(quid, 1)}, marveling at the size of it. Then, ${capitalize(pronounAndPlural(quid, 0, 'grab'))} the ${opponentSpecies} by the neck, dragging it into the bushes and back to the camp.*`);
+						embed.setDescription(`*${quid.name} licks ${pronoun(quid, 2)} paws, freeing the dirt that is under ${pronoun(quid, 2)} claws. The ${getDisplayspecies(quid)} turns to the dead ${opponentSpecies} behind ${pronoun(quid, 1)}, marveling at the size of it. Then, ${capitalize(pronounAndPlural(quid, 0, 'grab'))} the ${opponentSpecies} by the neck, dragging it into the bushes and back to the camp.*`);
 					}
 					else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Water) {
 
-						embed.setDescription(`*The ${quid.getDisplayspecies()} swims quickly to the surface, trying to stay as stealthy and unnoticed as possible. ${capitalize(pronounAndPlural(quid, 0, 'break'))} the surface, gain ${pronoun(quid, 2)} bearing, and the ${quid.getDisplayspecies()} begins swimming to the shore, dragging the dead ${opponentSpecies} up the shore to the camp.*`);
+						embed.setDescription(`*The ${getDisplayspecies(quid)} swims quickly to the surface, trying to stay as stealthy and unnoticed as possible. ${capitalize(pronounAndPlural(quid, 0, 'break'))} the surface, gain ${pronoun(quid, 2)} bearing, and the ${getDisplayspecies(quid)} begins swimming to the shore, dragging the dead ${opponentSpecies} up the shore to the camp.*`);
 					}
 					else { throw new Error('quid species habitat not found'); }
 					embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}\n\n+1 ${opponentSpecies}` });
@@ -847,22 +847,22 @@ async function executeExploring(
 					experiencePoints = Math.round(experiencePoints / 2);
 					if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm) {
 
-						embed.setDescription(`*${quid.name} and the ${opponentSpecies} are snarling at one another as they retreat to the opposite sides of the hill, now stirred up and filled with sticks from the surrounding bushes. The ${quid.getDisplayspecies()} runs back to camp, ${pronoun(quid, 2)} mouth empty as before.*`);
+						embed.setDescription(`*${quid.name} and the ${opponentSpecies} are snarling at one another as they retreat to the opposite sides of the hill, now stirred up and filled with sticks from the surrounding bushes. The ${getDisplayspecies(quid)} runs back to camp, ${pronoun(quid, 2)} mouth empty as before.*`);
 					}
 					else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Cold) {
 
-						embed.setDescription(`*${quid.name} and the ${opponentSpecies} are snarling at one another as they retreat into the bushes surrounding the clearing, now covered in trampled grass and loose clumps of dirt. The ${quid.getDisplayspecies()} runs back to camp, ${pronoun(quid, 2)} mouth empty as before.*`);
+						embed.setDescription(`*${quid.name} and the ${opponentSpecies} are snarling at one another as they retreat into the bushes surrounding the clearing, now covered in trampled grass and loose clumps of dirt. The ${getDisplayspecies(quid)} runs back to camp, ${pronoun(quid, 2)} mouth empty as before.*`);
 					}
 					else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Water) {
 
-						embed.setDescription(`*${quid.name} and the ${opponentSpecies} glance at one another as they swim in opposite directions from the kelp, now cloudy from the stirred up dirt. The ${quid.getDisplayspecies()} swims back to camp, ${pronoun(quid, 2)} mouth empty as before.*`);
+						embed.setDescription(`*${quid.name} and the ${opponentSpecies} glance at one another as they swim in opposite directions from the kelp, now cloudy from the stirred up dirt. The ${getDisplayspecies(quid)} swims back to camp, ${pronoun(quid, 2)} mouth empty as before.*`);
 					}
 					else { throw new Error('quid species habitat not found'); }
 					embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}` });
 				}
 				else {
 
-					const healthPoints = getSmallerNumber(quidToServer.health, getRandomNumber(5, 3));
+					const healthPoints = getSmallestNumber(quidToServer.health, getRandomNumber(5, 3));
 
 					if (getRandomNumber(2) === 0) {
 
@@ -870,15 +870,15 @@ async function executeExploring(
 
 						if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm) {
 
-							embed.setDescription(`*The ${quid.getDisplayspecies()} rolls over in the sand, pinned down by the ${opponentSpecies}.* "Get off my territory," *it growls before walking away from the shaking form of ${quid.name} laying on the sand. ${capitalize(pronounAndPlural(quid, 0, 'let'))} the ${opponentSpecies} walk away for a little, trying to put space between the two animals. After catching ${pronoun(quid, 2)} breath, the ${quid.getDisplayspecies()} pulls ${pronoun(quid, 4)} off the ground, noticing sand sticking to ${pronoun(quid, 2)} side. ${capitalize(pronounAndPlural(quid, 0, 'shake'))} ${pronoun(quid, 2)} body, sending bolts of pain up ${pronoun(quid, 2)} side from the wound. ${capitalize(pronounAndPlural(quid, 0, 'slowly walk'))} away from the valley that the ${opponentSpecies} was sitting in before running back towards camp.*`);
+							embed.setDescription(`*The ${getDisplayspecies(quid)} rolls over in the sand, pinned down by the ${opponentSpecies}.* "Get off my territory," *it growls before walking away from the shaking form of ${quid.name} laying on the sand. ${capitalize(pronounAndPlural(quid, 0, 'let'))} the ${opponentSpecies} walk away for a little, trying to put space between the two animals. After catching ${pronoun(quid, 2)} breath, the ${getDisplayspecies(quid)} pulls ${pronoun(quid, 4)} off the ground, noticing sand sticking to ${pronoun(quid, 2)} side. ${capitalize(pronounAndPlural(quid, 0, 'shake'))} ${pronoun(quid, 2)} body, sending bolts of pain up ${pronoun(quid, 2)} side from the wound. ${capitalize(pronounAndPlural(quid, 0, 'slowly walk'))} away from the valley that the ${opponentSpecies} was sitting in before running back towards camp.*`);
 						}
 						else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Cold) {
 
-							embed.setDescription(`*${quid.name} runs into the brush, trying to avoid making the wound from the ${opponentSpecies} any worse than it already is. The ${quid.getDisplayspecies()} stops and confirms that the ${opponentSpecies} isn't following ${pronoun(quid, 1)}, before walking back inside the camp borders.*`);
+							embed.setDescription(`*${quid.name} runs into the brush, trying to avoid making the wound from the ${opponentSpecies} any worse than it already is. The ${getDisplayspecies(quid)} stops and confirms that the ${opponentSpecies} isn't following ${pronoun(quid, 1)}, before walking back inside the camp borders.*`);
 						}
 						else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Water) {
 
-							embed.setDescription(`*Running from the ${opponentSpecies}, ${quid.name} flips and spins around in the water, trying to escape from the grasp of the animal behind ${pronoun(quid, 1)}. ${capitalize(pronounAndPlural(quid, 0, 'slip'))} into a small crack in a wall, waiting silently for the creature to give up. Finally, the ${opponentSpecies} swims away, leaving the ${quid.getDisplayspecies()} alone. Slowly emerging from the crevice, ${quid.name} flinches away from the wall as ${pronounAndPlural(quid, 0, 'hit')} it, a wound making itself known from the fight. Hopefully, it can be treated back at the camp.*`);
+							embed.setDescription(`*Running from the ${opponentSpecies}, ${quid.name} flips and spins around in the water, trying to escape from the grasp of the animal behind ${pronoun(quid, 1)}. ${capitalize(pronounAndPlural(quid, 0, 'slip'))} into a small crack in a wall, waiting silently for the creature to give up. Finally, the ${opponentSpecies} swims away, leaving the ${getDisplayspecies(quid)} alone. Slowly emerging from the crevice, ${quid.name} flinches away from the wall as ${pronounAndPlural(quid, 0, 'hit')} it, a wound making itself known from the fight. Hopefully, it can be treated back at the camp.*`);
 						}
 						else { throw new Error('quid species habitat not found'); }
 						embed.setFooter({ text: `-${healthPoints} HP (from wound)\n${changedCondition.statsUpdateText}` });
@@ -889,15 +889,15 @@ async function executeExploring(
 
 						if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm) {
 
-							embed.setDescription(`*${quid.name} limps back to camp, ${pronoun(quid, 2)} paw sprained from the fight with the ${opponentSpecies}. Only barely did ${pronoun(quid, 0)} get away, leaving the enemy alone in the sand that is now stirred up and filled with sticks from the surrounding bushes. Maybe next time, the ${quid.getDisplayspecies()} will be successful in ${pronoun(quid, 2)} hunt.*`);
+							embed.setDescription(`*${quid.name} limps back to camp, ${pronoun(quid, 2)} paw sprained from the fight with the ${opponentSpecies}. Only barely did ${pronoun(quid, 0)} get away, leaving the enemy alone in the sand that is now stirred up and filled with sticks from the surrounding bushes. Maybe next time, the ${getDisplayspecies(quid)} will be successful in ${pronoun(quid, 2)} hunt.*`);
 						}
 						else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Cold) {
 
-							embed.setDescription(`*${quid.name} limps back to camp, ${pronoun(quid, 2)} paw sprained from the fight with the ${opponentSpecies}. Only barely did ${pronoun(quid, 0)} get away, leaving the enemy alone in a clearing now filled with trampled grass and dirt clumps. Maybe next time, the ${quid.getDisplayspecies()} will be successful in ${pronoun(quid, 2)} hunt.*`);
+							embed.setDescription(`*${quid.name} limps back to camp, ${pronoun(quid, 2)} paw sprained from the fight with the ${opponentSpecies}. Only barely did ${pronoun(quid, 0)} get away, leaving the enemy alone in a clearing now filled with trampled grass and dirt clumps. Maybe next time, the ${getDisplayspecies(quid)} will be successful in ${pronoun(quid, 2)} hunt.*`);
 						}
 						else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Water) {
 
-							embed.setDescription(`*${quid.name} swims back to camp in pain, ${pronoun(quid, 2)} fin sprained from the fight with the ${opponentSpecies}. Only barely did ${pronoun(quid, 0)} get away, leaving the enemy alone in the water that is now cloudy from the stirred up dirt. Maybe next time, the ${quid.getDisplayspecies()} will be successful in ${pronoun(quid, 2)} hunt.*`);
+							embed.setDescription(`*${quid.name} swims back to camp in pain, ${pronoun(quid, 2)} fin sprained from the fight with the ${opponentSpecies}. Only barely did ${pronoun(quid, 0)} get away, leaving the enemy alone in the water that is now cloudy from the stirred up dirt. Maybe next time, the ${getDisplayspecies(quid)} will be successful in ${pronoun(quid, 2)} hunt.*`);
 						}
 						else { throw new Error('quid species habitat not found'); }
 						embed.setFooter({ text: `-${healthPoints} HP (from sprain)\n${changedCondition.statsUpdateText}` });

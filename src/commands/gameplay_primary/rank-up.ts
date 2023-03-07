@@ -111,7 +111,7 @@ export const command: SlashCommand = {
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
-					.setDescription(`"We are here to celebrate the nomination of ${quid.name} to the highest rank, Elderly. The ${quid.getDisplayspecies()} has shown incredible skills and persistence, and we congratulate ${pronoun(quid, 1)} to ${pronoun(quid, 2)} new title." *A mixture of howls, crows, meows, roars and squeaks are heard all around the hill, on which the Alpha stoof to announce this special event. It is not every day that a packmate gets the title of Elderly.*`)],
+					.setDescription(`"We are here to celebrate the nomination of ${quid.name} to the highest rank, Elderly. The ${getDisplayspecies(quid)} has shown incredible skills and persistence, and we congratulate ${pronoun(quid, 1)} to ${pronoun(quid, 2)} new title." *A mixture of howls, crows, meows, roars and squeaks are heard all around the hill, on which the Alpha stoof to announce this special event. It is not every day that a packmate gets the title of Elderly.*`)],
 			});
 
 			await checkRankRequirements(serverData, interaction, interaction.member, RankType.Elderly, true);
@@ -129,7 +129,7 @@ export const command: SlashCommand = {
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
-					.setDescription(`*${quid.name} is very wise from all the adventures ${pronoun(quid, 0)} had, but also a little... quaint. The ${quid.getDisplayspecies()} seems to have forgotten that as Elderly, ${pronounAndPlural(quid, 0, 'has', 'have')} already achieved the highest possible rank.*`)],
+					.setDescription(`*${quid.name} is very wise from all the adventures ${pronoun(quid, 0)} had, but also a little... quaint. The ${getDisplayspecies(quid)} seems to have forgotten that as Elderly, ${pronounAndPlural(quid, 0, 'has', 'have')} already achieved the highest possible rank.*`)],
 			});
 			return;
 		}
@@ -143,11 +143,11 @@ export const command: SlashCommand = {
 					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
-				.setDescription(`*${quid.name} looks at the Elderly with puppy eyes, trying to convince them.*\n"I'm sorry, little ${quid.getDisplayspecies()}, you haven't proven yourself worthy of moving up a rank yet. Try again once you were able to put your strength, agility and decision-making to the test!" *the Elderly says.*`)
+				.setDescription(`*${quid.name} looks at the Elderly with puppy eyes, trying to convince them.*\n"I'm sorry, little ${getDisplayspecies(quid)}, you haven't proven yourself worthy of moving up a rank yet. Try again once you were able to put your strength, agility and decision-making to the test!" *the Elderly says.*`)
 				.setFooter({ text: `Go ${quidToServer.rank === 'Youngling' ? 'playing' : 'exploring'} until you find a quest! Once you have completed the quest, you can move up a rank.` })],
 		});
 	},
-	async sendMessageComponentResponse(interaction, userData, serverData) {
+	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer, server }) {
 
 		if (!interaction.isButton()) { return; }
 		/* This ensures that the user is in a guild and has a completed account. */
@@ -172,7 +172,7 @@ export const command: SlashCommand = {
 					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
-				.setDescription(`*${quid.name} stands before one of the eldest, excited to hear their following words.* "Congratulations, ${quid.name}, you are now a fully-fledged ${rank}. I am certain you will contribute greatly to the pack in this role."\n*The ${quid.getDisplayspecies()} grins from ear to ear.*`)],
+				.setDescription(`*${quid.name} stands before one of the eldest, excited to hear their following words.* "Congratulations, ${quid.name}, you are now a fully-fledged ${rank}. I am certain you will contribute greatly to the pack in this role."\n*The ${getDisplayspecies(quid)} grins from ear to ear.*`)],
 			components: [],
 		}, 'update', interaction.message.id);
 

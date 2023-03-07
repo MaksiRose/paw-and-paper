@@ -9,7 +9,7 @@ import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
-import { capitalize, getArrayElement, getBiggerNumber, getMapData, getMessageId, getSmallerNumber, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
+import { capitalize, getArrayElement, getBiggestNumber, getMapData, getMessageId, getSmallestNumber, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
@@ -67,7 +67,7 @@ export const command: SlashCommand = {
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData1.quid.color)
 					.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-					.setDescription(`*${userData1.quid.name} believes that ${userData1.quid.pronounAndPlural(0, 'is', 'are')} so unmatched that only ${userData1.quid.pronoun(0)} could defeat ${userData1.quid.pronoun(4)}. But it doesn't take ${userData1.quid.pronoun(1)} long to realize that it is more fun to fight a partner after all.*`)],
+					.setDescription(`*${userData1.quid.name} believes that ${userData1.pronounAndPlural(quid, 0, 'is', 'are')} so unmatched that only ${userData1.pronoun(quid, 0)} could defeat ${userData1.pronoun(quid, 4)}. But it doesn't take ${userData1.pronoun(quid, 1)} long to realize that it is more fun to fight a partner after all.*`)],
 			});
 			return;
 		}
@@ -91,7 +91,7 @@ export const command: SlashCommand = {
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData1.quid.color)
 				.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-				.setDescription(`*${userData1.quid.name} hangs around the prairie when ${userData2.quid.name} comes by. The ${userData2.quid.getDisplayspecies()} has things to do but ${userData1.quid.name}'s smug expression implies ${userData2.quid.pronoun(0)} wouldn't be able to beat the ${userData1.quid.getDisplayspecies()}.*`)
+				.setDescription(`*${userData1.quid.name} hangs around the prairie when ${userData2.quid.name} comes by. The ${userData2.getDisplayspecies(quid)} has things to do but ${userData1.quid.name}'s smug expression implies ${userData2.pronoun(quid, 0)} wouldn't be able to beat the ${userData1.getDisplayspecies(quid)}.*`)
 				.setFooter({ text: `The game that is being played is ${gameType}.` })],
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
@@ -106,7 +106,7 @@ export const command: SlashCommand = {
 		saveCommandDisablingInfo(userData1, interaction.guildId, interaction.channelId, botReply.id, interaction);
 		saveCommandDisablingInfo(userData2, interaction.guildId, interaction.channelId, botReply.id, interaction);
 	},
-	async sendMessageComponentResponse(interaction, userData, serverData) {
+	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer, server }) {
 
 		if (!interaction.isButton()) { return; }
 
@@ -238,9 +238,9 @@ export const command: SlashCommand = {
 			const userDataOther = user1IsPlaying ? userData2 : userData1;
 
 			const newTurnEmbedTextArray = [
-				`*${userDataCurrent.quid.name} bites into ${userDataOther.quid.name}, not very deep, but deep enough to hang onto the ${userDataOther.quid.getDisplayspecies()}. ${userDataOther.quid.name} needs to get the ${userDataCurrent.quid.getDisplayspecies()} off of ${userDataOther.quid.pronoun(1)}.*`,
-				`*${userDataCurrent.quid.name} slams into ${userDataOther.quid.name}, leaving the ${userDataOther.quid.getDisplayspecies()} disoriented. ${userDataOther.quid.name} needs to start an attack of ${userDataOther.quid.pronoun(2)} own now.*`,
-				`*${userDataOther.quid.name} has gotten hold of ${userDataCurrent.quid.name}, but the ${userDataCurrent.quid.getDisplayspecies()} manages to get ${userDataOther.quid.pronoun(1)} off, sending the ${userDataOther.quid.getDisplayspecies()} slamming into the ground. ${userDataOther.quid.name} needs to get up and try a new strategy.*`,
+				`*${userDataCurrent.quid.name} bites into ${userDataOther.quid.name}, not very deep, but deep enough to hang onto the ${userDataOther.getDisplayspecies(quid)}. ${userDataOther.quid.name} needs to get the ${userDataCurrent.getDisplayspecies(quid)} off of ${userDataOther.pronoun(quid, 1)}.*`,
+				`*${userDataCurrent.quid.name} slams into ${userDataOther.quid.name}, leaving the ${userDataOther.getDisplayspecies(quid)} disoriented. ${userDataOther.quid.name} needs to start an attack of ${userDataOther.pronoun(quid, 2)} own now.*`,
+				`*${userDataOther.quid.name} has gotten hold of ${userDataCurrent.quid.name}, but the ${userDataCurrent.getDisplayspecies(quid)} manages to get ${userDataOther.pronoun(quid, 1)} off, sending the ${userDataOther.getDisplayspecies(quid)} slamming into the ground. ${userDataOther.quid.name} needs to get up and try a new strategy.*`,
 			] as const;
 
 			newTurnEmbedTextArrayIndex = getRandomNumber(newTurnEmbedTextArray.length, 0, newTurnEmbedTextArrayIndex === -1 ? undefined : newTurnEmbedTextArrayIndex);
@@ -342,7 +342,7 @@ export const command: SlashCommand = {
 							new EmbedBuilder()
 								.setColor(userData1.quid.color)
 								.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-								.setDescription(`*${userDataCurrent.quid.name} takes so long with ${userDataCurrent.quid.pronoun(2)} decision on how to attack that ${userDataOther.quid.name} gets impatient and leaves.*`)
+								.setDescription(`*${userDataCurrent.quid.name} takes so long with ${userDataCurrent.pronoun(quid, 2)} decision on how to attack that ${userDataOther.quid.name} gets impatient and leaves.*`)
 								.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n\n${decreasedStatsData2.statsUpdateText}` }),
 							...decreasedStatsData1.injuryUpdateEmbed,
 							...decreasedStatsData2.injuryUpdateEmbed,
@@ -371,7 +371,7 @@ export const command: SlashCommand = {
 
 				if (reason.includes('win')) {
 
-					const x = getBiggerNumber(userDataOther.quidToServer.levels - userDataCurrent.quidToServer.levels, 0);
+					const x = getBiggestNumber(userDataOther.quidToServer.levels - userDataCurrent.quidToServer.levels, 0);
 					const extraExperience = Math.round((80 / (1 + Math.pow(Math.E, -0.09375 * x))) - 40);
 					const experiencePoints = userDataCurrent.quidToServer.rank === RankType.Youngling ? 0 : (getRandomNumber(11, 10) + extraExperience);
 
@@ -425,7 +425,7 @@ export const command: SlashCommand = {
 						new EmbedBuilder()
 							.setColor(userData1.quid.color)
 							.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-							.setDescription(reason.includes('win') ? `*The two animals are pressing against each other with all their might. It seems like the fight will never end this way, but ${userDataCurrent.quid.name} has one more trick up ${userDataCurrent.quid.pronoun(2)} sleeve: ${userDataCurrent.quid.pronoun(0)} simply moves out of the way, letting ${userDataOther.quid.name} crash into the ground. ${capitalize(userDataOther.quid.pronounAndPlural(0, 'has', 'have'))} a wry grin on ${userDataOther.quid.pronoun(2)} face as ${userDataOther.quid.pronounAndPlural(0, 'look')} up at the ${userDataCurrent.quid.getDisplayspecies()}. ${userDataCurrent.quid.name} wins this fight, but who knows about the next one?*` : `*The two animals wrestle with each other until ${userDataCurrent.quid.name} falls over the ${userDataOther.quid.getDisplayspecies()} and both of them land on the ground. They pant and glare at each other, but ${userDataOther.quid.name} can't contain ${userDataOther.quid.pronoun(2)} laughter. The ${userDataCurrent.quid.getDisplayspecies()} starts to giggle as well. The fight has been fun, even though no one won.*`)
+							.setDescription(reason.includes('win') ? `*The two animals are pressing against each other with all their might. It seems like the fight will never end this way, but ${userDataCurrent.quid.name} has one more trick up ${userDataCurrent.pronoun(quid, 2)} sleeve: ${userDataCurrent.pronoun(quid, 0)} simply moves out of the way, letting ${userDataOther.quid.name} crash into the ground. ${capitalize(userDataOther.pronounAndPlural(quid, 0, 'has', 'have'))} a wry grin on ${userDataOther.pronoun(quid, 2)} face as ${userDataOther.pronounAndPlural(quid, 0, 'look')} up at the ${userDataCurrent.getDisplayspecies(quid)}. ${userDataCurrent.quid.name} wins this fight, but who knows about the next one?*` : `*The two animals wrestle with each other until ${userDataCurrent.quid.name} falls over the ${userDataOther.getDisplayspecies(quid)} and both of them land on the ground. They pant and glare at each other, but ${userDataOther.quid.name} can't contain ${userDataOther.pronoun(quid, 2)} laughter. The ${userDataCurrent.getDisplayspecies(quid)} starts to giggle as well. The fight has been fun, even though no one won.*`)
 							.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}` }),
 						...decreasedStatsData1.injuryUpdateEmbed,
 						...decreasedStatsData2.injuryUpdateEmbed,
@@ -467,8 +467,8 @@ function getWinningRow(
 	/* Array 1 would contain the row that the lpp is in. It starts at the bigger number between LPP's row - (winCount - 1) and 0. It ends at the smaller number between LPP's row + (winCount - 1) and the highest row. This ensures that no positions are checked that don't include the lpp itself. */
 	const verticalPositions: PlayingFieldPosition[] = [];
 	for (
-		let i = getBiggerNumber(lastPopulatedPosition.row - (winCount - 1), 0);
-		i <= getSmallerNumber(lastPopulatedPosition.row + (winCount - 1), highestVertical);
+		let i = getBiggestNumber(lastPopulatedPosition.row - (winCount - 1), 0);
+		i <= getSmallestNumber(lastPopulatedPosition.row + (winCount - 1), highestVertical);
 		i++
 	) {
 		verticalPositions.push({ row: i, column: lastPopulatedPosition.column });
@@ -477,8 +477,8 @@ function getWinningRow(
 	/* Array 2 would contain the row that the lpp is in. It starts at the bigger number between LPP's row - (winCount - 1) and 0. It ends at the smaller number between LPP's row + (winCount - 1) and the highest row. This ensures that no positions are checked that don't include the lpp itself. */
 	const horizontalPositions: PlayingFieldPosition[] = [];
 	for (
-		let i = getBiggerNumber(lastPopulatedPosition.column - (winCount - 1), 0);
-		i <= getSmallerNumber(lastPopulatedPosition.column + (winCount - 1), highestHorizontal);
+		let i = getBiggestNumber(lastPopulatedPosition.column - (winCount - 1), 0);
+		i <= getSmallestNumber(lastPopulatedPosition.column + (winCount - 1), highestHorizontal);
 		i++
 	) {
 		horizontalPositions.push({ row: lastPopulatedPosition.row, column: i });
@@ -486,11 +486,11 @@ function getWinningRow(
 
 	/* Array 3 would be a 135° angled line from the positions at top left to the bottom right and through the lpp. We get X which is the smaller number between LPP's row and LPP's column. It starts at column: bigger number between LPP's column - (winCount - 1) and LPP's column - X and row: bigger number between LPP's row - (winCount - 1) and LPP's row - X. We get Y which is the smaller number between (highest row - LPP's row) and (highest column - LPP's column). It ends when either column: smaller number between LPP's column + (winCount - 1) and LPP's column + Y or row: smaller number between LPP's row + (winCount - 1) and LPP's row + Y is reached. This ensures that no positions are checked that don't include the lpp itself. */
 	const diagonal135Positions: PlayingFieldPosition[] = [];
-	const diagonal135Start = getSmallerNumber(lastPopulatedPosition.row, lastPopulatedPosition.column);
-	const diagonal135End = getSmallerNumber(highestVertical - lastPopulatedPosition.row, highestHorizontal - lastPopulatedPosition.column);
+	const diagonal135Start = getSmallestNumber(lastPopulatedPosition.row, lastPopulatedPosition.column);
+	const diagonal135End = getSmallestNumber(highestVertical - lastPopulatedPosition.row, highestHorizontal - lastPopulatedPosition.column);
 	for (
-		let c = getBiggerNumber(lastPopulatedPosition.column - (winCount - 1), lastPopulatedPosition.column - diagonal135Start), r = getBiggerNumber(lastPopulatedPosition.row - (winCount - 1), lastPopulatedPosition.row - diagonal135Start);
-		c <= getSmallerNumber(lastPopulatedPosition.column + (winCount - 1), lastPopulatedPosition.column + diagonal135End) && r <= getSmallerNumber(lastPopulatedPosition.row + (winCount - 1), lastPopulatedPosition.row + diagonal135End);
+		let c = getBiggestNumber(lastPopulatedPosition.column - (winCount - 1), lastPopulatedPosition.column - diagonal135Start), r = getBiggestNumber(lastPopulatedPosition.row - (winCount - 1), lastPopulatedPosition.row - diagonal135Start);
+		c <= getSmallestNumber(lastPopulatedPosition.column + (winCount - 1), lastPopulatedPosition.column + diagonal135End) && r <= getSmallestNumber(lastPopulatedPosition.row + (winCount - 1), lastPopulatedPosition.row + diagonal135End);
 		c++, r++
 	) {
 		diagonal135Positions.push({ row: r, column: c });
@@ -498,11 +498,11 @@ function getWinningRow(
 
 	/* Array 4 would be a 45° angled line from the positions at bottom left to the top right and through the lpp. We get X which is the smaller number between LPP's row and (highest column - LPP's column). It starts at column: smaller number between LPP's column + (winCount - 1) and LPP's column + X and row: bigger number between LPP's row - (winCount - 1) and LPP's row - X. We get Y which is the smaller number between (highest row - LPP's row) and LPP's column. It ends when either column: bigger number between LPP's column - (winCount - 1) and LPP's column - Y or row: smaller number between LPP's row + (winCount - 1) and LPP's row + Y is reached. This ensures that no positions are checked that don't include the lpp itself. */
 	const diagonal45Positions: PlayingFieldPosition[] = [];
-	const diagonal45Start = getSmallerNumber(lastPopulatedPosition.row, highestVertical - lastPopulatedPosition.column);
-	const diagonal45End = getSmallerNumber(highestHorizontal - lastPopulatedPosition.row, lastPopulatedPosition.column);
+	const diagonal45Start = getSmallestNumber(lastPopulatedPosition.row, highestVertical - lastPopulatedPosition.column);
+	const diagonal45End = getSmallestNumber(highestHorizontal - lastPopulatedPosition.row, lastPopulatedPosition.column);
 	for (
-		let c = getSmallerNumber(lastPopulatedPosition.column + (winCount - 1), lastPopulatedPosition.column + diagonal45Start), r = getBiggerNumber(lastPopulatedPosition.row - (winCount - 1), lastPopulatedPosition.row - diagonal45Start);
-		c >= getBiggerNumber(lastPopulatedPosition.column - (winCount - 1), lastPopulatedPosition.column - diagonal45End) && r <= getSmallerNumber(lastPopulatedPosition.row + (winCount - 1), lastPopulatedPosition.row + diagonal45End);
+		let c = getSmallestNumber(lastPopulatedPosition.column + (winCount - 1), lastPopulatedPosition.column + diagonal45Start), r = getBiggestNumber(lastPopulatedPosition.row - (winCount - 1), lastPopulatedPosition.row - diagonal45Start);
+		c >= getBiggestNumber(lastPopulatedPosition.column - (winCount - 1), lastPopulatedPosition.column - diagonal45End) && r <= getSmallestNumber(lastPopulatedPosition.row + (winCount - 1), lastPopulatedPosition.row + diagonal45End);
 		c--, r++
 	) {
 		diagonal45Positions.push({ row: r, column: c });

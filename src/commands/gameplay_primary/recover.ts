@@ -102,7 +102,7 @@ export const command: SlashCommand = {
 					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
-				.setDescription(`*${quid.name} walks towards the entrance of the grotto, where an elderly is already waiting for ${pronoun(quid, 1)}.*\n"Do you already know about this place? It has everything needed to heal any injury or illness. This makes it very precious, and so it should only be used in emergencies. So only go here if you can't find anything in the medicine den that can cure you!"\n*The ${quid.getDisplayspecies()} must decide which of their injuries ${pronounAndPlural(quid, 0, 'want')} to heal here.*`)
+				.setDescription(`*${quid.name} walks towards the entrance of the grotto, where an elderly is already waiting for ${pronoun(quid, 1)}.*\n"Do you already know about this place? It has everything needed to heal any injury or illness. This makes it very precious, and so it should only be used in emergencies. So only go here if you can't find anything in the medicine den that can cure you!"\n*The ${getDisplayspecies(quid)} must decide which of their injuries ${pronounAndPlural(quid, 0, 'want')} to heal here.*`)
 				.setFooter({ text: 'You can only select an injury when the pack has no herbs that can heal that injury.' })],
 			components: components,
 			fetchReply: true,
@@ -129,7 +129,7 @@ export const command: SlashCommand = {
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
-					.setDescription(`*After careful consideration, ${quid.name} decides that none of ${pronoun(quid, 2)} injuries are urgent enough to use the grotto to regenerate. The ${quid.getDisplayspecies()} might inspect the medicine den for useful plants instead.*`)],
+					.setDescription(`*After careful consideration, ${quid.name} decides that none of ${pronoun(quid, 2)} injuries are urgent enough to use the grotto to regenerate. The ${getDisplayspecies(quid)} might inspect the medicine den for useful plants instead.*`)],
 				components: disableAllComponents(components),
 			}, 'reply', getMessageId(botReply));
 			return;
@@ -306,7 +306,7 @@ export const command: SlashCommand = {
 									name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 									iconURL: quid.avatarURL,
 								})
-								.setDescription('✅'.repeat((choosingEmoji || 1) - 1) + '❌\n\n' + `*${quid.name} makes every effort to take full advantage of the grotto to heal ${pronoun(quid, 2)} own injuries. But ${pronounAndPlural(quid, 0, 'just doesn\'t', 'just don\'t')} seem to get better. The ${quid.getDisplayspecies()} may have to try again...*`);
+								.setDescription('✅'.repeat((choosingEmoji || 1) - 1) + '❌\n\n' + `*${quid.name} makes every effort to take full advantage of the grotto to heal ${pronoun(quid, 2)} own injuries. But ${pronounAndPlural(quid, 0, 'just doesn\'t', 'just don\'t')} seem to get better. The ${getDisplayspecies(quid)} may have to try again...*`);
 							if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 						}
 						else if (emojisToClick.length < 12) {

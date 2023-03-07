@@ -66,7 +66,7 @@ export const command: SlashCommand = {
 		});
 		if (userData !== null) { saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction); }
 	},
-	async sendMessageComponentResponse(interaction, userData, serverData) {
+	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer, server }) {
 
 		if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
 		if (serverData === null) { throw new TypeError('serverData is null'); }

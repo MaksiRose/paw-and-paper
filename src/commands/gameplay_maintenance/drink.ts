@@ -9,7 +9,7 @@ import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { getDisplayname, pronoun, pronounAndPlural } from '../../utils/getQuidInfo';
-import { getMessageId, getSmallerNumber, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
+import { getMessageId, getSmallestNumber, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
 import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
 const { default_color } = require('../../../config.json');
@@ -108,7 +108,7 @@ export async function sendDrinkMessage(
 
 			await setCooldown(userToServer, false);
 
-			const thirstPoints = getSmallerNumber(quidToServer.maxThirst - quidToServer.thirst, getRandomNumber(3, collected.size));
+			const thirstPoints = getSmallestNumber(quidToServer.maxThirst - quidToServer.thirst, getRandomNumber(3, collected.size));
 			const currentRegion = quidToServer.currentRegion;
 
 			await quidToServer.update({ currentRegion: CurrentRegionType.Lake, thirst: quidToServer.thirst + thirstPoints });

@@ -6,7 +6,7 @@ import { UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
-import { getMapData, getSmallerNumber, respond } from '../../utils/helperFunctions';
+import { getMapData, getSmallestNumber, respond } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { hasPermission } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -94,7 +94,7 @@ export const command: SlashCommand = {
 		const timeDifference = Math.abs(currentTimestamp - (quidToServer.sapling.nextWaterTimestamp ?? 0));
 		const timeDifferenceInMinutes = Math.round(timeDifference / oneMinute);
 
-		let experiencePoints = getSmallerNumber(quidToServer.sapling.waterCycles, quidToServer.levels * 5);
+		let experiencePoints = getSmallestNumber(quidToServer.sapling.waterCycles, quidToServer.levels * 5);
 		let healthPoints = 0;
 
 		const embed = new EmbedBuilder()
@@ -115,7 +115,7 @@ export const command: SlashCommand = {
 			if (quidToServer.health + healthPoints > quidToServer.maxHealth) { healthPoints = quidToServer.maxHealth - quidToServer.health; }
 
 			embed.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/main/pictures/ginkgo_tree/Perfect.png');
-			embed.setDescription(`*${quid.name} waters the seedling, and it look it's at the perfect time. The ginkgo tree looks healthy, the leaves have a strong green color, and a pleasant fragrance emanates from them. The ${quid.getDisplayspecies()} feels warm and safe from the scent.*`);
+			embed.setDescription(`*${quid.name} waters the seedling, and it look it's at the perfect time. The ginkgo tree looks healthy, the leaves have a strong green color, and a pleasant fragrance emanates from them. The ${getDisplayspecies(quid)} feels warm and safe from the scent.*`);
 			embed.setFooter({ text: `+${experiencePoints} XP (${quidToServer.experience + experiencePoints}/${quidToServer.levels * 50})${healthPoints > 0 ? `\n+${healthPoints} health (${quidToServer.health + healthPoints}/${quidToServer.maxEnergy})` : ''}\n\n+${saplingHealthPoints} health for ginkgo sapling\nCome back to water it in 24 hours.` });
 		}
 		/* This is the second of three `if` statements that check the time difference between the current timestamp and the timestamp of the perfect watering time. If the time difference is less than or equal to 3 hours, the number of watering cycles is increased by 1, the experience points are set to the number of watering cycles, and the embed's description and footer are set. */
@@ -140,7 +140,7 @@ export const command: SlashCommand = {
 			embed.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/main/pictures/ginkgo_tree/Miss.png');
 			if (currentTimestamp < (quidToServer.sapling.nextWaterTimestamp || 0)) {
 
-				embed.setDescription(`*The soil is already soggy when ${quid.name} adds more water to it. The leaves are yellow-brown, the stem is muddy and has a slight mold. Next time the ${quid.getDisplayspecies()} should wait a little with the watering.*`);
+				embed.setDescription(`*The soil is already soggy when ${quid.name} adds more water to it. The leaves are yellow-brown, the stem is muddy and has a slight mold. Next time the ${getDisplayspecies(quid)} should wait a little with the watering.*`);
 			}
 			else {
 

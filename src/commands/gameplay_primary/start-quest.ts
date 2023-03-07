@@ -86,15 +86,15 @@ export async function sendQuestMessage(
 
 		if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm) {
 
-			embed.setDescription(`*The ${quid.getDisplayspecies()} wanders through the peaceful shrubbery, carefully surveying the undergrowth around ${pronoun(quid, 1)}. To ${pronoun(quid, 2)} left are thick bushes at the base of a lone tree. Suddenly, ${quid.name} hears a pained yowl that seems to come from between the bushes. Could this be a pack member? Curious, ${pronounAndPlural(quid, 0, 'trot')} over, and sure enough, another apprentice seems to be trapped. Now ${pronoun(quid, 0)} must show all ${pronoun(quid, 2)} strength and pull out ${pronoun(quid, 2)} friend.*`);
+			embed.setDescription(`*The ${getDisplayspecies(quid)} wanders through the peaceful shrubbery, carefully surveying the undergrowth around ${pronoun(quid, 1)}. To ${pronoun(quid, 2)} left are thick bushes at the base of a lone tree. Suddenly, ${quid.name} hears a pained yowl that seems to come from between the bushes. Could this be a pack member? Curious, ${pronounAndPlural(quid, 0, 'trot')} over, and sure enough, another apprentice seems to be trapped. Now ${pronoun(quid, 0)} must show all ${pronoun(quid, 2)} strength and pull out ${pronoun(quid, 2)} friend.*`);
 		}
 		else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Cold) {
 
-			embed.setDescription(`*The ${quid.getDisplayspecies()} wanders through the peaceful forest, carefully surveying the undergrowth around ${pronoun(quid, 1)}. To ${pronoun(quid, 2)} left is a long, thick tree trunk overgrown with sodden moss. Suddenly, ${quid.name} hears a pained yowl that seems to come from between the bushes. Could this be a pack member? Curious, ${pronounAndPlural(quid, 0, 'trot')} over, and sure enough, another apprentice seems to be trapped. Now ${pronoun(quid, 0)} must show all ${pronoun(quid, 2)} strength and pull out ${pronoun(quid, 2)} friend.*`);
+			embed.setDescription(`*The ${getDisplayspecies(quid)} wanders through the peaceful forest, carefully surveying the undergrowth around ${pronoun(quid, 1)}. To ${pronoun(quid, 2)} left is a long, thick tree trunk overgrown with sodden moss. Suddenly, ${quid.name} hears a pained yowl that seems to come from between the bushes. Could this be a pack member? Curious, ${pronounAndPlural(quid, 0, 'trot')} over, and sure enough, another apprentice seems to be trapped. Now ${pronoun(quid, 0)} must show all ${pronoun(quid, 2)} strength and pull out ${pronoun(quid, 2)} friend.*`);
 		}
 		else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Water) {
 
-			embed.setDescription(`*The ${quid.getDisplayspecies()} swims through the peaceful river, carefully surveying the algae around ${pronoun(quid, 1)}. In front of ${pronoun(quid, 2)} is a thick strainer, which through the leaves is barely passable even underneath. Suddenly, ${quid.name} hears a pained yowl that seems to come from between the bushes. Could this be a pack member? Curious, ${pronounAndPlural(quid, 0, 'swim')} over, and sure enough, another apprentice seems to be trapped. Now ${pronoun(quid, 0)} must show all ${pronoun(quid, 2)} strength and pull out ${pronoun(quid, 2)} friend.*`);
+			embed.setDescription(`*The ${getDisplayspecies(quid)} swims through the peaceful river, carefully surveying the algae around ${pronoun(quid, 1)}. In front of ${pronoun(quid, 2)} is a thick strainer, which through the leaves is barely passable even underneath. Suddenly, ${quid.name} hears a pained yowl that seems to come from between the bushes. Could this be a pack member? Curious, ${pronounAndPlural(quid, 0, 'swim')} over, and sure enough, another apprentice seems to be trapped. Now ${pronoun(quid, 0)} must show all ${pronoun(quid, 2)} strength and pull out ${pronoun(quid, 2)} friend.*`);
 		}
 		else { throw new Error('No habitat was found for this species'); }
 	}
@@ -102,15 +102,15 @@ export async function sendQuestMessage(
 
 		if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm) {
 
-			embed.setDescription(`*It is a quiet morning in the savanna. Only the rustling of the scarce bushes and trees breaks the silence. ${quid.name} meanders over the sand, looking for food for ${pronoun(quid, 2)} pack. But suddenly the ${quid.getDisplayspecies()} hears a motor. Frightened, ${pronounAndPlural(quid, 0, 'look')} into the distance: indeed, a jeep is in front of ${pronoun(quid, 1)}, and the humans inside have another ${quidToServer.rank} of ${pronoun(quid, 2)} pack in their crosshairs! The sooner ${pronounAndPlural(quid, 0, 'get')} to the rescue, the better.*`);
+			embed.setDescription(`*It is a quiet morning in the savanna. Only the rustling of the scarce bushes and trees breaks the silence. ${quid.name} meanders over the sand, looking for food for ${pronoun(quid, 2)} pack. But suddenly the ${getDisplayspecies(quid)} hears a motor. Frightened, ${pronounAndPlural(quid, 0, 'look')} into the distance: indeed, a jeep is in front of ${pronoun(quid, 1)}, and the humans inside have another ${quidToServer.rank} of ${pronoun(quid, 2)} pack in their crosshairs! The sooner ${pronounAndPlural(quid, 0, 'get')} to the rescue, the better.*`);
 		}
 		else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Cold) {
 
-			embed.setDescription(`*It is a quiet morning in the taiga. Only the chirping of birds in the trees breaks the silence. ${quid.name} meanders between the trees, looking for food for ${pronoun(quid, 2)} pack. But suddenly the ${quid.getDisplayspecies()} hears a motor. Frightened, ${pronounAndPlural(quid, 0, 'look')} into the distance: indeed, a jeep is in front of ${pronoun(quid, 1)}, and the humans inside have another ${quidToServer.rank} of ${pronoun(quid, 2)} pack in their crosshairs! The sooner ${pronounAndPlural(quid, 0, 'get')} to the rescue, the better.*`);
+			embed.setDescription(`*It is a quiet morning in the taiga. Only the chirping of birds in the trees breaks the silence. ${quid.name} meanders between the trees, looking for food for ${pronoun(quid, 2)} pack. But suddenly the ${getDisplayspecies(quid)} hears a motor. Frightened, ${pronounAndPlural(quid, 0, 'look')} into the distance: indeed, a jeep is in front of ${pronoun(quid, 1)}, and the humans inside have another ${quidToServer.rank} of ${pronoun(quid, 2)} pack in their crosshairs! The sooner ${pronounAndPlural(quid, 0, 'get')} to the rescue, the better.*`);
 		}
 		else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Water) {
 
-			embed.setDescription(`*It is a quiet morning in the coral reef. Only once in a while a fish passes by. ${quid.name} floats through the water, looking for food for ${pronoun(quid, 2)} pack. But suddenly the ${quid.getDisplayspecies()} hears a motor. Frightened, ${pronounAndPlural(quid, 0, 'look')} to the surface: indeed, a motorboat is in front of ${pronoun(quid, 1)}, and the humans inside have another ${quidToServer.rank} of ${pronoun(quid, 2)} pack in their crosshairs! The sooner ${pronounAndPlural(quid, 0, 'get')} to the rescue, the better.*`);
+			embed.setDescription(`*It is a quiet morning in the coral reef. Only once in a while a fish passes by. ${quid.name} floats through the water, looking for food for ${pronoun(quid, 2)} pack. But suddenly the ${getDisplayspecies(quid)} hears a motor. Frightened, ${pronounAndPlural(quid, 0, 'look')} to the surface: indeed, a motorboat is in front of ${pronoun(quid, 1)}, and the humans inside have another ${quidToServer.rank} of ${pronoun(quid, 2)} pack in their crosshairs! The sooner ${pronounAndPlural(quid, 0, 'get')} to the rescue, the better.*`);
 		}
 		else { throw new Error('No habitat was found for this species'); }
 	}
@@ -118,15 +118,15 @@ export async function sendQuestMessage(
 
 		if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm) {
 
-			embed.setDescription(`*Something is off, the ${quid.getDisplayspecies()} senses it. In the desert, it was strangely quiet, not this peaceful silence, but as if ${pronoun(quid, 0)} were all alone. ${quid.name} looks around and can't see a soul far and wide. Then it dawns on ${pronoun(quid, 1)}. A glance over ${pronoun(quid, 2)} shoulder confirms ${pronoun(quid, 2)} fear, a big sandstorm is approaching. ${quid.name} is out of range, but other pack members might be in danger. If ${pronounAndPlural(quid, 0, 'doesn\'t', 'don\'t')} hurry now, ${pronoun(quid, 2)} friends may never find their way back.*`);
+			embed.setDescription(`*Something is off, the ${getDisplayspecies(quid)} senses it. In the desert, it was strangely quiet, not this peaceful silence, but as if ${pronoun(quid, 0)} were all alone. ${quid.name} looks around and can't see a soul far and wide. Then it dawns on ${pronoun(quid, 1)}. A glance over ${pronoun(quid, 2)} shoulder confirms ${pronoun(quid, 2)} fear, a big sandstorm is approaching. ${quid.name} is out of range, but other pack members might be in danger. If ${pronounAndPlural(quid, 0, 'doesn\'t', 'don\'t')} hurry now, ${pronoun(quid, 2)} friends may never find their way back.*`);
 		}
 		else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Cold) {
 
-			embed.setDescription(`*Something is off, the ${quid.getDisplayspecies()} senses it. In the tundra, it was strangely quiet, not this peaceful silence, but as if ${pronoun(quid, 0)} were all alone. ${quid.name} looks around and can't see a soul far and wide. Then it dawns on ${pronoun(quid, 1)}. A glance over ${pronoun(quid, 2)} shoulder confirms ${pronoun(quid, 2)} fear, a big snowstorm is approaching. ${quid.name} is out of range, but other pack members might be in danger. If ${pronounAndPlural(quid, 0, 'doesn\'t', 'don\'t')} hurry now, ${pronoun(quid, 2)} friends may never find their way back.*`);
+			embed.setDescription(`*Something is off, the ${getDisplayspecies(quid)} senses it. In the tundra, it was strangely quiet, not this peaceful silence, but as if ${pronoun(quid, 0)} were all alone. ${quid.name} looks around and can't see a soul far and wide. Then it dawns on ${pronoun(quid, 1)}. A glance over ${pronoun(quid, 2)} shoulder confirms ${pronoun(quid, 2)} fear, a big snowstorm is approaching. ${quid.name} is out of range, but other pack members might be in danger. If ${pronounAndPlural(quid, 0, 'doesn\'t', 'don\'t')} hurry now, ${pronoun(quid, 2)} friends may never find their way back.*`);
 		}
 		else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Water) {
 
-			embed.setDescription(`*Something is off, the ${quid.getDisplayspecies()} senses it. In the ocean, it was strangely quiet, not this peaceful silence, but as if ${pronoun(quid, 0)} were all alone. ${quid.name} looks around and can't see a soul far and wide. Then it dawns on ${pronoun(quid, 1)}. A glance over ${pronoun(quid, 2)} shoulder confirms ${pronoun(quid, 2)} fear, a big landslide is approaching. ${quid.name} is out of range, but other pack members might be in danger. If ${pronounAndPlural(quid, 0, 'doesn\'t', 'don\'t')} hurry now, ${pronoun(quid, 2)} friends may never find their way back.*`);
+			embed.setDescription(`*Something is off, the ${getDisplayspecies(quid)} senses it. In the ocean, it was strangely quiet, not this peaceful silence, but as if ${pronoun(quid, 0)} were all alone. ${quid.name} looks around and can't see a soul far and wide. Then it dawns on ${pronoun(quid, 1)}. A glance over ${pronoun(quid, 2)} shoulder confirms ${pronoun(quid, 2)} fear, a big landslide is approaching. ${quid.name} is out of range, but other pack members might be in danger. If ${pronounAndPlural(quid, 0, 'doesn\'t', 'don\'t')} hurry now, ${pronoun(quid, 2)} friends may never find their way back.*`);
 		}
 		else { throw new Error('No habitat was found for this species'); }
 	}
@@ -347,7 +347,7 @@ async function startQuest(
 
 			if (quidToServer.rank === RankType.Youngling) {
 
-				embed.setDescription(`*A large thump erupts into the forest, sending flocks of crows fleeing to the sky. ${quid.name} collapses, panting and yearning for breath after the difficult task of pushing the giant boulder. Another ${quid.getDisplayspecies()} runs out of the cave, jumping around ${quid.name} with relief. Suddenly, an Elderly shows up behind the two.*\n"Well done, Youngling, you have proven to be worthy of the Apprentice status. If you ever choose to rank up, just come to me," *the proud elder says with a raspy voice.*`);
+				embed.setDescription(`*A large thump erupts into the forest, sending flocks of crows fleeing to the sky. ${quid.name} collapses, panting and yearning for breath after the difficult task of pushing the giant boulder. Another ${getDisplayspecies(quid)} runs out of the cave, jumping around ${quid.name} with relief. Suddenly, an Elderly shows up behind the two.*\n"Well done, Youngling, you have proven to be worthy of the Apprentice status. If you ever choose to rank up, just come to me," *the proud elder says with a raspy voice.*`);
 			}
 			else if (quidToServer.rank === RankType.Apprentice) {
 
@@ -369,11 +369,11 @@ async function startQuest(
 
 				if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm || speciesInfo[quid.species].habitat === SpeciesHabitatType.Cold) {
 
-					embed.setDescription(`*The engine noise became quieter and quieter before it finally disappeared entirely after endless maneuvers. Relieved, the ${quid.getDisplayspecies()} runs to the pack, the other ${quidToServer.rank} in ${pronoun(quid, 2)} mouth. An Elderly is already coming towards ${pronoun(quid, 1)}.*\n"You're alright! We heard the humans. And you didn't lead them straight to us, very good! Your wisdom, skill, and experience qualify you as an Elderly, ${quid.name}. I'll talk to the other Elderlies about it. Just let me know if you want to join us."`);
+					embed.setDescription(`*The engine noise became quieter and quieter before it finally disappeared entirely after endless maneuvers. Relieved, the ${getDisplayspecies(quid)} runs to the pack, the other ${quidToServer.rank} in ${pronoun(quid, 2)} mouth. An Elderly is already coming towards ${pronoun(quid, 1)}.*\n"You're alright! We heard the humans. And you didn't lead them straight to us, very good! Your wisdom, skill, and experience qualify you as an Elderly, ${quid.name}. I'll talk to the other Elderlies about it. Just let me know if you want to join us."`);
 				}
 				else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Water) {
 
-					embed.setDescription(`*The engine noise became quieter and quieter before it finally disappeared entirely after endless maneuvers. Relieved, the ${quid.getDisplayspecies()} swims to the pack, the other ${quidToServer.rank} in ${pronoun(quid, 2)} mouth. An Elderly is already swimming towards ${pronoun(quid, 1)}.*\n"You're alright! We heard the humans. And you didn't lead them straight to us, very good! Your wisdom, skill, and experience qualify you as an Elderly, ${quid.name}. I'll talk to the other Elderlies about it. Just let me know if you want to join us."`);
+					embed.setDescription(`*The engine noise became quieter and quieter before it finally disappeared entirely after endless maneuvers. Relieved, the ${getDisplayspecies(quid)} swims to the pack, the other ${quidToServer.rank} in ${pronoun(quid, 2)} mouth. An Elderly is already swimming towards ${pronoun(quid, 1)}.*\n"You're alright! We heard the humans. And you didn't lead them straight to us, very good! Your wisdom, skill, and experience qualify you as an Elderly, ${quid.name}. I'll talk to the other Elderlies about it. Just let me know if you want to join us."`);
 				}
 				else { throw new Error('No species habitat type found'); }
 			}
@@ -381,11 +381,11 @@ async function startQuest(
 
 				if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm || speciesInfo[quid.species].habitat === SpeciesHabitatType.Cold) {
 
-					embed.setDescription(`*The ${quid.getDisplayspecies()} runs for a while before the situation seems to clear up. ${quid.name} gasps in exhaustion. That was close. Full of adrenaline, ${pronounAndPlural(quid, 0, 'goes', 'go')} back to the pack, another pack member in ${pronoun(quid, 2)} mouth. ${capitalize(pronounAndPlural(quid, 0, 'feel'))} strangely stronger than before.*`);
+					embed.setDescription(`*The ${getDisplayspecies(quid)} runs for a while before the situation seems to clear up. ${quid.name} gasps in exhaustion. That was close. Full of adrenaline, ${pronounAndPlural(quid, 0, 'goes', 'go')} back to the pack, another pack member in ${pronoun(quid, 2)} mouth. ${capitalize(pronounAndPlural(quid, 0, 'feel'))} strangely stronger than before.*`);
 				}
 				else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Water) {
 
-					embed.setDescription(`*The ${quid.getDisplayspecies()} runs for a while before the situation seems to clear up. ${quid.name} gasps in exhaustion. That was close. Full of adrenaline, ${pronounAndPlural(quid, 0, 'swim')} back to the pack, another pack member in ${pronoun(quid, 2)} mouth. ${capitalize(pronounAndPlural(quid, 0, 'feel'))} strangely stronger than before.*`);
+					embed.setDescription(`*The ${getDisplayspecies(quid)} runs for a while before the situation seems to clear up. ${quid.name} gasps in exhaustion. That was close. Full of adrenaline, ${pronounAndPlural(quid, 0, 'swim')} back to the pack, another pack member in ${pronoun(quid, 2)} mouth. ${capitalize(pronounAndPlural(quid, 0, 'feel'))} strangely stronger than before.*`);
 				}
 				else { throw new Error('No species habitat type found'); }
 
@@ -449,21 +449,21 @@ async function startQuest(
 
 			if (quidToServer.rank === RankType.Youngling) {
 
-				embed.setDescription(`"I can't... I can't do it," *${quid.name} heaves, ${pronoun(quid, 2)} chest struggling to fall and rise.\nSuddenly the boulder shakes and falls away from the cave entrance.*\n"You are too weak for a task like this. Come back to camp, Youngling." *The Elderly turns around and slowly walks back towards camp, not dwelling long by the exhausted ${quid.getDisplayspecies()}.*`);
+				embed.setDescription(`"I can't... I can't do it," *${quid.name} heaves, ${pronoun(quid, 2)} chest struggling to fall and rise.\nSuddenly the boulder shakes and falls away from the cave entrance.*\n"You are too weak for a task like this. Come back to camp, Youngling." *The Elderly turns around and slowly walks back towards camp, not dwelling long by the exhausted ${getDisplayspecies(quid)}.*`);
 			}
 			else if (quidToServer.rank === RankType.Apprentice) {
 
 				if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm) {
 
-					embed.setDescription(`*No matter how long the ${quid.getDisplayspecies()} pulls and tugs, ${pronoun(quid, 0)} just can't break the Apprentice free. They both lie there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's them!" *the Elderly shouts. The other two run to the Apprentice and bite away the root.*\n"Thanks for trying, ${quid.name}. But thank goodness we found you!" *the Elderly says.*`);
+					embed.setDescription(`*No matter how long the ${getDisplayspecies(quid)} pulls and tugs, ${pronoun(quid, 0)} just can't break the Apprentice free. They both lie there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's them!" *the Elderly shouts. The other two run to the Apprentice and bite away the root.*\n"Thanks for trying, ${quid.name}. But thank goodness we found you!" *the Elderly says.*`);
 				}
 				else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Cold) {
 
-					embed.setDescription(`*No matter how long the ${quid.getDisplayspecies()} pulls and tugs, ${pronoun(quid, 0)} just can't break the Apprentice free. They both lie there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's them!" *the Elderly shouts. The other two run to the Apprentice and pull them out from under the log with their mouths.*\n"Thanks for trying, ${quid.name}. But thank goodness we found you!" *the Elderly says.*`);
+					embed.setDescription(`*No matter how long the ${getDisplayspecies(quid)} pulls and tugs, ${pronoun(quid, 0)} just can't break the Apprentice free. They both lie there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's them!" *the Elderly shouts. The other two run to the Apprentice and pull them out from under the log with their mouths.*\n"Thanks for trying, ${quid.name}. But thank goodness we found you!" *the Elderly says.*`);
 				}
 				else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Water) {
 
-					embed.setDescription(`*No matter how long the ${quid.getDisplayspecies()} pulls and tugs, ${pronoun(quid, 0)} just can't break the Apprentice free. They both lie there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's them!" *the Elderly shouts. The other two run to the Apprentice and push them away from the log with their heads.*\n"Thanks for trying, ${quid.name}. But thank goodness we found you!" *the Elderly says.*`);
+					embed.setDescription(`*No matter how long the ${getDisplayspecies(quid)} pulls and tugs, ${pronoun(quid, 0)} just can't break the Apprentice free. They both lie there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's them!" *the Elderly shouts. The other two run to the Apprentice and push them away from the log with their heads.*\n"Thanks for trying, ${quid.name}. But thank goodness we found you!" *the Elderly says.*`);
 				}
 				else { throw new Error('No species habitat type found'); }
 			}
@@ -471,11 +471,11 @@ async function startQuest(
 
 				if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm || speciesInfo[quid.species].habitat === SpeciesHabitatType.Cold) {
 
-					embed.setDescription(`*It almost looks like the humans are catching up to the other ${quidToServer.rank} when suddenly two larger ${quid.getDisplayspecies()}s come running from the side. They pick both of them up and run sideways as fast as lightning. Before ${pronounAndPlural(quid, 0, 'know')} what has happened to ${pronoun(quid, 1)}, they are already out of reach.*\n"That was close," *the Elderly says.* "Good thing I was nearby."`);
+					embed.setDescription(`*It almost looks like the humans are catching up to the other ${quidToServer.rank} when suddenly two larger ${getDisplayspecies(quid)}s come running from the side. They pick both of them up and run sideways as fast as lightning. Before ${pronounAndPlural(quid, 0, 'know')} what has happened to ${pronoun(quid, 1)}, they are already out of reach.*\n"That was close," *the Elderly says.* "Good thing I was nearby."`);
 				}
 				else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Water) {
 
-					embed.setDescription(`*It almost looks like the humans are catching up to the other ${quidToServer.rank} when suddenly two larger ${quid.getDisplayspecies()}s come swimming from the side. They push them both away with their head and swim sideways as fast as lightning. Before ${pronounAndPlural(quid, 0, 'know')} what has happened to ${pronoun(quid, 1)}, they are already out of reach.*\n"That was close," *the Elderly says.* "Good thing I was nearby."`);
+					embed.setDescription(`*It almost looks like the humans are catching up to the other ${quidToServer.rank} when suddenly two larger ${getDisplayspecies(quid)}s come swimming from the side. They push them both away with their head and swim sideways as fast as lightning. Before ${pronounAndPlural(quid, 0, 'know')} what has happened to ${pronoun(quid, 1)}, they are already out of reach.*\n"That was close," *the Elderly says.* "Good thing I was nearby."`);
 				}
 				else { throw new Error('No species habitat type found'); }
 			}
@@ -483,11 +483,11 @@ async function startQuest(
 
 				if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm || speciesInfo[quid.species].habitat === SpeciesHabitatType.Cold) {
 
-					embed.setDescription(`*The ${quid.getDisplayspecies()} gasps as ${pronounAndPlural(quid, 0, 'drop')} down to the ground, defeated. ${capitalize(pronounAndPlural(quid, 0, '\'s', '\'re'))} just not fast enough... Suddenly a bunch of Elderlies come running and lift the pack members by their necks. Another ${quid.getDisplayspecies()} has ${quid.name} in their mouth and runs as fast as they can. Everyone is saved!*`);
+					embed.setDescription(`*The ${getDisplayspecies(quid)} gasps as ${pronounAndPlural(quid, 0, 'drop')} down to the ground, defeated. ${capitalize(pronounAndPlural(quid, 0, '\'s', '\'re'))} just not fast enough... Suddenly a bunch of Elderlies come running and lift the pack members by their necks. Another ${getDisplayspecies(quid)} has ${quid.name} in their mouth and runs as fast as they can. Everyone is saved!*`);
 				}
 				else if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Water) {
 
-					embed.setDescription(`*The ${quid.getDisplayspecies()} gasps as ${pronounAndPlural(quid, 0, 'stop')} swimming, defeated. ${capitalize(pronounAndPlural(quid, 0, '\'s', '\'re'))} just not fast enough... Suddenly a bunch of Elderlies come running and thrust the pack members from the side. Another ${quid.getDisplayspecies()} pushes into ${quid.name} with their head and swims as fast as they can. Everyone is saved!*`);
+					embed.setDescription(`*The ${getDisplayspecies(quid)} gasps as ${pronounAndPlural(quid, 0, 'stop')} swimming, defeated. ${capitalize(pronounAndPlural(quid, 0, '\'s', '\'re'))} just not fast enough... Suddenly a bunch of Elderlies come running and thrust the pack members from the side. Another ${getDisplayspecies(quid)} pushes into ${quid.name} with their head and swims as fast as they can. Everyone is saved!*`);
 				}
 				else { throw new Error('No species habitat type found'); }
 			}

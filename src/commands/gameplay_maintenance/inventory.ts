@@ -34,7 +34,7 @@ export const command: SlashCommand = {
 
 		await showInventoryMessage(interaction, userData, serverData, 1);
 	},
-	async sendMessageComponentResponse(interaction, userData, serverData) {
+	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer, server }) {
 
 		if (!interaction.isStringSelectMenu()) { return; }
 		/* This ensures that the user is in a guild and has a completed account. */

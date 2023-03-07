@@ -1,5 +1,6 @@
 import { Optional } from 'sequelize';
 import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, HasMany, HasOne, Model, Table } from 'sequelize-typescript';
+import { SpeciesNames } from '../typings/data/general';
 import Friendship from './friendship';
 import Group from './group';
 import GroupToQuid from './groupToQuid';
@@ -16,7 +17,7 @@ interface QuidAttributes<Completed extends boolean = boolean> {
 	mainGroupId: string | null;
 	name: string
 	nickname: string;
-	species: Completed extends true ? string : string | null;
+	species: Completed extends true ? SpeciesNames : SpeciesNames | null;
 	displayedSpecies: string;
 	description: string;
 	avatarURL: string;
@@ -55,7 +56,7 @@ export default class Quid<Completed extends boolean = boolean> extends Model<Qui
 	declare nickname: string;
 
 	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
-	declare species: Completed extends true ? string : string | null;
+	declare species: Completed extends true ? SpeciesNames : SpeciesNames | null;
 
 	@Column({ type: DataType.STRING, defaultValue: '' })
 	declare displayedSpecies: string;

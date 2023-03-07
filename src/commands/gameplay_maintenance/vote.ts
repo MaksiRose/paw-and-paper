@@ -6,7 +6,7 @@ import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
-import { getMapData, getSmallerNumber, respond } from '../../utils/helperFunctions';
+import { getMapData, getSmallestNumber, respond } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 const { default_color } = require('../../../config.json');
 
@@ -126,7 +126,7 @@ export const command: SlashCommand = {
 			voteCache['id_' + interaction.user.id] = newUserVoteCache;
 			writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
 
-			const energyPoints = getSmallerNumber(quidToServer.maxEnergy - quidToServer.energy, 30);
+			const energyPoints = getSmallestNumber(quidToServer.maxEnergy - quidToServer.energy, 30);
 
 			await userData.update(
 				(u) => {
