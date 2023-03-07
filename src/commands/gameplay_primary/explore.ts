@@ -1,7 +1,7 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, GuildMember, InteractionResponse, Message, SlashCommandBuilder } from 'discord.js';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { capitalize, getBiggestNumber, getMapData, getMessageId, getSmallestNumber, keyInObject, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
+import { capitalize, getMessageId, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
 import { remindOfAttack, startAttack } from './attack';
 import Fuse from 'fuse.js';
 import { disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
@@ -15,13 +15,20 @@ import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../
 import { pickMaterial, pickMeat, pickPlant, simulateMeatUse, simulatePlantUse } from '../../utils/simulateItemUse';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
-import { RankType, UserData } from '../../typings/data/user';
+import { RankType } from '../../typings/data/user';
 import { SpeciesHabitatType } from '../../typings/main';
-import { speciesInfo } from '../..';
-import { ServerSchema } from '../../typings/data/server';
-import { userModel } from '../../oldModels/userModel';
+import { materialsInfo, speciesInfo } from '../..';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { AsyncQueue } from '@sapphire/async-queue';
+import QuidToServer from '../../models/quidToServer';
+import User from '../../models/user';
+import Quid from '../../models/quid';
+import UserToServer from '../../models/userToServer';
+import Server from '../../models/server';
+import { getDisplayname, pronoun, pronounAndPlural, getDisplayspecies } from '../../utils/getQuidInfo';
+import { Op } from 'sequelize';
+import DiscordUser from '../../models/discordUser';
+import DiscordUserToServer from '../../models/discordUserToServer';
 
 type CustomIdArgs = ['new'] | ['new', string]
 type Position = { row: number, column: number; };
@@ -41,13 +48,13 @@ export const command: SlashCommand = {
 	position: 2,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
-	sendAutocomplete: async (interaction, userData, serverData) => {
+	sendAutocomplete: async (interaction, { quid, quidToServer }) => {
 
-		if (!serverData || !interaction.inGuild()) { return; }
-		if (!hasNameAndSpecies(userData)) { return; }
+		if (!interaction.inGuild()) { return; }
+		if (!hasNameAndSpecies(quid) || !quidToServer) { return; }
 		const focusedValue = interaction.options.getFocused();
 
-		const availableBiomes = getAvailableBiomes(userData);
+		const availableBiomes = getAvailableBiomes(quid, quidToServer);
 		const fuse = new Fuse(availableBiomes);
 		const choices = focusedValue.length > 0 ? fuse.search(focusedValue).map(value => value.item) : availableBiomes;
 
@@ -57,22 +64,25 @@ export const command: SlashCommand = {
 	},
 	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
 
-		await executeExploring(interaction, userData, serverData);
+		await executeExploring(interaction, user, quid, userToServer, quidToServer, server);
 	},
 	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer, server }) {
 
 		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
 		if (interaction.isButton() && customId?.args[0] === 'new') {
 
-			await executeExploring(interaction, userData, serverData);
+			await executeExploring(interaction, user, quid, userToServer, quidToServer, server);
 		}
 	},
 };
 
 async function executeExploring(
 	interaction: ChatInputCommandInteraction | ButtonInteraction,
-	userData: UserData<undefined, ''> | null,
-	serverData: ServerSchema | null,
+	user: User | undefined,
+	quid: Quid | undefined,
+	userToServer: UserToServer | undefined,
+	quidToServer: QuidToServer | undefined,
+	server: Server | undefined,
 ): Promise<void> {
 
 	if (await missingPermissions(interaction, [
@@ -81,19 +91,22 @@ async function executeExploring(
 	]) === true) { return; }
 
 	/* This ensures that the user is in a guild and has a completed account. */
-	if (serverData === null) { throw new Error('serverData is null'); }
-	if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
+	if (server === undefined) { throw new Error('serverData is null'); }
+	if (!user) { throw new TypeError('user is undefined'); }
+	if (!userToServer) { throw new TypeError('userToServer is undefined'); }
+	if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
+	if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
 	/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-	if (command.disablePreviousCommand) { await disableCommandComponent(userData); }
+	if (command.disablePreviousCommand) { await disableCommandComponent(userToServer); }
 
 	/* Checks if the profile is resting, on a cooldown or passed out. */
-	const restEmbed = await isInvalid(interaction, userData);
+	const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
 	if (restEmbed === false) { return; }
 
 	let messageContent = remindOfAttack(interaction.guildId);
 
-	if (await hasFullInventory(interaction, userData, restEmbed, messageContent)) { return; }
+	if (await hasFullInventory(interaction, user, userToServer, quid, quidToServer, restEmbed, messageContent)) { return; }
 
 	/* Checks  if the user is a Youngling and sends a message that they are too young if they are. */
 	if (quidToServer.rank === RankType.Youngling) {
@@ -113,7 +126,7 @@ async function executeExploring(
 	}
 
 	const stringInput = interaction.isChatInputCommand() ? interaction.options.getString('biome')?.toLowerCase() : deconstructCustomId<CustomIdArgs>(interaction.customId)?.args[1]?.toLowerCase();
-	if (quidToServer.tutorials.explore === false) {
+	if (quidToServer.tutorials_explore === false) {
 
 		// This is always a reply
 		await respond(interaction, {
@@ -121,25 +134,20 @@ async function executeExploring(
 			components: [
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.id, ['new', ...(stringInput ? [stringInput] : []) as [string]]))
+						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, user.id, ['new', ...(stringInput ? [stringInput] : []) as [string]]))
 						.setLabel('I understand, let\'s explore!')
 						.setStyle(ButtonStyle.Success)),
 			],
 		});
 
-		await userData.update(
-			(u) => {
-				const p = getMapData(getMapData(u.quids, userData!.quid!.id).profiles, interaction.guildId);
-				p.tutorials.explore = true;
-			},
-		);
+		await quidToServer.update({ tutorials_explore: true });
 		return;
 	}
 
-	await setCooldown(userData, interaction.guildId, true);
+	await setCooldown(userToServer, true);
 
 	/* Here we are getting the biomes available to the quid, getting a user input if there is one, and defining chosenBiome as the user input if it matches an available biome, else it is null. */
-	const availableBiomes = getAvailableBiomes(userData);
+	const availableBiomes = getAvailableBiomes(quid, quidToServer);
 	let chosenBiome = (stringInput && availableBiomes.includes(stringInput)) ? stringInput : null;
 
 	/** In case a biome was already chosen, the first waiting game reply would be the original reply. If they have to choose a biome, the biome choosing is the original reply, and the waiting game is an update to button click. To safe API calls, the update function is called with this interaction if it isn't null. This is later re-used for finding a plant/exploring */
@@ -179,7 +187,7 @@ async function executeExploring(
 		if (int !== null) { buttonInteraction = int; }
 		else {
 
-			await setCooldown(userData, interaction.guildId, false);
+			await setCooldown(userToServer, false);
 			await respond(interaction, { components: disableAllComponents([biomeComponent]) }, 'reply', getMessageId(getBiomeMessage)); // This is always an editReply
 		}
 	}
@@ -229,7 +237,7 @@ async function executeExploring(
 	let waitingComponent = getWaitingComponent(waitingGameField, playerPos, empty, goal);
 
 	// This is a reply to "interaction" if a biome was already pre-chosen, or an update to the message with the button ("buttonInteraction") otherwise
-	let botReply = await respond(buttonInteraction ?? interaction, getWaitingMessageObject(messageContent, restEmbed, userData, waitingString, waitingGameField, waitingComponent), buttonInteraction !== null ? 'update' : 'reply', buttonInteraction !== null ? buttonInteraction.message.id : undefined);
+	let botReply = await respond(buttonInteraction ?? interaction, await getWaitingMessageObject(messageContent, restEmbed, quid, { serverId: interaction.guildId, userToServer, quidToServer, user }, waitingString, waitingGameField, waitingComponent), buttonInteraction !== null ? 'update' : 'reply', buttonInteraction !== null ? buttonInteraction.message.id : undefined);
 
 
 	const collector = (botReply as Message<true> | InteractionResponse<true>).createMessageComponentCollector({
@@ -290,7 +298,7 @@ async function executeExploring(
 			waitingComponent = getWaitingComponent(waitingGameField, playerPos, empty, goal);
 
 			// This is an update to the message with the button
-			botReply = await respond(int, getWaitingMessageObject(messageContent, restEmbed, userData!, waitingString, waitingGameField, waitingComponent), 'update', int.message.id);
+			botReply = await respond(int, await getWaitingMessageObject(messageContent, restEmbed, quid, { serverId: interaction.guildId, userToServer, quidToServer, user }, waitingString, waitingGameField, waitingComponent), 'update', int.message.id);
 		}
 		catch (error) {
 
@@ -310,7 +318,7 @@ async function executeExploring(
 	});
 	queue.abortAll();
 
-	const changedCondition = await changeCondition(userData, 0);
+	const changedCondition = await changeCondition(quidToServer, quid, 0);
 
 	const responseTime = chosenBiomeNumber === 2 ? 3_000 : chosenBiomeNumber === 1 ? 4_000 : 5_000;
 	const embed = new EmbedBuilder()
@@ -323,22 +331,22 @@ async function executeExploring(
 
 	messageContent = remindOfAttack(interaction.guildId);
 
-	const plantUse = await simulatePlantUse(serverData, true);
-	const meatUse = await simulateMeatUse(serverData, true);
+	const plantUse = await simulatePlantUse(server, true);
+	const meatUse = await simulateMeatUse(server, true);
 	const itemUse = (plantUse + meatUse) / 2;
 
 	let foundQuest = false;
 	let foundSapling = false;
 	// If the chosen biome is the highest choosable biome, the user has no quest, has not unlocked a higher rank and they succeed in the chance, get a quest
 	if (chosenBiomeNumber === (availableBiomes.length - 1)
-		&& userFindsQuest(userData)) {
+		&& await userFindsQuest(quidToServer)) {
 
 		foundQuest = true;
 	}
 	// If the server has 6 or more items in the inventory than needed, there is no attack, and the next possible attack is possible, start an attack
 	else if (itemUse >= 6
 		&& remindOfAttack(interaction.guildId) === ''
-		&& serverData.nextPossibleAttack <= Date.now()) {
+		&& server.nextPossibleAttackTimestamp <= Date.now()) {
 
 		// It should be at least two humans, or more if there are more people active
 		const humanCount = (serverActiveUsersMap.get(interaction.guildId)?.length ?? 1) + 1;
@@ -349,27 +357,23 @@ async function executeExploring(
 		embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\nYou have two minutes to prepare before the humans will attack!` });
 	}
 	// If the user gets the right chance, find sapling or material or nothing
-	else if (pullFromWeightedTable({ 0: 10, 1: 90 + quidToServer.sapling.waterCycles }) === 0) {
+	else if (pullFromWeightedTable({ 0: 10, 1: 90 + quidToServer.sapling_waterCycles }) === 0) {
 
-		const serverMaterialsCount = Object.values(serverData.inventory.materials).flat().reduce((a, b) => a + b, 0);
+		const materials = Object.keys(materialsInfo);
+		const serverMaterialsCount = server.inventory.filter(materials.includes).length;
 
-		if (!quidToServer.sapling.exists) {
+		if (!quidToServer.sapling_exists) {
 
 			foundSapling = true;
-			await userData.update(
-				(u) => {
-					const p = getMapData(getMapData(u.quids, userData!.quid!.id).profiles, interaction.guildId);
-					p.sapling = {
-						exists: true,
-						health: 50,
-						waterCycles: 0,
-						nextWaterTimestamp: Date.now(),
-						sentGentleReminder: false,
-						sentReminder: false,
-						lastMessageChannelId: interaction.channelId,
-					};
-				},
-			);
+			await quidToServer.update({
+				sapling_exists: true,
+				sapling_health: 50,
+				sapling_waterCycles: 0,
+				sapling_nextWaterTimestamp: Date.now(),
+				sapling_sentReminder: false,
+				sapling_sentGentleReminder: false,
+				sapling_lastChannelId: interaction.channelId,
+			});
 
 			embed.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/main/pictures/ginkgo_tree/Discovery.png');
 			embed.setDescription(`*${quid.name} is looking around for useful things around ${pronoun(quid, 1)} when ${pronounAndPlural(quid, 0, 'discover')} the sapling of a ginkgo tree. The ${getDisplayspecies(quid)} remembers that they bring good luck and health. Surely it can't hurt to bring it back to the pack!*`);
@@ -377,14 +381,9 @@ async function executeExploring(
 		}
 		else if (serverMaterialsCount < 36) {
 
-			const foundMaterial = pickMaterial(serverData.inventory);
-
-			await userData.update(
-				(u) => {
-					const p = getMapData(getMapData(u.quids, userData!.quid!.id).profiles, interaction.guildId);
-					p.inventory.materials[foundMaterial] += 1;
-				},
-			);
+			const foundMaterial = pickMaterial(server);
+			quidToServer.inventory.push(foundMaterial);
+			await quidToServer.update({ inventory: quidToServer.inventory });
 
 			embed.setDescription(`*${quid.name} is looking around for things around ${pronoun(quid, 1)} but there doesn't appear to be anything useful. The ${getDisplayspecies(quid)} decides to grab a ${foundMaterial} as to not go back with nothing to show.*`);
 			embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${foundMaterial}` });
@@ -399,10 +398,10 @@ async function executeExploring(
 	else if (pullFromWeightedTable({ 0: quidToServer.rank === RankType.Healer ? 2 : 1, 1: quidToServer.rank === RankType.Hunter ? 2 : 1 }) === 0) {
 
 		/* First we are calculating needed plants - existing plants through simulatePlantUse three times, of which two it is calculated for active users only. The results of these are added together and divided by 3 to get their average. This is then used to get a random number that can be between 1 higher and 1 lower than that. The user's level is added with this, and it is limited to not be below 1. */
-		const simAverage = Math.round((plantUse + await simulatePlantUse(serverData, true) + await simulatePlantUse(serverData, false)) / 3);
-		const environmentLevel = getBiggestNumber(1, quidToServer.levels + getRandomNumber(3, simAverage - 1));
+		const simAverage = Math.round((plantUse + await simulatePlantUse(server, true) + await simulatePlantUse(server, false)) / 3);
+		const environmentLevel = Math.max(1, quidToServer.levels + getRandomNumber(3, simAverage - 1));
 
-		const foundItem = await pickPlant(chosenBiomeNumber, serverData);
+		const foundItem = await pickPlant(chosenBiomeNumber, server);
 
 		if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm) {
 
@@ -417,7 +416,7 @@ async function executeExploring(
 			embed.setDescription(`*For a while, ${quid.name} has been swimming through the water, searching in vain for something useful. ${capitalize(pronounAndPlural(quid, 0, 'was', 'were'))} about to give up when ${pronounAndPlural(quid, 0, 'discover')} a ${foundItem} among large algae. Now ${pronounAndPlural(quid, 0, 'just need')} to pick it up gently...*`);
 		}
 		else { throw new Error('quid species habitat not found'); }
-		const replaceEmojis = userData.settings.accessibility.replaceEmojis;
+		const replaceEmojis = user.accessibility_replaceEmojis;
 		embed.setFooter({ text: `The ${foundItem} is in an environment of difficulty level ${environmentLevel}.\nYou will be presented five buttons with five emojis each. The footer will show you an emoji, and you have to find the button with that emoji, but without the campsite (${replaceEmojis ? accessiblePlantEmojis.toAvoid : plantEmojis.toAvoid}).` });
 
 		// This is either an update or an editReply if there is a buttonInteraction, or an editReply if it's an interaction
@@ -463,8 +462,6 @@ async function executeExploring(
 
 			await (async function interactionCollector(
 				interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
-				userData: UserData<never, never>,
-				serverData: ServerSchema,
 				newInteraction: ButtonInteraction<'cached'>,
 				previousExploreComponents?: ActionRowBuilder<ButtonBuilder>,
 			): Promise<void> {
@@ -521,7 +518,7 @@ async function executeExploring(
 
 				if (totalCycles < 3) {
 
-					await interactionCollector(interaction, userData, serverData, newInteraction, exploreComponent);
+					await interactionCollector(interaction, newInteraction, exploreComponent);
 					return;
 				}
 				buttonInteraction = newInteraction;
@@ -533,18 +530,12 @@ async function executeExploring(
 
 				if (outcome === 2) {
 
-					await userData.update(
-						(u) => {
-							const p = getMapData(getMapData(u.quids, userData!.quid!.id).profiles, interaction.guildId);
-							if (keyInObject(p.inventory.commonPlants, foundItem)) { p.inventory.commonPlants[foundItem] += 1; }
-							else if (keyInObject(p.inventory.uncommonPlants, foundItem)) { p.inventory.uncommonPlants[foundItem] += 1; }
-							else { p.inventory.rarePlants[foundItem] += 1; }
-						},
-					);
+					quidToServer.inventory.push(foundItem);
+					await quidToServer.update({ inventory: quidToServer.inventory });
 
 					embed.setDescription(`*${quid.name} gently lowers ${pronoun(quid, 2)} head, picking up the ${foundItem} and carrying it back in ${pronoun(quid, 2)} mouth. What a success!*`);
 
-					embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}\n\n+1 ${foundItem}` });
+					embed.setFooter({ text: `${await addExperience(quidToServer, experiencePoints)}\n${changedCondition.statsUpdateText}\n\n+1 ${foundItem}` });
 				}
 				else if (outcome === 1) {
 
@@ -562,24 +553,24 @@ async function executeExploring(
 						embed.setDescription(`*${quid.name} tries really hard to pick up the ${foundItem} that ${pronoun(quid, 0)} discovered among large algae. But as the ${getDisplayspecies(quid)} tries to pick it up, it just breaks into little pieces.*`);
 					}
 					else { throw new Error('quid species habitat not found'); }
-					embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}` });
+					embed.setFooter({ text: `${await addExperience(quidToServer, experiencePoints)}\n${changedCondition.statsUpdateText}` });
 				}
 				else {
 
-					const healthPoints = getSmallestNumber(quidToServer.health, getRandomNumber(5, 3));
+					const healthPoints = Math.min(quidToServer.health, getRandomNumber(5, 3));
 
 					const twoWeeksInMs = 1_209_600_000;
-					const activeElderlyAccounts = await userModel.find(
-						(u) => {
-							return Object.values(u.quids).filter(q => {
-								const p = q.profiles[interaction.guildId];
-								return p !== undefined && p.rank === RankType.Elderly && p.lastActiveTimestamp > (Date.now() - twoWeeksInMs);
-							}).length > 0;
-						});
+					const activeElderlies = await QuidToServer.count({
+						where: {
+							serverId: interaction.guildId,
+							rank: RankType.Elderly,
+							lastActiveTimestamp: { [Op.gt]: (Date.now() - twoWeeksInMs) },
+						},
+					});
 
-					if (getRandomNumber(2) === 0 && activeElderlyAccounts.length > 0) {
+					if (getRandomNumber(2) === 0 && activeElderlies > 0) {
 
-						quidToServer.injuries.poison = true;
+						quidToServer.injuries_poison = true;
 
 						if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm) {
 
@@ -596,9 +587,9 @@ async function executeExploring(
 						else { throw new Error('quid species habitat not found'); }
 						embed.setFooter({ text: `-${healthPoints} HP (from poison)\n${changedCondition.statsUpdateText}` });
 					}
-					else if (getRandomNumber(2) === 0 && quidToServer.injuries.cold == false) {
+					else if (getRandomNumber(2) === 0 && quidToServer.injuries_cold == false) {
 
-						quidToServer.injuries.cold = true;
+						quidToServer.injuries_cold = true;
 
 						if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm) {
 
@@ -617,7 +608,7 @@ async function executeExploring(
 					}
 					else {
 
-						quidToServer.injuries.infections += 1;
+						quidToServer.injuries_infections += 1;
 
 						if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm) {
 
@@ -635,29 +626,28 @@ async function executeExploring(
 						embed.setFooter({ text: `-${healthPoints} HP (from infection)\n${changedCondition.statsUpdateText}` });
 					}
 
-					await userData.update(
-						(u) => {
-							const p = getMapData(getMapData(u.quids, quid.id).profiles, interaction.guildId);
-							p.health -= healthPoints;
-							p.injuries = quidToServer.injuries;
-						},
-					);
+					await quidToServer.update({
+						health: healthPoints,
+						injuries_poison: quidToServer.injuries_poison,
+						injuries_cold: quidToServer.injuries_cold,
+						injuries_infections: quidToServer.injuries_infections,
+					});
 				}
-			})(interaction, userData, serverData, int);
+			})(interaction, int);
 		}
 	}
 	// Find an enemy
 	else {
 
 		/* First we are calculating needed meat - existing meat through simulateMeatUse three times, of which two it is calculated for active users only. The results of these are added together and divided by 3 to get their average. This is then used to get a random number that can be between 1 higher and 1 lower than that. The user's level is added with this, and it is limited to not be below 1. */
-		const simAverage = Math.round((meatUse + await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, false)) / 3);
-		const opponentLevel = getBiggestNumber(1, quidToServer.levels + getRandomNumber(3, simAverage - 1));
+		const simAverage = Math.round((meatUse + await simulateMeatUse(server, true) + await simulateMeatUse(server, false)) / 3);
+		const opponentLevel = Math.max(1, quidToServer.levels + getRandomNumber(3, simAverage - 1));
 
 		const opponentsArray = speciesInfo[quid.species].biome1OpponentArray.concat([
 			...(chosenBiomeNumber > 0 ? speciesInfo[quid.species].biome2OpponentArray : []),
 			...(chosenBiomeNumber === 2 ? speciesInfo[quid.species].biome3OpponentArray : []),
 		]);
-		const opponentSpecies = pickMeat(opponentsArray, serverData.inventory);
+		const opponentSpecies = await pickMeat(opponentsArray, server);
 
 		if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm) {
 
@@ -729,8 +719,6 @@ async function executeExploring(
 
 			await (async function interactionCollector(
 				interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
-				userData: UserData<never, never>,
-				serverData: ServerSchema,
 				newInteraction: ButtonInteraction<'cached'>,
 				previousExploreComponents?: ActionRowBuilder<ButtonBuilder>,
 				lastRoundCycleIndex?: number,
@@ -808,7 +796,7 @@ async function executeExploring(
 
 				if (totalCycles < 3) {
 
-					await interactionCollector(interaction, userData, serverData, newInteraction, exploreComponent, fightGame.thisRoundCycleIndex);
+					await interactionCollector(interaction, newInteraction, exploreComponent, fightGame.thisRoundCycleIndex);
 					return;
 				}
 				buttonInteraction = newInteraction;
@@ -820,12 +808,8 @@ async function executeExploring(
 
 				if (outcome === 2) {
 
-					await userData.update(
-						(u) => {
-							const p = getMapData(getMapData(u.quids, quid.id).profiles, interaction.guildId);
-							p.inventory.meat[opponentSpecies] += 1;
-						},
-					);
+					quidToServer.inventory.push(opponentSpecies);
+					await quidToServer.update({ inventory: quidToServer.inventory });
 
 					if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm) {
 
@@ -840,7 +824,7 @@ async function executeExploring(
 						embed.setDescription(`*The ${getDisplayspecies(quid)} swims quickly to the surface, trying to stay as stealthy and unnoticed as possible. ${capitalize(pronounAndPlural(quid, 0, 'break'))} the surface, gain ${pronoun(quid, 2)} bearing, and the ${getDisplayspecies(quid)} begins swimming to the shore, dragging the dead ${opponentSpecies} up the shore to the camp.*`);
 					}
 					else { throw new Error('quid species habitat not found'); }
-					embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}\n\n+1 ${opponentSpecies}` });
+					embed.setFooter({ text: `${await addExperience(quidToServer, experiencePoints)}\n${changedCondition.statsUpdateText}\n\n+1 ${opponentSpecies}` });
 				}
 				else if (outcome === 1) {
 
@@ -858,15 +842,15 @@ async function executeExploring(
 						embed.setDescription(`*${quid.name} and the ${opponentSpecies} glance at one another as they swim in opposite directions from the kelp, now cloudy from the stirred up dirt. The ${getDisplayspecies(quid)} swims back to camp, ${pronoun(quid, 2)} mouth empty as before.*`);
 					}
 					else { throw new Error('quid species habitat not found'); }
-					embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}` });
+					embed.setFooter({ text: `${await addExperience(quidToServer, experiencePoints)}\n${changedCondition.statsUpdateText}` });
 				}
 				else {
 
-					const healthPoints = getSmallestNumber(quidToServer.health, getRandomNumber(5, 3));
+					const healthPoints = Math.min(quidToServer.health, getRandomNumber(5, 3));
 
 					if (getRandomNumber(2) === 0) {
 
-						quidToServer.injuries.wounds += 1;
+						quidToServer.injuries_wounds += 1;
 
 						if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm) {
 
@@ -885,7 +869,7 @@ async function executeExploring(
 					}
 					else {
 
-						quidToServer.injuries.sprains += 1;
+						quidToServer.injuries_sprains += 1;
 
 						if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm) {
 
@@ -904,32 +888,41 @@ async function executeExploring(
 
 					}
 
-					await userData.update(
-						(u) => {
-							const p = getMapData(getMapData(u.quids, quid.id).profiles, interaction.guildId);
-							p.health -= healthPoints;
-							p.injuries = quidToServer.injuries;
-						},
-					);
+					await quidToServer.update({
+						health: healthPoints,
+						injuries_wounds: quidToServer.injuries_wounds,
+						injuries_sprains: quidToServer.injuries_sprains,
+					});
 				}
-			})(interaction, userData, serverData, int);
+			})(interaction, int);
 		}
 	}
 
-	await setCooldown(userData, interaction.guildId, false);
-	const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
+	await setCooldown(userToServer, false);
+
+	const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
+	const discordUserToServer = await DiscordUserToServer.findAll({
+		where: {
+			serverId: interaction.guildId,
+			isMember: true,
+			discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
+		},
+	});
+
+	const members = (await Promise.all(discordUserToServer
+		.map(async (duts) => (await interaction.guild.members.fetch(duts.discordUserId).catch(() => {
+			duts.update({ isMember: false });
+			return null;
+		}))))).filter(function(v): v is GuildMember { return v !== null; });
+
+	const levelUpEmbed = await checkLevelUp(interaction, quid, quidToServer, members);
 
 	if (foundQuest) {
 
-		await userData.update(
-			(u) => {
-				const p = getMapData(getMapData(u.quids, userData!.quid!.id).profiles, interaction.guildId);
-				p.hasQuest = true;
-			},
-		);
+		await quidToServer.update({ hasQuest: true });
 
 		// This is either an update or an editReply if there is a buttonInteraction, or an editReply if it's an interaction
-		await sendQuestMessage(buttonInteraction ?? interaction, 'update', userData, serverData, messageContent, restEmbed, [...changedCondition.injuryUpdateEmbed, ...levelUpEmbed], changedCondition.statsUpdateText, (botReply ? getMessageId(botReply) : undefined));
+		await sendQuestMessage(buttonInteraction ?? interaction, 'update', user, quid, userToServer, quidToServer, messageContent, restEmbed, [...changedCondition.injuryUpdateEmbed, ...levelUpEmbed], changedCondition.statsUpdateText, (botReply ? getMessageId(botReply) : undefined));
 	}
 	else {
 
@@ -946,7 +939,7 @@ async function executeExploring(
 				...(exploreComponent ? [exploreComponent] : []),
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.id, ['new', ...(stringInput ? [stringInput] : []) as [string]]))
+						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, user.id, ['new', ...(stringInput ? [stringInput] : []) as [string]]))
 						.setLabel('Explore again')
 						.setStyle(ButtonStyle.Primary)),
 			],
@@ -960,13 +953,9 @@ async function executeExploring(
 	await drinkAdvice(interaction, user, quidToServer);
 	await eatAdvice(interaction, user, quidToServer);
 
-	if (userData.advice.ginkgosapling === false && foundSapling) {
+	if (user.advice_sapling === false && foundSapling) {
 
-		await userData.update(
-			(u) => {
-				u.advice.ginkgosapling = true;
-			},
-		);
+		await user.update({ advice_sapling: true });
 
 		// This is always a followUp
 		await respond(buttonInteraction ?? interaction, {
@@ -975,21 +964,22 @@ async function executeExploring(
 	}
 }
 
-function getWaitingMessageObject(
+async function getWaitingMessageObject(
 	messageContent: string,
 	restEmbed: EmbedBuilder[],
-	userData: UserData<never, never>,
+	quid: Quid,
+	displaynameOptions: Parameters<typeof getDisplayname>[1],
 	waitingString: string,
 	waitingGameField: string[][],
 	waitingComponent: ActionRowBuilder<ButtonBuilder>,
-): { content: string; embeds: EmbedBuilder[]; components: ActionRowBuilder<ButtonBuilder>[]; } {
+): Promise<{ content: string; embeds: EmbedBuilder[]; components: ActionRowBuilder<ButtonBuilder>[]; }> {
 
 	return {
 		content: messageContent,
 		embeds: [...restEmbed, new EmbedBuilder()
 			.setColor(quid.color)
 			.setAuthor({
-				name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+				name: await getDisplayname(quid, displaynameOptions),
 				iconURL: quid.avatarURL,
 			})
 			.setDescription(waitingString + waitingGameField.map(v => v.join('')).join('\n'))
@@ -1031,7 +1021,8 @@ function getWaitingComponent(
 }
 
 function getAvailableBiomes(
-	userData: UserData<never, never>,
+	quid: Quid<true>,
+	quidToServer: QuidToServer,
 ): readonly [string, string, string] | readonly [string, string] | readonly [string] {
 
 	const array = {

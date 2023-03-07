@@ -6,7 +6,7 @@ import { UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
-import { getMapData, getSmallestNumber, respond } from '../../utils/helperFunctions';
+import { getMapData, Math.min, respond } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { hasPermission } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -36,10 +36,10 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
+		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
-		const restEmbed = await isInvalid(interaction, userData);
+		const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
 		if (restEmbed === false) { return; }
 
 		const messageContent = remindOfAttack(interaction.guildId);
@@ -94,7 +94,7 @@ export const command: SlashCommand = {
 		const timeDifference = Math.abs(currentTimestamp - (quidToServer.sapling.nextWaterTimestamp ?? 0));
 		const timeDifferenceInMinutes = Math.round(timeDifference / oneMinute);
 
-		let experiencePoints = getSmallestNumber(quidToServer.sapling.waterCycles, quidToServer.levels * 5);
+		let experiencePoints = Math.min(quidToServer.sapling.waterCycles, quidToServer.levels * 5);
 		let healthPoints = 0;
 
 		const embed = new EmbedBuilder()

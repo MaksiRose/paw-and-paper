@@ -43,7 +43,7 @@ export const command: SlashCommand = {
 		if (!isInGuild(interaction) || !hasNameAndSpecies(userData1, interaction)) { return; } // This is always a reply
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
-		const restEmbed = await isInvalid(interaction, userData1);
+		const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer1);
 		if (restEmbed === false) { return; }
 
 		/* Define messageContent as the return of remindOfAttack */
@@ -163,7 +163,7 @@ export const command: SlashCommand = {
 		sharingCooldownAccountsMap.set(userData1.quid.id + interaction.guildId, Date.now());
 
 		/* Change the condition for user 1 */
-		const decreasedStatsData = await changeCondition(userData1, 0, CurrentRegionType.Ruins);
+		const decreasedStatsData = await changeCondition(quidToServer, quid1, 0, CurrentRegionType.Ruins);
 
 		/* Give user 2 experience */
 		const experienceIncrease = getRandomNumber(Math.round(userData2.quidToServer.levels * 7.5), Math.round(userData2.quidToServer.levels * 2.5));

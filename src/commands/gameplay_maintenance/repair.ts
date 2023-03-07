@@ -11,7 +11,7 @@ import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents } from '../../utils/componentDisabling';
 import getInventoryElements from '../../utils/getInventoryElements';
-import { getArrayElement, getSmallestNumber, respond } from '../../utils/helperFunctions';
+import { getArrayElement, Math.min, respond } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -40,10 +40,10 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
+		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
-		const restEmbed = await isInvalid(interaction, userData);
+		const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
 		if (restEmbed === false) { return; }
 
 		const messageContent = remindOfAttack(interaction.guildId);
@@ -103,7 +103,7 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
+		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
 
 		if (interaction.isButton()) {
 
@@ -125,7 +125,7 @@ export const command: SlashCommand = {
 			const repairKind = materialsInfo[chosenItem].reinforcesStructure ? 'structure' : materialsInfo[chosenItem].improvesBedding ? 'bedding' : materialsInfo[chosenItem].thickensWalls ? 'thickness' : materialsInfo[chosenItem].removesOverhang ? 'evenness' : undefined;
 			if (repairKind === undefined) { throw new TypeError('repairKind is undefined'); }
 
-			const repairAmount = getSmallestNumber(addMaterialPoints(), 100 - serverData.dens[chosenDen][repairKind]);
+			const repairAmount = Math.min(addMaterialPoints(), 100 - serverData.dens[chosenDen][repairKind]);
 
 			/** True when the repairAmount is bigger than zero. If the user isn't of  rank Hunter or Elderly, a weighted table decided whether they are successful. */
 			const isSuccessful = repairAmount > 0 && !isUnlucky(userData);
@@ -139,7 +139,7 @@ export const command: SlashCommand = {
 			);
 
 			const experiencePoints = isSuccessful === false ? 0 : getRandomNumber(5, quidToServer.levels + 8);
-			const changedCondition = await changeCondition(userData, experiencePoints);
+			const changedCondition = await changeCondition(quidToServer, quid, experiencePoints);
 			const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
 
 			const denName = chosenDen.split(/(?=[A-Z])/).join(' ').toLowerCase();

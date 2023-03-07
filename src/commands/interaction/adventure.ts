@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, SlashCommandBuilder, Snowflake } from 'discord.js';
-import { delay, getArrayElement, getSmallestNumber, keyInObject, KeyOfUnion, respond, sendErrorMessage, setCooldown, widenValues } from '../../utils/helperFunctions';
+import { delay, getArrayElement, Math.min, keyInObject, KeyOfUnion, respond, sendErrorMessage, setCooldown, widenValues } from '../../utils/helperFunctions';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
@@ -45,14 +45,14 @@ export const command: SlashCommand = {
 		if (!isInGuild(interaction) || !hasNameAndSpecies(userData1, interaction)) { return; } // This is always a reply
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
-		const restEmbed = await isInvalid(interaction, userData1); // This is always a reply
+		const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer1); // This is always a reply
 		if (restEmbed === false) { return; }
 
 		/* Define messageContent as the return of remindOfAttack */
 		const messageContent = remindOfAttack(interaction.guildId);
 
 		/* Checks whether the user's inventory is full and returns if it is. */
-		if (await hasFullInventory(interaction, userData1, restEmbed, messageContent)) { return; } // This is always a reply
+		if (await hasFullInventory(interaction, user, userToServer, quid, quidToServer1, restEmbed, messageContent)) { return; } // This is always a reply
 
 		/* Gets the mentioned user. */
 		const mentionedUser = interaction.options.getUser('user');
@@ -195,8 +195,8 @@ export const command: SlashCommand = {
 		await setCooldown(userData2, interaction.guildId, true);
 		deleteCommandDisablingInfo(userData1, interaction.guildId);
 		deleteCommandDisablingInfo(userData2, interaction.guildId);
-		const decreasedStatsData1 = await changeCondition(userData1, userData1.quidToServer.rank === RankType.Youngling ? 0 : getRandomNumber(5, userData1.quidToServer.levels + 8), CurrentRegionType.Prairie, true);
-		const decreasedStatsData2 = await changeCondition(userData2, userData2.quidToServer.rank === RankType.Youngling ? 0 : getRandomNumber(5, userData2.quidToServer.levels + 8), CurrentRegionType.Prairie, true);
+		const decreasedStatsData1 = await changeCondition(quidToServer, quid1, userData1.quidToServer.rank === RankType.Youngling ? 0 : getRandomNumber(5, userData1.quidToServer.levels + 8), CurrentRegionType.Prairie, true);
+		const decreasedStatsData2 = await changeCondition(quidToServer, quid2, userData2.quidToServer.rank === RankType.Youngling ? 0 : getRandomNumber(5, userData2.quidToServer.levels + 8), CurrentRegionType.Prairie, true);
 
 		/* Define number of rounds, and the uncovered card amount for both users. */
 		let finishedRounds = 0;
@@ -371,7 +371,7 @@ export const command: SlashCommand = {
 
 						let extraFooter = '';
 						let outcome: string | 1 | 2;
-						const losingHealthPoints = getSmallestNumber(maxHP, losingUserData.quidToServer.health);
+						const losingHealthPoints = Math.min(maxHP, losingUserData.quidToServer.health);
 
 						const { itemType, itemName } = getHighestItem(losingUserData.quidToServer.inventory);
 						const inventory_ = widenValues(losingUserData.quidToServer.inventory);
@@ -498,7 +498,7 @@ export const command: SlashCommand = {
 
 						if (winningUserData.quidToServer.health < winningUserData.quidToServer.maxHealth) {
 
-							extraHealthPoints = getSmallestNumber(maxHP, winningUserData.quidToServer.maxHealth - winningUserData.quidToServer.health);
+							extraHealthPoints = Math.min(maxHP, winningUserData.quidToServer.maxHealth - winningUserData.quidToServer.health);
 						}
 						else if (pullFromWeightedTable({ 0: 20 - finishedRounds, 1: finishedRounds - 10 }) === 0) {
 

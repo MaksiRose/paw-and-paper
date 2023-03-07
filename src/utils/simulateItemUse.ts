@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { commonPlantsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '..';
+import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '..';
 import { addCorrectDietHungerPoints, removeHungerPoints } from '../commands/gameplay_maintenance/eat';
 import { getStatsPoints, isUnlucky as healingIsUnlucky, quidNeedsHealing } from '../commands/gameplay_maintenance/heal';
 import { addMaterialPoints, isUnlucky as repairingIsUnlucky } from '../commands/gameplay_maintenance/repair';
@@ -7,13 +7,13 @@ import Den from '../models/den';
 import Quid from '../models/quid';
 import QuidToServer from '../models/quidToServer';
 import Server from '../models/server';
-import { CommonPlantNames, Inventory, MaterialNames, RarePlantNames, SpecialPlantNames, SpeciesNames, UncommonPlantNames } from '../typings/data/general';
+import { CommonPlantNames, MaterialNames, RarePlantNames, SpecialPlantNames, SpeciesNames, UncommonPlantNames } from '../typings/data/general';
 import { DenSchema } from '../typings/data/server';
 import { RankType } from '../typings/data/user';
 import { PlantEdibilityType, PlantInfo, SpeciesDietType } from '../typings/main';
 import { changeCondition } from './changeCondition';
 import { deepCopyObject, getArrayElement } from './helperFunctions';
-import { getRandomNumber, pullFromWeightedTable } from './randomizers';
+import { getRandomNumber } from './randomizers';
 import { wearDownAmount } from './wearDownDen';
 
 /**
@@ -30,7 +30,7 @@ async function getProfilesInServer(
 	const twoWeeksInMs = 1_209_600_000;
 	return await QuidToServer.findAll({
 		include: [{
-			model: Quid,
+			model: Quid<true>,
 			where: {
 				name: { [Op.not]: '' },
 				species: { [Op.not]: null },
@@ -50,31 +50,32 @@ async function getProfilesInServer(
  * @returns The difference between the amount of meat in the server's inventory and the amount of meat needed
  */
 export async function simulateMeatUse(
-	serverData: ServerSchema,
+	server: Server,
 	activeUsersOnly: boolean,
 ): Promise<number> {
 
-	const serverData_ = deepCopyObject(serverData);
-	const users = await getProfilesInServer(serverData_.serverId, activeUsersOnly);
+	const quidsToServer = await getProfilesInServer(server.id, activeUsersOnly);
 	let neededItems = 0;
 
-	for (const user of users.filter(u => speciesInfo[u.quid.species].diet !== SpeciesDietType.Herbivore)) {
+	const foodDen = await Den.findByPk(server.foodDenId, { rejectOnEmpty: true });
 
-		while (user.quidToServer.hunger < user.quidToServer.maxHunger) {
+	for (const quidToServer of quidsToServer.filter(qts => qts.quid.species !== null && speciesInfo[qts.quid.species].diet !== SpeciesDietType.Herbivore)) {
+
+		while (quidToServer.hunger < quidToServer.maxHunger) {
 
 			neededItems += 1;
-			user.quidToServer.hunger += addCorrectDietHungerPoints() - removeHungerPoints(serverData_);
+			quidToServer.hunger += addCorrectDietHungerPoints() - removeHungerPoints(foodDen);
 
 			const denStatkind = (['structure', 'bedding', 'thickness', 'evenness'] as const)[getRandomNumber(4)];
 			if (denStatkind === undefined) { throw new TypeError('denStatkind is undefined'); }
-			serverData_.dens.foodDen[denStatkind] -= wearDownAmount(serverData_.dens.foodDen[denStatkind]);
+			foodDen[denStatkind] -= wearDownAmount(foodDen[denStatkind]);
 		}
 	}
 
-	const existingItems = calculateInventorySize(server.inventory, ([key]) => key === 'meat');
-	const itemDifference = existingItems - neededItems;
+	const meat = Object.keys(speciesInfo);
+	const existingItems = server.inventory.filter(meat.includes).length;
 
-	return itemDifference;
+	return existingItems - neededItems;
 }
 
 /**
@@ -84,14 +85,42 @@ export async function simulateMeatUse(
  * @param {Inventory} inventory - The inventory of the server
  * @returns A species name.
  */
-export function pickMeat(
+export async function pickMeat(
 	options: SpeciesNames[],
-	inventory: Inventory,
-): SpeciesNames {
+	server: Server,
+): Promise<SpeciesNames> {
 
-	// First, get how many times each of these meat types exist in the inventory. these are the denominators. We add 1 to each to avoid having null as a possible value, which would break the code
-	const object = options.reduce((prev, cur, index) => ({ ...prev, [index]: inventory.meat[cur] + 1 }), {} as Record<number, number>);
-	return pickItem(object, options);
+	let inventory = [...server.inventory];
+	const quidsToServer = await getProfilesInServer(server.id, false);
+	const meat = Object.keys(speciesInfo);
+
+	const foodDen = await Den.findByPk(server.foodDenId, { rejectOnEmpty: true });
+
+	const neededEatingItems = getNeededHungerItems(quidsToServer, foodDen);
+	for (let i = 0; i < neededEatingItems; i++) {
+
+		const meatInventory = inventory.filter(meat.includes);
+		if (meatInventory.length === 0) { break; }
+
+		const anyMeatItem = getArrayElement(meatInventory, getRandomNumber(meatInventory.length));
+
+		const index = inventory.indexOf(anyMeatItem);
+		if (index === -1) { throw new Error('index is -1'); }
+		inventory = inventory.splice(index, 1);
+	}
+
+	const items = new Map<string, number>();
+	inventory.forEach((item) => {
+
+		if (!meat.includes(item)) { return; }
+		if (!options.includes(item as SpeciesNames)) { return; }
+
+		const itemCount = items.get(item);
+		if (itemCount) { items.set(item, itemCount + 1); }
+		else { items.set(item, 1); }
+	});
+
+	return pickItem(items) as SpeciesNames;
 }
 
 
@@ -180,17 +209,20 @@ function getNeededMedicineItems(
  * @returns The difference between the amount of plants in the inventory and the amount of plants needed.
  */
 export async function simulatePlantUse(
-	serverData: ServerSchema,
+	server: Server,
 	activeUsersOnly: boolean,
 ): Promise<number> {
 
-	const quids = await getProfilesInServer(serverData.serverId, activeUsersOnly);
-	const neededItems = getNeededHungerItems(quids, serverData) + getNeededMedicineItems(quids, serverData);
+	const itemInfo = Object.keys({ ...commonPlantsInfo, ...uncommonPlantsInfo, ...rarePlantsInfo, ...specialPlantsInfo });
+	const quidsToServer = await getProfilesInServer(server.id, activeUsersOnly);
 
-	const existingItems = calculateInventorySize(server.inventory, ([key]) => key === 'commonPlants' || key === 'uncommonPlants' || key === 'rarePlants' || key === 'specialPlants');
-	const itemDifference = existingItems - neededItems;
+	const foodDen = await Den.findByPk(server.foodDenId, { rejectOnEmpty: true });
+	const medicineDen = await Den.findByPk(server.medicineDenId, { rejectOnEmpty: true });
 
-	return itemDifference;
+	const existingItems = server.inventory.filter(itemInfo.includes).length;
+	const neededItems = getNeededHungerItems(quidsToServer, foodDen) + getNeededMedicineItems(quidsToServer, medicineDen);
+
+	return existingItems - neededItems;
 }
 
 /**
@@ -216,10 +248,9 @@ export async function pickPlant(
 	server: Server,
 ): Promise<CommonPlantNames | UncommonPlantNames | RarePlantNames> {
 
+	let inventory = [...server.inventory];
 	const itemInfo = { ...commonPlantsInfo, ...uncommonPlantsInfo, ...rarePlantsInfo, ...specialPlantsInfo };
 	const quidsToServer = await getProfilesInServer(server.id, false);
-
-	server.inventory;
 
 	const foodDen = await Den.findByPk(server.foodDenId, { rejectOnEmpty: true });
 	const medicineDen = await Den.findByPk(server.medicineDenId, { rejectOnEmpty: true });
@@ -233,19 +264,19 @@ export async function pickPlant(
 	const neededSprainItems = getNeededMedicineItems(quidsToServer, medicineDen, 'sprains');
 	const neededPoisonItems = getNeededMedicineItems(quidsToServer, medicineDen, 'poison');
 
-	server.inventory = removeLeastUsefulItem(server.inventory, 'edibility', itemInfo, neededEatingItems + neededHungerItems);
-	server.inventory = removeLeastUsefulItem(server.inventory, 'givesEnergy', itemInfo, neededEnergyItems);
-	server.inventory = removeLeastUsefulItem(server.inventory, 'healsWounds', itemInfo, neededWoundItems);
-	server.inventory = removeLeastUsefulItem(server.inventory, 'healsInfections', itemInfo, neededInfectionItems);
-	server.inventory = removeLeastUsefulItem(server.inventory, 'healsColds', itemInfo, neededColdItems);
-	server.inventory = removeLeastUsefulItem(server.inventory, 'healsSprains', itemInfo, neededSprainItems);
-	server.inventory = removeLeastUsefulItem(server.inventory, 'healsPoison', itemInfo, neededPoisonItems);
+	inventory = removeLeastUsefulItem(inventory, 'edibility', itemInfo, neededEatingItems + neededHungerItems);
+	inventory = removeLeastUsefulItem(inventory, 'givesEnergy', itemInfo, neededEnergyItems);
+	inventory = removeLeastUsefulItem(inventory, 'healsWounds', itemInfo, neededWoundItems);
+	inventory = removeLeastUsefulItem(inventory, 'healsInfections', itemInfo, neededInfectionItems);
+	inventory = removeLeastUsefulItem(inventory, 'healsColds', itemInfo, neededColdItems);
+	inventory = removeLeastUsefulItem(inventory, 'healsSprains', itemInfo, neededSprainItems);
+	inventory = removeLeastUsefulItem(inventory, 'healsPoison', itemInfo, neededPoisonItems);
 
 	const items = new Map<string, number>();
 	const rarePlants = Object.keys(rarePlantsInfo);
 	const uncommonPlants = Object.keys(uncommonPlantsInfo);
 	const commonPlants = Object.keys(commonPlantsInfo);
-	server.inventory.forEach((item) => {
+	inventory.forEach((item) => {
 
 		const isRightItemType = (include < 2 ? false : rarePlants.includes(item)) ||
 		(include < 1 ? false : uncommonPlants.includes(item)) ||
@@ -258,6 +289,34 @@ export async function pickPlant(
 	});
 
 	return pickItem(items) as CommonPlantNames | UncommonPlantNames | RarePlantNames;
+}
+
+/**
+ * It takes an inventory and returns a random material weighted by how much of each material is in the inventory
+ * @param {Inventory} inventory - Inventory - this is the inventory object that we're going to be
+ * picking from.
+ * @returns A MaterialNames
+ */
+export function pickMaterial(
+	server: Server,
+): MaterialNames {
+
+	const inventory = [...server.inventory];
+	// It should first do a getNeededMaterialItems for each type of damage type and each den
+	// then remove all the materials that are needed for that from the server inventory
+
+	const items = new Map<string, number>();
+	const materials = Object.keys(materialsInfo);
+	inventory.forEach((item) => {
+
+		if (!materials.includes(item)) { return; }
+
+		const itemCount = items.get(item);
+		if (itemCount) { items.set(item, itemCount + 1); }
+		else { items.set(item, 1); }
+	});
+
+	return pickItem(items) as MaterialNames;
 }
 
 function findLeastUsefulItem(
@@ -384,21 +443,6 @@ export async function simulateMaterialUse(
 	const itemDifference = existingItems - neededItems;
 
 	return itemDifference;
-}
-
-/**
- * It takes an inventory and returns a random material weighted by how much of each material is in the inventory
- * @param {Inventory} inventory - Inventory - this is the inventory object that we're going to be
- * picking from.
- * @returns A MaterialNames
- */
-export function pickMaterial(
-	inventory: Inventory,
-): MaterialNames {
-
-	const options: MaterialNames[] = Object.keys(inventory.materials) as MaterialNames[];
-	const object = options.reduce((prev, curItem, index) => ({ ...prev, [index]: inventory.materials[curItem] + 1 }), {} as Record<number, number>);
-	return pickItem(object, options);
 }
 
 

@@ -2,7 +2,7 @@
 import serverModel from '../oldModels/serverModel';
 import { ServerSchema } from '../typings/data/server';
 import { CurrentRegionType } from '../typings/data/user';
-import { getSmallestNumber } from './helperFunctions';
+import { Math.min } from './helperFunctions';
 import { getRandomNumber } from './randomizers';
 
 /**
@@ -32,4 +32,4 @@ export async function wearDownDen(
 
 export function wearDownAmount(
 	denAmount: number,
-): number { return getSmallestNumber(denAmount, getRandomNumber(5, 1)); }
+): number { return Math.min(denAmount, getRandomNumber(5, 1)); }

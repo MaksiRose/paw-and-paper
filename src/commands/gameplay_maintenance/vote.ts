@@ -6,7 +6,7 @@ import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
-import { getMapData, getSmallestNumber, respond } from '../../utils/helperFunctions';
+import { getMapData, Math.min, respond } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 const { default_color } = require('../../../config.json');
 
@@ -26,12 +26,12 @@ export const command: SlashCommand = {
 			'ViewChannel', // Needed because of createCommandComponentDisabler
 		]) === true) { return; }
 
-		if (!hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
+		if (!hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
 
 		let restEmbed: EmbedBuilder[] = [];
 		if (interaction.inGuild()) {
 
-			const restEmbedOrFalse = await isInvalid(interaction, userData);
+			const restEmbedOrFalse = await isInvalid(interaction, user, userToServer, quid, quidToServer);
 			if (restEmbedOrFalse === false) { return; }
 			else { restEmbed = restEmbedOrFalse; }
 		}
@@ -78,7 +78,7 @@ export const command: SlashCommand = {
 
 		if (!interaction.isStringSelectMenu()) { return; }
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
+		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
 
 		const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8')) as VoteList;
 		const twelveHoursInMs = 43_200_000;
@@ -126,7 +126,7 @@ export const command: SlashCommand = {
 			voteCache['id_' + interaction.user.id] = newUserVoteCache;
 			writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
 
-			const energyPoints = getSmallestNumber(quidToServer.maxEnergy - quidToServer.energy, 30);
+			const energyPoints = Math.min(quidToServer.maxEnergy - quidToServer.energy, 30);
 
 			await userData.update(
 				(u) => {

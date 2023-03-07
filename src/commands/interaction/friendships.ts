@@ -17,7 +17,7 @@ export const command: SlashCommand = {
 	modifiesServerProfile: false,
 	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
 
-		if (!hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
+		if (!hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
 
 		/* Creating a message with up to 25 friendships and buttons to go back and fourth a page if the quid has more than 25 friends. */
 		await respond(interaction, await getFriendshipMessage(userData, interaction.guildId ?? '', 0)); // This is always a reply
@@ -25,7 +25,7 @@ export const command: SlashCommand = {
 	async sendMessageComponentResponse(interaction, userData) {
 
 		if (!interaction.isButton()) { return; }
-		if (!hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
+		if (!hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
 
 		/* Get the page number of the friendship list.  */
 		let page = Number(interaction.customId.split('_')[2] ?? 0);

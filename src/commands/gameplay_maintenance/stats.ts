@@ -62,7 +62,7 @@ export const command: SlashCommand = {
 				return;
 			}
 		}
-		else if (!hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
+		else if (!hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
 
 		await sendStatsMessage(interaction, userData, interaction.user.id);
 	},
@@ -87,8 +87,8 @@ export const command: SlashCommand = {
 
 		if (interaction.customId.includes('store')) {
 
-			if (!hasNameAndSpecies(userData, interaction)) { return; }
-			const restEmbed = await isInvalid(interaction, userData);
+			if (!hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; }
+			const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
 			if (restEmbed === false) { return; }
 
 			await sendStoreMessage(interaction, userData, serverData, restEmbed);

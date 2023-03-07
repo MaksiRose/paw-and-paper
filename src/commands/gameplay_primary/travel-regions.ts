@@ -46,10 +46,10 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
+		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
-		const restEmbed = await isInvalid(interaction, userData);
+		const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
 		if (restEmbed === false) { return; }
 
 		const messageContent = remindOfAttack(interaction.guildId);
@@ -62,7 +62,7 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; }
 
 		const messageContent = interaction.message.content;
 		const restEmbed = interaction.message.embeds.slice(0, -1).map(c => new EmbedBuilder(c.toJSON()));

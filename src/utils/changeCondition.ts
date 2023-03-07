@@ -1,5 +1,5 @@
 import { EmbedBuilder } from 'discord.js';
-import { getArrayElement, getBiggestNumber, getSmallestNumber } from './helperFunctions';
+import { getArrayElement, Math.max, Math.min } from './helperFunctions';
 import { getRandomNumber, pullFromWeightedTable } from './randomizers';
 import { CurrentRegionType } from '../typings/data/user';
 import QuidToServer from '../models/quidToServer';
@@ -20,7 +20,7 @@ function calculateEnergyDecrease(
 	const healthDependentEnergyDecrease = Math.round(10 - (quidToServer.health / (quidToServer.maxHealth / 10)));
 
 	/* If energyDependentHungerDecrease is 0, return 0. If it's not 0, compare healthDependentEnergyDecrease with the profiles energy and return the smaller number. */
-	return healthDependentEnergyDecrease > 0 ? getSmallestNumber(healthDependentEnergyDecrease, quidToServer.energy) : 0;
+	return healthDependentEnergyDecrease > 0 ? Math.min(healthDependentEnergyDecrease, quidToServer.energy) : 0;
 }
 
 /**
@@ -36,7 +36,7 @@ function calculateHungerDecrease(
 	const energyDependentHungerDecrease = Math.round(10 - (quidToServer.energy / (quidToServer.maxEnergy / 10)));
 
 	/* If energyDependentHungerDecrease is 0, return 0. If it's not 0, randomize a number between energyDependentHungerDecrease and 2 higher than that, compare it with the profiles hunger and return the smaller number. */
-	return energyDependentHungerDecrease > 0 ? getSmallestNumber(getRandomNumber(3, energyDependentHungerDecrease), quidToServer.hunger) : 0;
+	return energyDependentHungerDecrease > 0 ? Math.min(getRandomNumber(3, energyDependentHungerDecrease), quidToServer.hunger) : 0;
 }
 
 /**
@@ -52,7 +52,7 @@ function calculateThirstDecrease(
 	const energyDependentThirstDecrease = Math.ceil(10 - (quidToServer.energy / (quidToServer.maxEnergy / 10)));
 
 	/* If energyDependentThirstDecrease is 0, return 0. If it's not 0, randomize a number between energyDependentThirstDecrease and 2 higher than that, compare it with the profiles thirst and return the smaller number. */
-	return energyDependentThirstDecrease > 0 ? getSmallestNumber(getRandomNumber(3, energyDependentThirstDecrease), quidToServer.thirst) : 0;
+	return energyDependentThirstDecrease > 0 ? Math.min(getRandomNumber(3, energyDependentThirstDecrease), quidToServer.thirst) : 0;
 }
 
 /**
@@ -150,7 +150,7 @@ function decreaseHealth(
 		else {
 
 			const minimumColdHealthDecrease = Math.round((10 - (quidToServer.health / (quidToServer.maxHealth / 10))) / 1.5);
-			totalHealthDecrease += getRandomNumber(3, getBiggestNumber(minimumColdHealthDecrease, 1));
+			totalHealthDecrease += getRandomNumber(3, Math.max(minimumColdHealthDecrease, 1));
 
 			description += `\n*${quid.name}'s cold is getting worse!*`;
 		}
@@ -170,7 +170,7 @@ function decreaseHealth(
 		}
 
 		const minimumSprainHealthDecrease = Math.round(quidToServer.levels / 2);
-		totalHealthDecrease += getRandomNumber(5, getSmallestNumber(minimumSprainHealthDecrease, 11));
+		totalHealthDecrease += getRandomNumber(5, Math.min(minimumSprainHealthDecrease, 11));
 
 		description += `\n*One of ${quid.name}'s sprains is getting worse!*`;
 	}
@@ -189,7 +189,7 @@ function decreaseHealth(
 		else {
 
 			const minimumPoisonHealthDecrease = Math.round((10 - (quidToServer.health / 10)) * 1.5);
-			totalHealthDecrease += getRandomNumber(5, getBiggestNumber(minimumPoisonHealthDecrease, 1));
+			totalHealthDecrease += getRandomNumber(5, Math.max(minimumPoisonHealthDecrease, 1));
 
 			description += `\n*The poison in ${quid.name}'s body is spreading!*`;
 		}
@@ -236,7 +236,7 @@ export async function changeCondition(
 ): Promise<DecreasedStatsData> {
 
 	const { injuryUpdateEmbed, totalHealthDecrease, modifiedInjuries } = decreaseHealth(quidToServer, quid);
-	const energyDecrease = getSmallestNumber(calculateEnergyDecrease(quidToServer) + getRandomNumber(3, 1), quidToServer.energy);
+	const energyDecrease = Math.min(calculateEnergyDecrease(quidToServer) + getRandomNumber(3, 1), quidToServer.energy);
 	const hungerDecrease = calculateHungerDecrease(quidToServer);
 	const thirstDecrease = calculateThirstDecrease(quidToServer);
 	const previousRegion = quidToServer.currentRegion;
@@ -300,7 +300,7 @@ export async function infectWithChance(
 
 	if (quidToServer2.injuries_cold === true && quidToServer1.injuries_cold === false && pullFromWeightedTable({ 0: 3, 1: 7 }) === 0) {
 
-		const healthPoints = getSmallestNumber(getRandomNumber(5, 3), quidToServer1.health);
+		const healthPoints = Math.min(getRandomNumber(5, 3), quidToServer1.health);
 
 		await quidToServer1.update({ health: quidToServer1.health - healthPoints, injuries_cold: true });
 

@@ -11,7 +11,7 @@ import { PlantEdibilityType, SpeciesDietType } from '../../typings/main';
 import { hasName, hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { disableAllComponents } from '../../utils/componentDisabling';
-import { capitalize, getBiggestNumber, getMapData, getSmallestNumber, keyInObject, respond, unsafeKeys, widenValues } from '../../utils/helperFunctions';
+import { capitalize, Math.max, getMapData, Math.min, keyInObject, respond, unsafeKeys, widenValues } from '../../utils/helperFunctions';
 import { getRandomNumber } from '../../utils/randomizers';
 import { wearDownDen } from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -61,10 +61,10 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
+		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
-		const restEmbed = await isInvalid(interaction, userData);
+		const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
 		if (restEmbed === false) { return; }
 
 		const messageContent = remindOfAttack(interaction.guildId);
@@ -186,15 +186,15 @@ export async function sendEatMessage(
 
 		if (allPlantsInfo[chosenFood].edibility === PlantEdibilityType.Toxic) {
 
-			finalHungerPoints = getBiggestNumber(-quidToServer.hunger, getRandomNumber(3, -5) - removeHungerPoints(serverData));
-			finalHealthPoints = getBiggestNumber(-quidToServer.health, getRandomNumber(3, -10));
+			finalHungerPoints = Math.max(-quidToServer.hunger, getRandomNumber(3, -5) - removeHungerPoints(serverData));
+			finalHealthPoints = Math.max(-quidToServer.health, getRandomNumber(3, -10));
 
 			embed.setDescription(`*A yucky feeling drifts down ${quid.name}'s throat. ${capitalize(pronounAndPlural(quid, 0, 'shakes and spits', 'shake and spit'))} it out, trying to rid ${pronoun(quid, 2)} mouth of the taste. The plant is poisonous!*`);
 		}
 
 		if (allPlantsInfo[chosenFood].edibility === PlantEdibilityType.Inedible) {
 
-			finalHungerPoints = getBiggestNumber(-quidToServer.hunger, getRandomNumber(3, -3) - removeHungerPoints(serverData));
+			finalHungerPoints = Math.max(-quidToServer.hunger, getRandomNumber(3, -3) - removeHungerPoints(serverData));
 
 			embed.setDescription(`*${quid.name} slowly opens ${pronoun(quid, 2)} mouth and chomps onto the ${chosenFood}. The ${getDisplayspecies(quid)} swallows it, but ${pronoun(quid, 2)} face has a look of disgust. That wasn't very tasty!*`);
 		}
@@ -203,13 +203,13 @@ export async function sendEatMessage(
 
 			if (speciesInfo[quid.species].diet === SpeciesDietType.Carnivore) {
 
-				finalHungerPoints = getBiggestNumber(-quidToServer.hunger, getSmallestNumber(quidToServer.maxHunger - quidToServer.hunger, addIncorrectDietHungerPoints() - removeHungerPoints(serverData)));
+				finalHungerPoints = Math.max(-quidToServer.hunger, Math.min(quidToServer.maxHunger - quidToServer.hunger, addIncorrectDietHungerPoints() - removeHungerPoints(serverData)));
 
 				embed.setDescription(`*${quid.name} plucks a ${chosenFood} from the pack storage and nibbles away at it. It has a bitter, foreign taste, not the usual meaty meal the ${getDisplayspecies(quid)} prefers.*`);
 			}
 			else {
 
-				finalHungerPoints = getSmallestNumber(quidToServer.maxHunger - quidToServer.hunger, addCorrectDietHungerPoints() - removeHungerPoints(serverData));
+				finalHungerPoints = Math.min(quidToServer.maxHunger - quidToServer.hunger, addCorrectDietHungerPoints() - removeHungerPoints(serverData));
 
 				embed.setDescription(`*Leaves flutter into the storage den, landing near ${quid.name}'s feet. The ${getDisplayspecies(quid)} searches around the inventory determined to find the perfect meal, and that ${pronounAndPlural(quid, 0, 'does', 'do')}. ${quid.name} plucks a ${chosenFood} from the pile and eats until ${pronoun(quid, 2)} stomach is pleased.*`);
 			}
@@ -217,7 +217,7 @@ export async function sendEatMessage(
 
 		if (allPlantsInfo[chosenFood].givesEnergy === true) {
 
-			finalEnergyPoints = getSmallestNumber(quidToServer.maxEnergy - quidToServer.energy, 20);
+			finalEnergyPoints = Math.min(quidToServer.maxEnergy - quidToServer.energy, 20);
 		}
 
 		if (allPlantsInfo[chosenFood].increasesMaxCondition === true) {
@@ -239,13 +239,13 @@ export async function sendEatMessage(
 
 		if (speciesInfo[quid.species].diet === SpeciesDietType.Herbivore) {
 
-			finalHungerPoints = getBiggestNumber(-quidToServer.hunger, getSmallestNumber(quidToServer.maxHunger - quidToServer.hunger, addIncorrectDietHungerPoints() - removeHungerPoints(serverData)));
+			finalHungerPoints = Math.max(-quidToServer.hunger, Math.min(quidToServer.maxHunger - quidToServer.hunger, addIncorrectDietHungerPoints() - removeHungerPoints(serverData)));
 
 			embed.setDescription(`*${quid.name} stands by the storage den, eyeing the varieties of food. A ${chosenFood} catches ${pronoun(quid, 2)} attention. The ${getDisplayspecies(quid)} walks over to it and begins to eat.* "This isn't very good!" *${quid.name} whispers to ${pronoun(quid, 4)} and leaves the den, stomach still growling, and craving for plants to grow.*`);
 		}
 		else {
 
-			finalHungerPoints = getSmallestNumber(quidToServer.maxHunger - quidToServer.hunger, addCorrectDietHungerPoints() - removeHungerPoints(serverData));
+			finalHungerPoints = Math.min(quidToServer.maxHunger - quidToServer.hunger, addCorrectDietHungerPoints() - removeHungerPoints(serverData));
 
 			embed.setDescription(`*${quid.name} sits chewing maliciously on a ${chosenFood}. A dribble of blood escapes out of ${pronoun(quid, 2)} jaw as the ${getDisplayspecies(quid)} finishes off the meal. It was a delicious feast, but very messy!*`);
 		}

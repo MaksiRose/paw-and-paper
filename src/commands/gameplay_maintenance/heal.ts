@@ -18,7 +18,7 @@ import { isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidit
 import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo, componentDisablingInteractions } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import getInventoryElements from '../../utils/getInventoryElements';
-import { capitalize, getArrayElement, getMapData, getSmallestNumber, keyInObject, respond, unsafeKeys, widenValues } from '../../utils/helperFunctions';
+import { capitalize, getArrayElement, getMapData, Math.min, keyInObject, respond, unsafeKeys, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -73,10 +73,10 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
+		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
-		const restEmbed = await isInvalid(interaction, userData);
+		const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
 		if (restEmbed === false) { return; }
 
 		const messageContent = remindOfAttack(interaction.guildId);
@@ -115,7 +115,7 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; }
 
 		if (interaction.isStringSelectMenu() && interaction.customId.startsWith('heal_quids_options')) {
 
@@ -541,7 +541,7 @@ export async function getHealResponse(
 	}
 
 	const experiencePoints = isSuccessful === false ? 0 : getRandomNumber(5, quidToServer.levels + 8);
-	const changedCondition = await changeCondition(userData.id === userToHeal.id ? userToHeal : userData, experiencePoints); // userToHeal is used here when a user is healing themselves to take into account the changes to the injuries & health
+	const changedCondition = await changeCondition(quidToServer, quid.id === userToHeal.id ? userToHeal : userData, experiencePoints); // userToHeal is used here when a user is healing themselves to take into account the changes to the injuries & health
 	const infectedEmbed = userData.id === userToHeal.id ? await infectWithChance(userData, userToHeal) : [];
 	const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
 
@@ -609,10 +609,10 @@ export function getStatsPoints(
 	userToHeal: UserData<never, never>,
 ): { health: number, energy: number, hunger: number, thirst: number; } {
 
-	const thirst = item === 'water' ? getSmallestNumber(getRandomNumber(10, 6), userToHeal.quidToServer.maxThirst - userToHeal.quidToServer.thirst) : 0;
-	const health = item === 'water' ? 0 : getSmallestNumber(getRandomNumber(10, 6), userToHeal.quidToServer.maxHealth - userToHeal.quidToServer.health);
-	const energy = (item !== 'water' && itemInfo[item].givesEnergy) ? getSmallestNumber(30, userToHeal.quidToServer.maxEnergy - userToHeal.quidToServer.energy) : 0;
-	const hunger = (item !== 'water' && itemInfo[item].edibility === PlantEdibilityType.Edible) ? getSmallestNumber(5, userToHeal.quidToServer.maxHunger - userToHeal.quidToServer.hunger) : 0;
+	const thirst = item === 'water' ? Math.min(getRandomNumber(10, 6), userToHeal.quidToServer.maxThirst - userToHeal.quidToServer.thirst) : 0;
+	const health = item === 'water' ? 0 : Math.min(getRandomNumber(10, 6), userToHeal.quidToServer.maxHealth - userToHeal.quidToServer.health);
+	const energy = (item !== 'water' && itemInfo[item].givesEnergy) ? Math.min(30, userToHeal.quidToServer.maxEnergy - userToHeal.quidToServer.energy) : 0;
+	const hunger = (item !== 'water' && itemInfo[item].edibility === PlantEdibilityType.Edible) ? Math.min(5, userToHeal.quidToServer.maxHunger - userToHeal.quidToServer.hunger) : 0;
 	return { thirst, hunger, energy, health };
 }
 

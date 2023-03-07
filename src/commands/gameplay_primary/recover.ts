@@ -37,10 +37,10 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
+		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
-		const restEmbed = await isInvalid(interaction, userData);
+		const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
 		if (restEmbed === false) { return; }
 
 		const messageContent = remindOfAttack(interaction.guildId);
@@ -135,7 +135,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		await setCooldown(userData, interaction.guildId, true);
+		await setCooldown(userToServer, true);
 		deleteCommandDisablingInfo(userData, interaction.guildId);
 
 		const healKind = buttonInteraction.customId.replace('recover_', '');
@@ -298,7 +298,7 @@ export const command: SlashCommand = {
 						let embed: EmbedBuilder;
 						if (reason === 'failed' || reason === 'idle') {
 
-							changedCondition = await changeCondition(userData, 0);
+							changedCondition = await changeCondition(quidToServer, quid, 0);
 
 							embed = new EmbedBuilder()
 								.setColor(quid.color)
@@ -357,7 +357,7 @@ export const command: SlashCommand = {
 								},
 							);
 
-							changedCondition = await changeCondition(userData, 0);
+							changedCondition = await changeCondition(quidToServer, quid, 0);
 
 							embed = new EmbedBuilder()
 								.setColor(quid.color)
@@ -387,7 +387,7 @@ export const command: SlashCommand = {
 						await drinkAdvice(lastInteraction, userData);
 						await eatAdvice(lastInteraction, userData);
 
-						await setCooldown(userData, interaction.guildId, false);
+						await setCooldown(userToServer, false);
 					}
 					catch (error) {
 

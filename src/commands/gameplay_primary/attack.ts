@@ -12,7 +12,7 @@ import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { disableCommandComponent } from '../../utils/componentDisabling';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { createFightGame } from '../../utils/gameBuilder';
-import { getMapData, getMessageId, getSmallestNumber, KeyOfUnion, respond, sendErrorMessage, setCooldown, unsafeKeys, ValueOf, widenValues } from '../../utils/helperFunctions';
+import { getMapData, getMessageId, Math.min, KeyOfUnion, respond, sendErrorMessage, setCooldown, unsafeKeys, ValueOf, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -60,13 +60,13 @@ async function executeAttacking(
 
 	/* This ensures that the user is in a guild and has a completed account. */
 	if (serverData === null) { throw new Error('serverData is null'); }
-	if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
+	if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
 
 	/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-	if (command.disablePreviousCommand) { await disableCommandComponent(userData); }
+	if (command.disablePreviousCommand) { await disableCommandComponent(userToServer); }
 
 	/* Checks if the profile is resting, on a cooldown or passed out. */
-	const restEmbed = await isInvalid(interaction, userData);
+	const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
 	if (restEmbed === false) { return; }
 
 	const serverAttackInfo = serverMap.get(interaction.guild.id);
@@ -106,12 +106,12 @@ async function executeAttacking(
 		return;
 	}
 
-	await setCooldown(userData, interaction.guildId, true);
+	await setCooldown(userToServer, true);
 	serverAttackInfo.idleHumans -= 1;
 	serverAttackInfo.ongoingFights += 1;
 
 	const experiencePoints = quidToServer.rank === RankType.Youngling ? 0 : getRandomNumber(5, quidToServer.levels + 8);
-	const changedCondition = await changeCondition(userData, experiencePoints);
+	const changedCondition = await changeCondition(quidToServer, quid, experiencePoints);
 
 	const embed = new EmbedBuilder()
 		.setColor(quid.color)
@@ -210,7 +210,7 @@ async function executeAttacking(
 			return botReply;
 		}
 
-		await setCooldown(userData, interaction.guildId, false);
+		await setCooldown(userToServer, false);
 
 		let minusItemText = '';
 		let injuryText = '';
@@ -244,7 +244,7 @@ async function executeAttacking(
 
 			if (winLoseRatio === -1) {
 
-				const healthPoints = getSmallestNumber(quidToServer.health, getRandomNumber(5, 3));
+				const healthPoints = Math.min(quidToServer.health, getRandomNumber(5, 3));
 
 				if (pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
 

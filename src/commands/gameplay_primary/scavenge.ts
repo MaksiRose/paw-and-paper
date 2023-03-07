@@ -50,13 +50,13 @@ async function executeScavenging(
 
 	/* This ensures that the user is in a guild and has a completed account. */
 	if (serverData === null) { throw new Error('serverData is null'); }
-	if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
+	if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
 
 	/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-	if (command.disablePreviousCommand) { await disableCommandComponent(userData); }
+	if (command.disablePreviousCommand) { await disableCommandComponent(userToServer); }
 
 	/* Checks if the profile is resting, on a cooldown or passed out. */
-	const restEmbed = await isInvalid(interaction, userData);
+	const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
 	if (restEmbed === false) { return; }
 
 	const messageContent = remindOfAttack(interaction.guildId);
@@ -77,12 +77,12 @@ async function executeScavenging(
 		return;
 	}
 
-	if (await hasFullInventory(interaction, userData, restEmbed, messageContent)) { return; } // This is always a reply
+	if (await hasFullInventory(interaction, user, userToServer, quid, quidToServer, restEmbed, messageContent)) { return; } // This is always a reply
 
-	await setCooldown(userData, interaction.guildId, true);
+	await setCooldown(userToServer, true);
 
 	let experiencePoints = getRandomNumber(5, quidToServer.levels);
-	const changedCondition = await changeCondition(userData, 0);
+	const changedCondition = await changeCondition(quidToServer, quid, 0);
 
 	const embed = new EmbedBuilder()
 		.setColor(quid.color)
@@ -195,7 +195,7 @@ async function executeScavenging(
 							}
 
 							embed.setDescription(`*After a while, ${quid.name} can indeed find something useful: On the floor is a ${foundCarcass} that seems to have recently lost a fight fatally. Although the animal has a few injuries, it can still serve as great nourishment. What a success!*\n${playingField}`);
-							embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}\n\n+1 ${foundCarcass}` });
+							embed.setFooter({ text: `${await addExperience(quidToServer, experiencePoints)}\n${changedCondition.statsUpdateText}\n\n+1 ${foundCarcass}` });
 
 							await userData.update(
 								(u) => {
@@ -214,7 +214,7 @@ async function executeScavenging(
 							}
 
 							embed.setDescription(`*${quid.name} searches in vain for edible remains of deceased animals. But the expedition is not without success: the ${getDisplayspecies(quid)} sees a ${foundMaterial}, which can serve as a great material for repairs and work in the pack. ${capitalize(pronoun(quid, 0))} happily takes it home with ${pronoun(quid, 1)}.*\n${playingField}`);
-							embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}\n\n+1 ${foundMaterial}` });
+							embed.setFooter({ text: `${await addExperience(quidToServer, experiencePoints)}\n${changedCondition.statsUpdateText}\n\n+1 ${foundMaterial}` });
 
 							await userData.update(
 								(u) => {
@@ -226,7 +226,7 @@ async function executeScavenging(
 						else {
 
 							embed.setDescription(`*Although ${quid.name} searches everything very thoroughly, there doesn't seem to be anything in the area that can be used at the moment. Probably everything has already been found. The ${getDisplayspecies(quid)} decides to look again later.*\n${playingField}`);
-							if (changedCondition.statsUpdateText) { embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}` }); }
+							if (changedCondition.statsUpdateText) { embed.setFooter({ text: `${await addExperience(quidToServer, experiencePoints)}\n${changedCondition.statsUpdateText}` }); }
 						}
 
 						await sendFinalMessage(int, userData, serverData);
@@ -272,7 +272,7 @@ async function executeScavenging(
 
 						experiencePoints = Math.round(experiencePoints / 2);
 						embed.setDescription(`*After ${quid.name} gets over the initial shock, the ${getDisplayspecies(quid)} quickly manages to free ${pronoun(quid, 4)} from the net. That was close!*`);
-						embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}` });
+						embed.setFooter({ text: `${await addExperience(quidToServer, experiencePoints)}\n${changedCondition.statsUpdateText}` });
 					}
 					else {
 
