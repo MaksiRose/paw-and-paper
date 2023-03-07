@@ -20,7 +20,7 @@ import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { accessiblePlantEmojis, createFightGame, createPlantGame, plantEmojis } from '../../utils/gameBuilder';
 import { getDisplayname, getDisplayspecies, pronoun, pronounAndPlural } from '../../utils/getQuidInfo';
-import { capitalize, getArrayElement, getSmallestNumber, respond, setCooldown } from '../../utils/helperFunctions';
+import { capitalize, getArrayElement, respond, setCooldown } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -194,7 +194,7 @@ export async function executePlaying(
 
 		if (hasNameAndSpecies(quid2) && quidToServer2 && (quidToServer.rank === RankType.Youngling || quidToServer.rank === RankType.Apprentice)) {
 
-			const partnerHealthPoints = getSmallestNumber(quidToServer2.maxHealth - quidToServer2.health, getRandomNumber(5, 1));
+			const partnerHealthPoints = Math.min(quidToServer2.maxHealth - quidToServer2.health, getRandomNumber(5, 1));
 			await quidToServer2.update({ health: quidToServer2.health + partnerHealthPoints });
 			changedCondition.statsUpdateText += `\n\n+${partnerHealthPoints} HP for ${quid2.name} (${quidToServer2.health}/${quidToServer2.maxHealth})`;
 		}
@@ -305,7 +305,7 @@ export async function executePlaying(
 		&& (quidToServer.rank !== RankType.Apprentice
 			|| pullFromWeightedTable({ 0: 10, 1: 90 + quidToServer.sapling_waterCycles }))) {
 
-		const healthPoints = getSmallestNumber(getRandomNumber(5, 3), quidToServer.health);
+		const healthPoints = Math.min(getRandomNumber(5, 3), quidToServer.health);
 		const newInjuries = { cold: quidToServer.injuries_cold, wounds: quidToServer.injuries_wounds };
 
 		if (getRandomNumber(2) === 0 && quidToServer.injuries_cold === false) {
@@ -439,7 +439,7 @@ export async function executePlaying(
 				...(playComponent ? [playComponent] : []),
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData1.id, ['new', ...(mentionedUserId ? [mentionedUserId] : []) as [string]]))
+						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, user.id, ['new', ...(mentionedUserId ? [mentionedUserId] : []) as [string]]))
 						.setLabel((tutorialMapEntry === 1 && tutorialMapEntry_ === 1) || (tutorialMapEntry === 2 && tutorialMapEntry_ === 2) ? 'Try again' : tutorialMapEntry === 1 && tutorialMapEntry_ === 2 ? 'Try another game' : 'Play again')
 						.setStyle(ButtonStyle.Primary)),
 			],
@@ -456,14 +456,14 @@ export async function executePlaying(
 
 	await isPassedOut(interaction, user, userToServer, quid, quidToServer, true);
 
-	await coloredButtonsAdvice(interaction, userData1);
-	await restAdvice(interaction, userData1);
-	await drinkAdvice(interaction, userData1);
-	await eatAdvice(interaction, userData1);
+	await coloredButtonsAdvice(interaction, user);
+	await restAdvice(interaction, user, quidToServer);
+	await drinkAdvice(interaction, user, quidToServer);
+	await eatAdvice(interaction, user, quidToServer);
 
 	const channel = interaction.channel ?? await interaction.client.channels.fetch(interaction.channelId);
 	if (channel === null || !channel.isTextBased()) { throw new TypeError('interaction.channel is null or not text based'); }
-	if (playedTogether && hasNameAndSpecies(userData2)) { await addFriendshipPoints({ createdTimestamp: SnowflakeUtil.timestampFrom(responseId), channel: channel }, userData1, userData2); } // I have to call SnowflakeUtil since InteractionResponse wrongly misses the createdTimestamp which is hopefully added in the future
+	if (playedTogether && hasNameAndSpecies(quid2)) { await addFriendshipPoints({ createdTimestamp: SnowflakeUtil.timestampFrom(responseId), channel: channel }, userData1, userData2); } // I have to call SnowflakeUtil since InteractionResponse wrongly misses the createdTimestamp which is hopefully added in the future
 }
 
 async function findPlayableQuidsToServers(

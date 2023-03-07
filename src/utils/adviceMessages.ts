@@ -1,6 +1,7 @@
 // @ts-check
 import { ButtonInteraction, ChatInputCommandInteraction, AnySelectMenuInteraction } from 'discord.js';
-import { UserData } from '../typings/data/user';
+import QuidToServer from '../models/quidToServer';
+import User from '../models/user';
 import { respond } from './helperFunctions';
 
 
@@ -12,16 +13,13 @@ import { respond } from './helperFunctions';
  */
 export async function restAdvice(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
-	userData: UserData<never, never>,
+	user: User,
+	quidToServer: QuidToServer,
 ): Promise<void> {
 
-	if (quidToServer.energy <= 80 && userData.advice.resting === false) {
+	if (quidToServer.energy <= 80 && user.advice_resting === false) {
 
-		await userData.update(
-			(u) => {
-				u.advice.resting = true;
-			},
-		);
+		await user.update({ advice_resting: true });
 
 		// This is always a followUp
 		await respond(interaction, {
@@ -38,16 +36,13 @@ export async function restAdvice(
  */
 export async function drinkAdvice(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
-	userData: UserData<never, never>,
+	user: User,
+	quidToServer: QuidToServer,
 ): Promise<void> {
 
-	if (quidToServer.thirst <= 80 && userData.advice.drinking === false) {
+	if (quidToServer.thirst <= 80 && user.advice_drinking === false) {
 
-		await userData.update(
-			(u) => {
-				u.advice.drinking = true;
-			},
-		);
+		await user.update({ advice_drinking: true });
 
 		// This is always a followUp
 		await respond(interaction, {
@@ -64,16 +59,13 @@ export async function drinkAdvice(
  */
 export async function eatAdvice(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
-	userData: UserData<never, never>,
+	user: User,
+	quidToServer: QuidToServer,
 ): Promise<void> {
 
-	if (quidToServer.hunger <= 80 && userData.advice.eating === false) {
+	if (quidToServer.hunger <= 80 && user.advice_eating === false) {
 
-		await userData.update(
-			(u) => {
-				u.advice.eating = true;
-			},
-		);
+		await user.update({ advice_eating: true });
 
 		// This is always a followUp
 		await respond(interaction, {
@@ -89,16 +81,12 @@ export async function eatAdvice(
  */
 export async function coloredButtonsAdvice(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
-	userData: UserData<never, never>,
+	user: User,
 ): Promise<void> {
 
-	if (userData.advice.coloredbuttons === false) {
+	if (user.advice_coloredButtons === false) {
 
-		await userData.update(
-			(u) => {
-				u.advice.coloredbuttons = true;
-			},
-		);
+		await user.update({ advice_coloredButtons: true });
 
 		// This is always a followUp
 		await respond(interaction, {

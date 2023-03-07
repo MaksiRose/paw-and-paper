@@ -1,5 +1,5 @@
 import { EmbedBuilder, TextBasedChannel } from 'discord.js';
-import { UserData } from '../typings/data/user';
+import Quid from '../models/quid';
 import { getMapData } from './helperFunctions';
 
 /* This is the required points to get a certain amount of friendship hearts */
@@ -11,25 +11,25 @@ const requiredPoints = [1, 3, 6, 9, 15, 24, 39, 63, 99, 162] as const;
 export async function addFriendshipPoints(
 	message: { createdTimestamp: number, channel: TextBasedChannel
 },
-	userData1: UserData<never, never>,
-	userData2: UserData<never, never>,
+	quid1: Quid,
+	quid2: Quid,
 ): Promise<void> {
 
 	/* Based on current friendship, the friendship points are calculated. */
-	const previousFriendshipPoints = getFriendshipPoints(userData1.quid.mentions[userData2.quid.id] || [], userData2.quid.mentions[userData1.quid.id] || []);
+	const previousFriendshipPoints = getFriendshipPoints(quid1.mentions[quid2.id] || [], quid2.mentions[quid1.id] || []);
 
 	/* It's updating the database with the new mention, and then grabbing the updated data from the database. */
 	await userData1.update(
 		(u) => {
-			const q = getMapData(u.quids, userData1.quid.id);
-			const cmentions = q.mentions[userData2.quid.id];
-			if (!cmentions) { q.mentions[userData2.quid.id] = [message.createdTimestamp]; }
+			const q = getMapData(u.quids, quid1.id);
+			const cmentions = q.mentions[quid2.id];
+			if (!cmentions) { q.mentions[quid2.id] = [message.createdTimestamp]; }
 			else { cmentions.push(message.createdTimestamp); }
 		},
 	);
 
-	await checkOldMentions(userData1, userData2);
-	const newFriendshipPoints = getFriendshipPoints(userData1.quid.mentions[userData2.quid.id] || [], userData2.quid.mentions[userData1.quid.id] || []);
+	await checkOldMentions(quid1, quid2);
+	const newFriendshipPoints = getFriendshipPoints(quid1.mentions[quid2.id] || [], quid2.mentions[quid1.id] || []);
 
 	/* A message is sent to the users if the friendship has more hearts now than it had before. */
 	if (getFriendshipHearts(previousFriendshipPoints) < getFriendshipHearts(newFriendshipPoints)) {
@@ -37,9 +37,9 @@ export async function addFriendshipPoints(
 		await message.channel
 			.send({ // Because of this, everything that calls addFriendshipPoints needs to be permission guarded
 				embeds: [new EmbedBuilder()
-					.setColor(userData1.quid.color)
-					.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-					.setTitle(`The friendship between ${userData1.quid.name} and ${userData2.quid.name} grew 💗`)
+					.setColor(quid1.color)
+					.setAuthor({ name: quid1.getDisplayname(), iconURL: quid1.avatarURL })
+					.setTitle(`The friendship between ${quid1.name} and ${quid2.name} grew 💗`)
 					.setDescription('❤️'.repeat(getFriendshipHearts(newFriendshipPoints)) + '🖤'.repeat(10 - getFriendshipHearts(newFriendshipPoints)))
 					.setFooter(getFriendshipHearts(newFriendshipPoints) === 6 ? { text: 'You can now adventure together using the "adventure" command!' } : null)],
 			});
@@ -54,34 +54,31 @@ export function getFriendshipPoints(
 	array2: number[],
 ): number {
 
-	if (!Array.isArray(array1)) { array1 = []; }
-	if (!Array.isArray(array2)) { array2 = []; }
+	const lowerPoints = Math.min(array1.length, array2.length);
+	const difference = Math.abs(array1.length - array2.length);
 
-	const higherPoints = array1?.length >= array2?.length ? array1?.length : array2?.length;
-	const lowerPoints = array1?.length < array2?.length ? array1?.length : array2?.length;
-
-	return (lowerPoints * 3) + (higherPoints - lowerPoints) || 0;
+	return (lowerPoints * 3) + difference;
 }
 
 /**
  * Checks if any mentions stored in a friendship are older than a week, and if they are, remove them.
  */
 export async function checkOldMentions(
-	userData1: UserData<never, never>,
-	userData2: UserData<never, never>,
+	quid1: Quid,
+	quid2: Quid,
 ): Promise<void> {
 
 	const oneWeekInMs = 604_800_000;
 	await userData1.update(
 		(u) => {
-			let cmentions = getMapData(u.quids, userData1.quid.id).mentions[userData2.quid.id];
+			let cmentions = getMapData(u.quids, quid1.id).mentions[quid2.id];
 			if (cmentions) { cmentions = cmentions.filter(ts => ts > Date.now() - oneWeekInMs); }
 		},
 	);
 
 	await userData2.update(
 		(u) => {
-			let cmentions = getMapData(u.quids, userData2.quid.id).mentions[userData1.quid.id];
+			let cmentions = getMapData(u.quids, quid2.id).mentions[quid1.id];
 			if (cmentions) { cmentions = cmentions.filter(ts => ts > Date.now() - oneWeekInMs); }
 		},
 	);
