@@ -161,11 +161,11 @@ export const command: SlashCommand = {
 				components: disableAllComponents(interaction.message.components),
 			}, 'update', interaction.message.id);
 
-			await isPassedOut(interaction, userData, true);
+			await isPassedOut(interaction, user, userToServer, quid, quidToServer, true);
 
-			await restAdvice(interaction, userData);
-			await drinkAdvice(interaction, userData);
-			await eatAdvice(interaction, userData);
+			await restAdvice(interaction, user, quidToServer);
+			await drinkAdvice(interaction, user, quidToServer);
+			await eatAdvice(interaction, user, quidToServer);
 		}
 	},
 };

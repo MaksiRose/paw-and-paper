@@ -1,6 +1,12 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, AnySelectMenuInteraction, SlashCommandBuilder, Message, InteractionResponse } from 'discord.js';
-import { ServerSchema } from '../../typings/data/server';
-import { RankType, UserData } from '../../typings/data/user';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, AnySelectMenuInteraction, SlashCommandBuilder, Message, InteractionResponse, GuildMember } from 'discord.js';
+import { Op } from 'sequelize';
+import DiscordUser from '../../models/discordUser';
+import DiscordUserToServer from '../../models/discordUserToServer';
+import Quid from '../../models/quid';
+import QuidToServer from '../../models/quidToServer';
+import User from '../../models/user';
+import UserToServer from '../../models/userToServer';
+import { RankType } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
@@ -8,6 +14,7 @@ import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
 import { createFightGame } from '../../utils/gameBuilder';
+import { getDisplayname, pronoun, pronounAndPlural, getDisplayspecies } from '../../utils/getQuidInfo';
 import { respond, setCooldown } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
@@ -24,18 +31,20 @@ export const command: SlashCommand = {
 	position: 1,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
-	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
 
 		if (await missingPermissions(interaction, [
 			'ViewChannel', // Needed because of createCommandComponentDisabler
 		]) === true) { return; }
 
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
+		if (!user) { throw new TypeError('user is undefined'); }
+		if (!userToServer) { throw new TypeError('userToServer is undefined'); }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
+		if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
-		const restEmbed = await isInvalid(interaction, userData);
+		const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
 		if (restEmbed === false) { return; }
 
 		const messageContent = remindOfAttack(interaction.guildId);
@@ -86,7 +95,7 @@ export const command: SlashCommand = {
 			fetchReply: true,
 		});
 
-		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
+		saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, botReply.id);
 
 		const int = await botReply
 			.awaitMessageComponent({
@@ -116,11 +125,11 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		await setCooldown(userData, interaction.guildId, true);
-		deleteCommandDisablingInfo(userData, interaction.guildId);
+		await setCooldown(userToServer, true);
+		deleteCommandDisablingInfo(userToServer);
 
 		const experiencePoints = getRandomNumber(5, 1);
-		const changedCondition = await changeCondition(userData, experiencePoints);
+		const changedCondition = await changeCondition(quidToServer, quid, experiencePoints);
 
 		const embed = new EmbedBuilder()
 			.setColor(quid.color)
@@ -132,12 +141,14 @@ export const command: SlashCommand = {
 		let totalCycles: 0 | 1 | 2 = 0;
 		let winLoseRatio = 0;
 
-		await interactionCollector(interaction, userData, serverData, int, restEmbed);
+		await interactionCollector(interaction, user, userToServer, quid, quidToServer, int, restEmbed);
 
 		async function interactionCollector(
 			interaction: ChatInputCommandInteraction<'cached'>,
-			userData: UserData<never, never>,
-			serverData: ServerSchema,
+			user: User,
+			userToServer: UserToServer,
+			quid: Quid,
+			quidToServer: QuidToServer,
 			newInteraction: ButtonInteraction | AnySelectMenuInteraction,
 			restEmbed: EmbedBuilder[],
 			previousFightComponents?: ActionRowBuilder<ButtonBuilder>,
@@ -212,11 +223,11 @@ export const command: SlashCommand = {
 
 			if (totalCycles < 3) {
 
-				await interactionCollector(interaction, userData, serverData, newInteraction, restEmbed, fightGame.fightComponent, fightGame.thisRoundCycleIndex);
+				await interactionCollector(interaction, user, userToServer, quid, quidToServer, newInteraction, restEmbed, fightGame.fightComponent, fightGame.thisRoundCycleIndex);
 				return;
 			}
 
-			await setCooldown(userData, interaction.guildId, false);
+			await setCooldown(userToServer, false);
 
 			if (winLoseRatio > 0) {
 
@@ -232,7 +243,22 @@ export const command: SlashCommand = {
 			}
 			if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 
-			const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
+			const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
+			const discordUserToServer = await DiscordUserToServer.findAll({
+				where: {
+					serverId: interaction.guildId,
+					isMember: true,
+					discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
+				},
+			});
+
+			const members = (await Promise.all(discordUserToServer
+				.map(async (duts) => (await interaction.guild.members.fetch(duts.discordUserId).catch(() => {
+					duts.update({ isMember: false });
+					return null;
+				}))))).filter(function(v): v is GuildMember { return v !== null; });
+
+			const levelUpEmbed = await checkLevelUp(interaction, quid, quidToServer, members);
 
 			// This is always an update
 			await respond(newInteraction, {
@@ -245,12 +271,12 @@ export const command: SlashCommand = {
 				components: [fightGame.fightComponent],
 			}, 'update', newInteraction.message.id);
 
-			await isPassedOut(interaction, userData, true);
+			await isPassedOut(interaction, user, userToServer, quid, quidToServer, true);
 
-			await coloredButtonsAdvice(interaction, userData);
-			await restAdvice(interaction, userData);
-			await drinkAdvice(interaction, userData);
-			await eatAdvice(interaction, userData);
+			await coloredButtonsAdvice(interaction, user);
+			await restAdvice(interaction, user, quidToServer);
+			await drinkAdvice(interaction, user, quidToServer);
+			await eatAdvice(interaction, user, quidToServer);
 
 			return;
 		}

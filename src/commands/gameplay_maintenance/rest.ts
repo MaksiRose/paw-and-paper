@@ -30,7 +30,7 @@ export const command: SlashCommand = {
 		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
 
 		/* Checks if the profile is on a cooldown or passed out. */
-		if (await isPassedOut(interaction, userData, false)) { return; }
+		if (await isPassedOut(interaction, user, userToServer, quid, quidToServer, false)) { return; }
 		if (await hasCooldown(interaction, userData)) { return; }
 
 		await executeResting(interaction, userData, serverData);

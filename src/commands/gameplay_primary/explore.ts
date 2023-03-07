@@ -953,12 +953,12 @@ async function executeExploring(
 		}, 'update', buttonInteraction?.message.id ?? (botReply ? getMessageId(botReply) : undefined));
 	}
 
-	await isPassedOut(interaction, userData, true);
+	await isPassedOut(interaction, user, userToServer, quid, quidToServer, true);
 
-	await coloredButtonsAdvice(interaction, userData);
-	await restAdvice(interaction, userData);
-	await drinkAdvice(interaction, userData);
-	await eatAdvice(interaction, userData);
+	await coloredButtonsAdvice(interaction, user);
+	await restAdvice(interaction, user, quidToServer);
+	await drinkAdvice(interaction, user, quidToServer);
+	await eatAdvice(interaction, user, quidToServer);
 
 	if (userData.advice.ginkgosapling === false && foundSapling) {
 

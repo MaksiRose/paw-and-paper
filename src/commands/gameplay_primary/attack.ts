@@ -292,12 +292,12 @@ async function executeAttacking(
 						.setStyle(ButtonStyle.Primary))],
 		}, 'update', newInteraction?.message.id ?? getMessageId(botReply));
 
-		await isPassedOut(interaction, userData, true);
+		await isPassedOut(interaction, user, userToServer, quid, quidToServer, true);
 
-		await coloredButtonsAdvice(interaction, userData);
-		await restAdvice(interaction, userData);
-		await drinkAdvice(interaction, userData);
-		await eatAdvice(interaction, userData);
+		await coloredButtonsAdvice(interaction, user);
+		await restAdvice(interaction, user, quidToServer);
+		await drinkAdvice(interaction, user, quidToServer);
+		await eatAdvice(interaction, user, quidToServer);
 
 		return botReply;
 	}

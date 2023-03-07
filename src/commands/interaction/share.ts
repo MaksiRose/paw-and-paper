@@ -200,9 +200,9 @@ export const command: SlashCommand = {
 
 		await isPassedOut(interaction, userData1, true);
 
-		await restAdvice(interaction, userData1);
-		await drinkAdvice(interaction, userData1);
-		await eatAdvice(interaction, userData1);
+		await restAdvice(interaction, user, quidToServer1);
+		await drinkAdvice(interaction, user, quidToServer1);
+		await eatAdvice(interaction, user, quidToServer1);
 		return;
 	},
 };

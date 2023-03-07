@@ -672,14 +672,14 @@ async function checkAfterGameChanges(
 	await isPassedOut(interaction, userData1, true);
 	await isPassedOut(interaction, userData2, true);
 
-	await restAdvice(interaction, userData1);
-	await restAdvice(interaction, userData2);
+	await restAdvice(interaction, user, quidToServer1);
+	await restAdvice(interaction, user, quidToServer2);
 
-	await drinkAdvice(interaction, userData1);
-	await drinkAdvice(interaction, userData2);
+	await drinkAdvice(interaction, user, quidToServer1);
+	await drinkAdvice(interaction, user, quidToServer2);
 
-	await eatAdvice(interaction, userData1);
-	await eatAdvice(interaction, userData2);
+	await eatAdvice(interaction, user, quidToServer1);
+	await eatAdvice(interaction, user, quidToServer2);
 
 	await addFriendshipPoints(interaction.message, userData1, userData2);
 }

@@ -585,11 +585,11 @@ export async function getHealResponse(
 		deleteCommandDisablingInfo(userData, interaction.guildId);
 	}
 
-	await isPassedOut(interaction, userData, true);
+	await isPassedOut(interaction, user, userToServer, quid, quidToServer, true);
 
-	await restAdvice(interaction, userData);
-	await drinkAdvice(interaction, userData);
-	await eatAdvice(interaction, userData);
+	await restAdvice(interaction, user, quidToServer);
+	await drinkAdvice(interaction, user, quidToServer);
+	await eatAdvice(interaction, user, quidToServer);
 
 	const channel = interaction.channel ?? await interaction.client.channels.fetch(interaction.channelId);
 	if (channel === null || !channel.isTextBased()) { throw new TypeError('interaction.channel is null or not text based'); }
