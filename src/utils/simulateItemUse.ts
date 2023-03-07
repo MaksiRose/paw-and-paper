@@ -302,6 +302,7 @@ export function pickMaterial(
 ): MaterialNames {
 
 	const inventory = [...server.inventory];
+	error('do the thing below');
 	// It should first do a getNeededMaterialItems for each type of damage type and each den
 	// then remove all the materials that are needed for that from the server inventory
 

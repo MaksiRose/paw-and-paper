@@ -13,65 +13,65 @@ import { getDisplayname } from '../../utils/getQuidInfo';
 import Webhook from '../../models/webhook';
 const { error_color } = require('../../../config.json');
 
-// export const command: SlashCommand = {
-// 	data: new SlashCommandBuilder()
-// 		.setName('say')
-// 		.setDescription('Sends a message as if your quid was saying it.')
-// 		.addStringOption(option =>
-// 			option.setName('text')
-// 				.setDescription('The text that you want your quid to say.'))
-// 		.addAttachmentOption(option =>
-// 			option.setName('attachment')
-// 				.setDescription('An attachment that you want to attach to the message'))
-// 		.setDMPermission(false)
-// 		.toJSON(),
-// 	category: 'page4',
-// 	position: 3,
-// 	disablePreviousCommand: false,
-// 	modifiesServerProfile: false,
-// 	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
+export const command: SlashCommand = {
+	data: new SlashCommandBuilder()
+		.setName('say')
+		.setDescription('Sends a message as if your quid was saying it.')
+		.addStringOption(option =>
+			option.setName('text')
+				.setDescription('The text that you want your quid to say.'))
+		.addAttachmentOption(option =>
+			option.setName('attachment')
+				.setDescription('An attachment that you want to attach to the message'))
+		.setDMPermission(false)
+		.toJSON(),
+	category: 'page4',
+	position: 3,
+	disablePreviousCommand: false,
+	modifiesServerProfile: false,
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
 
-// 		if (await missingPermissions(interaction, [
-// 			'ManageWebhooks', // Needed for webhook interaction
-// 		]) === true) { return; }
+		if (await missingPermissions(interaction, [
+			'ManageWebhooks', // Needed for webhook interaction
+		]) === true) { return; }
 
-// 		/* This ensures that the user is in a guild and has a completed account. */
-// 		if (!isInGuild(interaction) || !hasName(userData, interaction)) { return; }
+		/* This ensures that the user is in a guild and has a completed account. */
+		if (!isInGuild(interaction) || !hasName(userData, interaction)) { return; }
 
-// 		const text = interaction.options.getString('text') || '';
-// 		const attachment = interaction.options.getAttachment('attachment');
+		const text = interaction.options.getString('text') || '';
+		const attachment = interaction.options.getAttachment('attachment');
 
-// 		if (!text && !attachment) {
+		if (!text && !attachment) {
 
-// 			// This is always a reply
-// 			await respond(interaction, {
-// 				embeds: [new EmbedBuilder()
-// 					.setColor(error_color)
-// 					.setTitle('I cannot send an empty message!')],
-// 				ephemeral: true,
-// 			});
-// 			return;
-// 		}
+			// This is always a reply
+			await respond(interaction, {
+				embeds: [new EmbedBuilder()
+					.setColor(error_color)
+					.setTitle('I cannot send an empty message!')],
+				ephemeral: true,
+			});
+			return;
+		}
 
-// 		if (interaction.channel === null) {
+		if (interaction.channel === null) {
 
-// 			// This is always a reply
-// 			await respond(interaction, {
-// 				embeds: [new EmbedBuilder()
-// 					.setColor(error_color)
-// 					.setTitle('The channel that this interaction came from couldn\'t be found :(')],
-// 				ephemeral: true,
-// 			});
-// 			return;
-// 		}
+			// This is always a reply
+			await respond(interaction, {
+				embeds: [new EmbedBuilder()
+					.setColor(error_color)
+					.setTitle('The channel that this interaction came from couldn\'t be found :(')],
+				ephemeral: true,
+			});
+			return;
+		}
 
-// 		const isSuccessful = await sendMessage(interaction.channel, text, userData, interaction.user.id, attachment ? [attachment] : undefined);
+		const isSuccessful = await sendMessage(interaction.channel, text, userData, interaction.user.id, attachment ? [attachment] : undefined);
 
-// 		await interaction.deferReply({ ephemeral: true });
-// 		if (!isSuccessful) { return; }
-// 		await interaction.deleteReply();
-// 	},
-// };
+		await interaction.deferReply({ ephemeral: true });
+		if (!isSuccessful) { return; }
+		await interaction.deleteReply();
+	},
+};
 
 /**
  * It sends a message to a channel using a webhook

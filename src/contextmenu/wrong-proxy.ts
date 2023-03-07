@@ -54,7 +54,7 @@ export const command: ContextMenuCommand = {
 			ephemeral: true,
 		});
 	},
-	async sendMessageComponentResponse(interaction, { user, userToServer, quidToServer }) {
+	async sendMessageComponentResponse(interaction, { user, userToServer, quidToServer, discordUser }) {
 
 		if (!interaction.isStringSelectMenu()) { return; }
 		if (await missingPermissions(interaction, [
@@ -63,6 +63,7 @@ export const command: ContextMenuCommand = {
 		]) === true) { return; }
 
 		if (!interaction.inCachedGuild()) { throw new Error('interaction is not in cached guild'); }
+		if (discordUser === undefined) { throw new TypeError('discordUser is undefined'); }
 		if (user === undefined) { throw new TypeError('user is undefined'); }
 		const selectOptionId = getArrayElement(interaction.values, 0);
 		const targetMessageId = getArrayElement(interaction.customId.split('_'), 2).replace('@', '');
@@ -111,7 +112,7 @@ export const command: ContextMenuCommand = {
 					embeds: previousMessage.embeds,
 					threadId: channel.isThread() ? channel.id : undefined,
 				});
-			await Webhook.create({ id: botMessage.id, quidId: quid.id });
+			await Webhook.create({ id: botMessage.id, discordUserId: discordUser.id, quidId: quid.id });
 
 			/* Deleting the message. */
 			await webhook.deleteMessage(targetMessageId, channel.isThread() ? channel.id : undefined);

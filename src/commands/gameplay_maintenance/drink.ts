@@ -9,7 +9,7 @@ import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { getDisplayname, pronoun, pronounAndPlural } from '../../utils/getQuidInfo';
-import { getMessageId, Math.min, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
+import { getMessageId, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
 import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
 const { default_color } = require('../../../config.json');
@@ -60,7 +60,7 @@ export async function sendDrinkMessage(
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(quid.color)
 				.setAuthor({
-					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+					name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
 				.setDescription(`*Water sounds churned in ${quid.name}'s ear, ${pronoun(quid, 2)} mouth longing for just one more drink. It seems like ${pronoun(quid, 0)} can never be as hydrated as ${pronounAndPlural(quid, 0, 'want')}, but  ${pronoun(quid, 0)} had plenty of water today.*`)],
@@ -119,7 +119,7 @@ export async function sendDrinkMessage(
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(quid.color)
 					.setAuthor({
-						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+						name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
 					.setDescription(`*${quid.name} scurries over to the river and takes hasty gulps. The fresh water runs down ${pronoun(quid, 2)} throat and fills ${pronoun(quid, 2)} body with new energy.*`)

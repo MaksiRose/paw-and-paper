@@ -58,9 +58,9 @@ export const command: SlashCommand = {
 
 		// This is always a reply
 		const botReply = await respond(interaction, {
-			embeds: quid.species === '' ? [newSpeciesEmbed] : [existingSpeciesEmbed],
+			embeds: quid.species === null ? [newSpeciesEmbed] : [existingSpeciesEmbed],
 			components: [
-				...(quid.species === '' ? [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([speciesMenu])] : []),
+				...(quid.species === null ? [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([speciesMenu])] : []),
 				new ActionRowBuilder<ButtonBuilder>().setComponents([displayedSpeciesButton]),
 			],
 			fetchReply: true,

@@ -1,11 +1,18 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, StringSelectMenuBuilder, SlashCommandBuilder, Snowflake, StringSelectMenuInteraction } from 'discord.js';
-import { userModel } from '../../oldModels/userModel';
-import { CurrentRegionType, RankType, UserData } from '../../typings/data/user';
+import { Op } from 'sequelize';
+import DiscordUser from '../../models/discordUser';
+import DiscordUserToServer from '../../models/discordUserToServer';
+import Quid from '../../models/quid';
+import QuidToServer from '../../models/quidToServer';
+import User from '../../models/user';
+import UserToServer from '../../models/userToServer';
+import { CurrentRegionType, RankType } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
-import { getMapData, respond, valueInObject } from '../../utils/helperFunctions';
+import { getDisplayname, getDisplayspecies, pronoun, pronounAndPlural } from '../../utils/getQuidInfo';
+import { respond, valueInObject } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { sendDrinkMessage } from '../gameplay_maintenance/drink';
 import { getHealResponse } from '../gameplay_maintenance/heal';
@@ -45,8 +52,11 @@ export const command: SlashCommand = {
 		]) === true) { return; }
 
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (serverData === null) { throw new Error('serverData is null'); }
+		if (server === undefined) { throw new Error('server is null'); }
+		if (!user) { throw new TypeError('user is undefined'); }
+		if (!userToServer) { throw new TypeError('userToServer is undefined'); }
 		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
+		if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
@@ -55,14 +65,17 @@ export const command: SlashCommand = {
 		const messageContent = remindOfAttack(interaction.guildId);
 		const chosenRegion = interaction.options.getString('region');
 
-		const id = await sendTravelMessage(interaction, userData, messageContent, restEmbed, chosenRegion);
-		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, id, interaction);
+		const id = await sendTravelMessage(interaction, user, quid, userToServer, quidToServer, messageContent, restEmbed, chosenRegion);
+		saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, id);
 	},
-	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer, server }) {
+	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer, server, discordUser }) {
 
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; }
+		if (server === undefined) { throw new Error('server is null'); }
+		if (!user) { throw new TypeError('user is undefined'); }
+		if (!userToServer) { throw new TypeError('userToServer is undefined'); }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
+		if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
 		const messageContent = interaction.message.content;
 		const restEmbed = interaction.message.embeds.slice(0, -1).map(c => new EmbedBuilder(c.toJSON()));
@@ -87,16 +100,17 @@ export const command: SlashCommand = {
 			}
 			else if (interaction.customId.includes('drink')) {
 
-				await sendDrinkMessage(interaction, userData, messageContent, restEmbed);
+				await sendDrinkMessage(interaction, user, userToServer, quid, quidToServer, messageContent, restEmbed);
 			}
 			else if (interaction.customId.includes('play')) {
 
-				await executePlaying(interaction, userData, serverData, { forceEdit: true });
+				if (discordUser === undefined) { throw new TypeError('discordUser is undefined'); }
+				await executePlaying(interaction, { user, quid, userToServer, quidToServer, discordUser }, server, { forceEdit: true });
 			}
 		}
 		else if (interaction.isStringSelectMenu()) {
 
-			await sendTravelMessage(interaction, userData, '', restEmbed, interaction.values[0] ?? null);
+			await sendTravelMessage(interaction, user, quid, userToServer, quidToServer, '', restEmbed, interaction.values[0] ?? null);
 		}
 
 	},
@@ -104,7 +118,10 @@ export const command: SlashCommand = {
 
 async function sendTravelMessage(
 	interaction: ChatInputCommandInteraction<'cached'> | StringSelectMenuInteraction<'cached'>,
-	userData: UserData<never, never>,
+	user: User,
+	quid: Quid,
+	userToServer: UserToServer,
+	quidToServer: QuidToServer,
 	messageContent: string,
 	restEmbed: EmbedBuilder[],
 	chosenRegion: string | null,
@@ -113,12 +130,12 @@ async function sendTravelMessage(
 	const embed = new EmbedBuilder()
 		.setColor(quid.color)
 		.setAuthor({
-			name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+			name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 			iconURL: quid.avatarURL,
 		});
 	const travelComponent = new ActionRowBuilder<StringSelectMenuBuilder>()
 		.setComponents(new StringSelectMenuBuilder()
-			.setCustomId(`travel-regions_options_@${userData.id}`)
+			.setCustomId(`travel-regions_options_@${user.id}`)
 			.setPlaceholder('Select a region to travel to')
 			.setOptions([
 				{ label: CurrentRegionType.SleepingDens, value: CurrentRegionType.SleepingDens, emoji: '💤' },
@@ -132,12 +149,7 @@ async function sendTravelMessage(
 
 	if (chosenRegion && valueInObject(CurrentRegionType, chosenRegion)) {
 
-		await userData.update(
-			(u) => {
-				const p = getMapData(getMapData(u.quids, quid.id).profiles, interaction.guildId);
-				p.currentRegion = chosenRegion;
-			},
-		);
+		await quidToServer.update({ currentRegion: chosenRegion });
 	}
 
 	if (chosenRegion === CurrentRegionType.SleepingDens) {
@@ -149,7 +161,7 @@ async function sendTravelMessage(
 			embeds: [...restEmbed, embed],
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
-					.setCustomId(`travel-regions_rest_@${userData.id}`)
+					.setCustomId(`travel-regions_rest_@${user.id}`)
 					.setLabel('Rest')
 					.setStyle(ButtonStyle.Primary))],
 		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original')).id;
@@ -157,15 +169,31 @@ async function sendTravelMessage(
 	else if (chosenRegion === CurrentRegionType.FoodDen) {
 
 		embed.setDescription(`*${quid.name} runs to the food den. Maybe ${pronoun(quid, 0)} will eat something, or put ${pronoun(quid, 2)} food onto the pile.*`);
-		const allFoodDenUsersList = (await userModel.find(
-			(u) => {
-				return Object.values(u.quids).filter(q => {
-					const p = q.profiles[interaction.guildId];
-					return p && p.currentRegion === CurrentRegionType.FoodDen;
-				}).length > 0;
-			},
-		)).map(user => `<@${Object.keys(user.userIds)[0]}>`).slice(0, 45);
-		if (allFoodDenUsersList.length > 0) { embed.addFields({ name: 'Packmates at the food den:', value: allFoodDenUsersList.join('\n') }); }
+
+		const foodDenQuidsToServer = await QuidToServer.findAll({ where: { currentRegion: CurrentRegionType.FoodDen } });
+		const foodDenQuids = await Quid.findAll({ where: { id: { [Op.in]: foodDenQuidsToServer.map(qts => qts.quidId) } } });
+		const foodDenUsers = await User.findAll({ where: { id: { [Op.in]: foodDenQuids.map(q => q.userId) } } });
+
+		let foodDenDiscordUsersList = '';
+		for (const foodDenUser of foodDenUsers) {
+
+			const discordUsers = await DiscordUser.findAll({ where: { userId: foodDenUser.id } });
+			const discordUserToServer = await DiscordUserToServer.findOne({
+				where: {
+					discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
+					serverId: interaction.guildId,
+				},
+			});
+
+			if (discordUserToServer) {
+
+				const discordUserMention = `<@${discordUserToServer.discordUserId}>\n`;
+				if ((foodDenDiscordUsersList + discordUserMention).length > 1024) { break; }
+				else { foodDenDiscordUsersList += discordUserMention; }
+			}
+		}
+
+		if (foodDenDiscordUsersList.length > 0) { embed.addFields({ name: 'Packmates at the food den:', value: foodDenDiscordUsersList }); }
 
 		return (await respond(interaction, {
 			content: messageContent,
@@ -173,11 +201,11 @@ async function sendTravelMessage(
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([
 					new ButtonBuilder()
-						.setCustomId(`travel-regions_inventory_@${userData.id}`)
+						.setCustomId(`travel-regions_inventory_@${user.id}`)
 						.setLabel('View inventory')
 						.setStyle(ButtonStyle.Primary),
 					new ButtonBuilder()
-						.setCustomId(`travel-regions_store_@${userData.id}`)
+						.setCustomId(`travel-regions_store_@${user.id}`)
 						.setLabel('Store items away')
 						.setStyle(ButtonStyle.Primary),
 				])],
@@ -186,24 +214,56 @@ async function sendTravelMessage(
 	else if (chosenRegion === CurrentRegionType.MedicineDen) {
 
 		embed.setDescription(`*${quid.name} rushes over to the medicine den. Nearby are a mix of packmates, some with illnesses and injuries, others trying to heal them.*`);
-		const allMedicineDenUsersList = (await userModel.find(
-			(u) => {
-				return Object.values(u.quids).filter(q => {
-					const p = q.profiles[interaction.guildId];
-					return p && p.currentRegion === CurrentRegionType.MedicineDen;
-				}).length > 0;
-			},
-		)).map(user => `<@${Object.keys(user.userIds)[0]}>`).slice(0, 45);
-		if (allMedicineDenUsersList.length > 0) { embed.addFields({ name: 'Packmates at the medicine den:', value: allMedicineDenUsersList.join('\n') }); }
-		const allHealerUsersList = (await userModel.find(
-			(u) => {
-				return Object.values(u.quids).filter(q => {
-					const p = q.profiles[interaction.guildId];
-					return p && p.rank !== RankType.Youngling;
-				}).length > 0;
-			},
-		)).map(user => `<@${Object.keys(user.userIds)[0]}>`).slice(0, 45);
-		if (allHealerUsersList.length > 0) { embed.addFields({ name: 'Packmates that can heal:', value: allHealerUsersList.join('\n') }); }
+
+		const medicineDenQuidsToServer = await QuidToServer.findAll({ where: { currentRegion: CurrentRegionType.MedicineDen } });
+		const medicineDenQuids = await Quid.findAll({ where: { id: { [Op.in]: medicineDenQuidsToServer.map(qts => qts.quidId) } } });
+		const medicineDenUsers = await User.findAll({ where: { id: { [Op.in]: medicineDenQuids.map(q => q.userId) } } });
+
+		let medicineDenDiscordUsersList = '';
+		for (const medicineDenUser of medicineDenUsers) {
+
+			const discordUsers = await DiscordUser.findAll({ where: { userId: medicineDenUser.id } });
+			const discordUserToServer = await DiscordUserToServer.findOne({
+				where: {
+					discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
+					serverId: interaction.guildId,
+				},
+			});
+
+			if (discordUserToServer) {
+
+				const discordUserMention = `<@${discordUserToServer.discordUserId}>\n`;
+				if ((medicineDenDiscordUsersList + discordUserMention).length > 1024) { break; }
+				else { medicineDenDiscordUsersList += discordUserMention; }
+			}
+		}
+
+		if (medicineDenDiscordUsersList.length > 0) { embed.addFields({ name: 'Packmates at the medicine den:', value: medicineDenDiscordUsersList }); }
+
+		const healerQuidsToServer = await QuidToServer.findAll({ where: { rank: { [Op.not]: RankType.Youngling } } });
+		const healerQuids = await Quid.findAll({ where: { id: { [Op.in]: healerQuidsToServer.map(qts => qts.quidId) } } });
+		const healerUsers = await User.findAll({ where: { id: { [Op.in]: healerQuids.map(q => q.userId) } } });
+
+		let healerDiscordUsersList = '';
+		for (const healerUser of healerUsers) {
+
+			const discordUsers = await DiscordUser.findAll({ where: { userId: healerUser.id } });
+			const discordUserToServer = await DiscordUserToServer.findOne({
+				where: {
+					discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
+					serverId: interaction.guildId,
+				},
+			});
+
+			if (discordUserToServer) {
+
+				const discordUserMention = `<@${discordUserToServer.discordUserId}>\n`;
+				if ((healerDiscordUsersList + discordUserMention).length > 1024) { break; }
+				else { healerDiscordUsersList += discordUserMention; }
+			}
+		}
+
+		if (healerDiscordUsersList.length > 0) { embed.addFields({ name: 'Packmates that can heal:', value: healerDiscordUsersList }); }
 
 		return (await respond(interaction, {
 			content: messageContent,
@@ -212,7 +272,7 @@ async function sendTravelMessage(
 				travelComponent,
 				...(quidToServer.rank === RankType.Youngling ? [] : [new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(`travel-regions_heal_@${userData.id}`)
+						.setCustomId(`travel-regions_heal_@${user.id}`)
 						.setLabel('Heal')
 						.setStyle(ButtonStyle.Primary))]),
 			],
@@ -221,15 +281,31 @@ async function sendTravelMessage(
 	else if (chosenRegion === CurrentRegionType.Ruins) {
 
 		embed.setDescription(`*${quid.name} walks up to the ruins, carefully stepping over broken bricks. Hopefully, ${pronoun(quid, 0)} will find someone to talk with.*`);
-		const allRuinsUsersList = (await userModel.find(
-			(u) => {
-				return Object.values(u.quids).filter(q => {
-					const p = q.profiles[interaction.guildId];
-					return p && p.currentRegion === CurrentRegionType.Ruins;
-				}).length > 0;
-			},
-		)).map(user => `<@${Object.keys(user.userIds)[0]}>`).slice(0, 45);
-		if (allRuinsUsersList.length > 0) { embed.addFields({ name: 'Packmates at the ruins:', value: allRuinsUsersList.join('\n') }); }
+
+		const ruinsQuidsToServer = await QuidToServer.findAll({ where: { currentRegion: CurrentRegionType.Ruins } });
+		const ruinsQuids = await Quid.findAll({ where: { id: { [Op.in]: ruinsQuidsToServer.map(qts => qts.quidId) } } });
+		const ruinsUsers = await User.findAll({ where: { id: { [Op.in]: ruinsQuids.map(q => q.userId) } } });
+
+		let ruinsDiscordUsersList = '';
+		for (const ruinsUser of ruinsUsers) {
+
+			const discordUsers = await DiscordUser.findAll({ where: { userId: ruinsUser.id } });
+			const discordUserToServer = await DiscordUserToServer.findOne({
+				where: {
+					discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
+					serverId: interaction.guildId,
+				},
+			});
+
+			if (discordUserToServer) {
+
+				const discordUserMention = `<@${discordUserToServer.discordUserId}>\n`;
+				if ((ruinsDiscordUsersList + discordUserMention).length > 1024) { break; }
+				else { ruinsDiscordUsersList += discordUserMention; }
+			}
+		}
+
+		if (ruinsDiscordUsersList.length > 0) { embed.addFields({ name: 'Packmates at the ruins:', value: ruinsDiscordUsersList }); }
 
 		return (await respond(interaction, {
 			content: messageContent,
@@ -246,7 +322,7 @@ async function sendTravelMessage(
 			embeds: [...restEmbed, embed],
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
-					.setCustomId(`travel-regions_drink_@${userData.id}`)
+					.setCustomId(`travel-regions_drink_@${user.id}`)
 					.setLabel('Drink')
 					.setStyle(ButtonStyle.Primary))],
 		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original')).id;
@@ -254,22 +330,38 @@ async function sendTravelMessage(
 	else if (chosenRegion === CurrentRegionType.Prairie) {
 
 		embed.setDescription(`*${quid.name} approaches the prairie, watching younger packmates testing their strength in playful fights. Maybe the ${getDisplayspecies(quid)} could play with them!*`);
-		const allPrairieUsersList = (await userModel.find(
-			(u) => {
-				return Object.values(u.quids).filter(q => {
-					const p = q.profiles[interaction.guildId];
-					return p && p.currentRegion === CurrentRegionType.Prairie;
-				}).length > 0;
-			},
-		)).map(user => `<@${Object.keys(user.userIds)[0]}>`).slice(0, 45);
-		if (allPrairieUsersList.length > 0) { embed.addFields({ name: 'Packmates at the prairie:', value: allPrairieUsersList.join('\n') }); }
+
+		const prairieQuidsToServer = await QuidToServer.findAll({ where: { currentRegion: CurrentRegionType.Prairie } });
+		const prairieQuids = await Quid.findAll({ where: { id: { [Op.in]: prairieQuidsToServer.map(qts => qts.quidId) } } });
+		const prairieUsers = await User.findAll({ where: { id: { [Op.in]: prairieQuids.map(q => q.userId) } } });
+
+		let prairieDiscordUsersList = '';
+		for (const prairieUser of prairieUsers) {
+
+			const discordUsers = await DiscordUser.findAll({ where: { userId: prairieUser.id } });
+			const discordUserToServer = await DiscordUserToServer.findOne({
+				where: {
+					discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
+					serverId: interaction.guildId,
+				},
+			});
+
+			if (discordUserToServer) {
+
+				const discordUserMention = `<@${discordUserToServer.discordUserId}>\n`;
+				if ((prairieDiscordUsersList + discordUserMention).length > 1024) { break; }
+				else { prairieDiscordUsersList += discordUserMention; }
+			}
+		}
+
+		if (prairieDiscordUsersList.length > 0) { embed.addFields({ name: 'Packmates at the prairie:', value: prairieDiscordUsersList }); }
 
 		return (await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
-					.setCustomId(`travel-regions_play_@${userData.id}`)
+					.setCustomId(`travel-regions_play_@${user.id}`)
 					.setLabel('Play')
 					.setStyle(ButtonStyle.Primary))],
 		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original')).id;

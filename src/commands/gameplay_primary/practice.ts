@@ -57,7 +57,7 @@ export const command: SlashCommand = {
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(quid.color)
 					.setAuthor({
-						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+						name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
 					.setDescription(`*The Elderly shakes their head as they see ${quid.name} approaching.*\n"At your age, you shouldn't prepare for fights. Go play with your friends instead!"`)],
@@ -86,7 +86,7 @@ export const command: SlashCommand = {
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(quid.color)
 				.setAuthor({
-					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+					name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
 				.setDescription(`*A very experienced Elderly approaches ${quid.name}.* "I've seen that you have not performed well in fights lately. Do you want to practice with me for a bit to strengthen your skills?"`)
@@ -116,7 +116,7 @@ export const command: SlashCommand = {
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(quid.color)
 					.setAuthor({
-						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+						name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
 					.setDescription(`*After a bit of thinking, ${quid.name} decides that now is not a good time to practice ${pronoun(quid, 2)} fighting skills. Politely, ${pronounAndPlural(quid, 0, 'decline')} the Elderlies offer.*`)],
@@ -134,7 +134,7 @@ export const command: SlashCommand = {
 		const embed = new EmbedBuilder()
 			.setColor(quid.color)
 			.setAuthor({
-				name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+				name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 				iconURL: quid.avatarURL,
 			});
 

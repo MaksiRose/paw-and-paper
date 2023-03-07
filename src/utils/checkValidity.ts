@@ -39,7 +39,7 @@ export async function isPassedOut(
 			embeds: [new EmbedBuilder()
 				.setColor(quid.color)
 				.setAuthor({
-					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+					name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
 				.setDescription(`*${quid.name} lies on the ground near the pack borders, barely awake.* "Healer!" *${pronounAndPlural(quid, 0, 'screeches', 'screech')} with ${pronoun(quid, 2)} last energy. Without help, ${pronoun(quid, 0)} will not be able to continue.*\n\nIf no one heals you, you will stop being unconscious ${time(Math.floor((quidToServer.passedOutTimestamp + sixHoursInMs) / 1000), 'R')}.`)
@@ -81,7 +81,7 @@ export async function hasCooldown(
 			embeds: [new EmbedBuilder()
 				.setColor(quid.color)
 				.setAuthor({
-					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+					name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
 				.setDescription(`*${quid.name} is so eager to get things done today that ${pronounAndPlural(quid, 0, 'is', 'are')} somersaulting. ${capitalize(pronoun(quid, 0))} should probably take a few seconds to calm down.*`)],
@@ -132,7 +132,7 @@ export async function checkResting(
 		return [new EmbedBuilder()
 			.setColor(quid.color)
 			.setAuthor({
-				name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+				name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 				iconURL: quid.avatarURL,
 			})
 			.setDescription(`*${quid.name} opens ${pronoun(quid, 2)} eyes, blinking at the bright sun. After a long stretch, ${pronounAndPlural(quid, 0, 'leave')} ${pronoun(quid, 2)} den to continue ${pronoun(quid, 2)} day.*`)
@@ -196,7 +196,7 @@ export async function hasFullInventory(
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(quid.color)
 				.setAuthor({
-					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+					name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
 				.setDescription(`*${quid.name} approaches the pack borders, ${pronoun(quid, 2)} mouth filled with various things. As eager as ${pronounAndPlural(quid, 0, 'is', 'are')} to go into the wild, ${pronounAndPlural(quid, 0, 'decide')} to store some things away first.*`)

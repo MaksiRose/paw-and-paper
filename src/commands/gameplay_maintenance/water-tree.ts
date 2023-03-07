@@ -52,7 +52,7 @@ export const command: SlashCommand = {
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(quid.color)
 					.setAuthor({
-						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+						name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
 					.setDescription(`*${quid.name} has already fetched water when ${pronounAndPlural(quid, 0, 'remember')} that ${pronounAndPlural(quid, 0, 'has', 'have')} nothing to water.*`)
@@ -71,7 +71,7 @@ export const command: SlashCommand = {
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(quid.color)
 					.setAuthor({
-						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+						name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
 					.setDescription(`*${quid.name} searches for a red clover, but can't find one in the storage...*`)
@@ -100,7 +100,7 @@ export const command: SlashCommand = {
 		const embed = new EmbedBuilder()
 			.setColor(quid.color)
 			.setAuthor({
-				name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+				name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 				iconURL: quid.avatarURL,
 			});
 
@@ -183,7 +183,7 @@ export const command: SlashCommand = {
 				embeds: [new EmbedBuilder()
 					.setColor(quid.color)
 					.setAuthor({
-						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+						name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
 					.setDescription(`*No matter what ${quid.name} does, all the leaves on the ginkgo tree have either fallen off, or are dark brown and hang limply. It's time to say goodbye to the tree.*`)
@@ -251,7 +251,7 @@ export async function sendReminder(
 					embeds: [new EmbedBuilder()
 						.setColor(quid.color)
 						.setAuthor({
-							name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+							name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 							iconURL: quid.avatarURL,
 						})
 						.setDescription('It is time to `/water-tree` your tree!')

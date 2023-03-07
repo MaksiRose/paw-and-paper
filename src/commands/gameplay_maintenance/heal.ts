@@ -89,7 +89,7 @@ export const command: SlashCommand = {
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(quid.color)
 					.setAuthor({
-						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+						name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
 					.setDescription(`*A healer rushes into the medicine den in fury.*\n"${quid.name}, you are not trained to heal yourself, and especially not to heal others! I don't ever wanna see you again in here without supervision!"\n*${quid.name} lowers ${pronoun(quid, 2)} head and leaves in shame.*`)],
@@ -249,7 +249,7 @@ export async function getHealResponse(
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quid.color)
 				.setAuthor({
-					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+					name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
 				.setDescription(`*${quid.name} sits in front of the medicine den, looking if anyone needs help with injuries or illnesses.*`)
@@ -296,7 +296,7 @@ export async function getHealResponse(
 				embeds: [...embedArray, new EmbedBuilder()
 					.setColor(quid.color)
 					.setAuthor({
-						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+						name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
 					.setDescription(`*${quid.name} approaches ${userToHeal.quid.name}, desperately searching for someone to help.*\n"Do you have any injuries or illnesses you know of?" *the ${getDisplayspecies(quid)} asks.\n${userToHeal.quid.name} shakes ${userToHeal.pronoun(quid, 2)} head.* "Not that I know of, no."\n*Disappointed, ${quid.name} goes back to the medicine den.*`)],
@@ -311,7 +311,7 @@ export async function getHealResponse(
 		const quidConditionEmbed = new EmbedBuilder()
 			.setColor(quid.color)
 			.setAuthor({
-				name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+				name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 				iconURL: quid.avatarURL,
 			})
 			.setDescription(userToHeal.id === userData.id
@@ -555,7 +555,7 @@ export async function getHealResponse(
 			new EmbedBuilder()
 				.setColor(quid.color)
 				.setAuthor({
-					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+					name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
 				.setDescription(embedDescription)

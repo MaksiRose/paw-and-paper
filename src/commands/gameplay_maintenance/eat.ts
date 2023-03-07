@@ -77,7 +77,7 @@ export const command: SlashCommand = {
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(quid.color)
 					.setAuthor({
-						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+						name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
 					})
 					.setDescription(`*${quid.name}'s stomach bloats as ${pronounAndPlural(quid, 0, 'roll')} around camp, stuffing food into ${pronoun(quid, 2)} mouth. The ${getDisplayspecies(quid)} might need to take a break from food before ${pronounAndPlural(quid, 0, 'goes', 'go')} into a food coma.*`)],
@@ -103,7 +103,7 @@ export async function sendEatMessage(
 	const embed = new EmbedBuilder()
 		.setColor(quid.color)
 		.setAuthor({
-			name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+			name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 			iconURL: quid.avatarURL,
 		});
 

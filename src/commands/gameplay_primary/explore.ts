@@ -117,7 +117,7 @@ async function executeExploring(
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(quid.color)
 				.setAuthor({
-					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+					name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
 				.setDescription(`*A hunter cuts ${quid.name} as they see ${pronoun(quid, 1)} running towards the pack borders.* "You don't have enough experience to go into the wilderness, ${quidToServer.rank}," *they say.*`)],
@@ -168,7 +168,7 @@ async function executeExploring(
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(quid.color)
 				.setAuthor({
-					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+					name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
 				.setDescription(`*${quid.name} is longing for adventure as ${pronounAndPlural(quid, 0, 'look')} into the wild outside of camp. All there is to decide is where the journey will lead ${pronoun(quid, 1)}.*`)],
@@ -324,7 +324,7 @@ async function executeExploring(
 	const embed = new EmbedBuilder()
 		.setColor(quid.color)
 		.setAuthor({
-			name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+			name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 			iconURL: quid.avatarURL,
 		});
 	let exploreComponent: ActionRowBuilder<ButtonBuilder> | null = null;
