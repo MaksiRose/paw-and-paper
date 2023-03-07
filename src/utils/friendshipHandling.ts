@@ -1,6 +1,9 @@
+import { generateId } from 'crystalid';
 import { EmbedBuilder, TextBasedChannel } from 'discord.js';
+import { Op } from 'sequelize';
+import Friendship from '../models/friendship';
 import Quid from '../models/quid';
-import { getMapData } from './helperFunctions';
+import { getDisplayname } from './getQuidInfo';
 
 /* This is the required points to get a certain amount of friendship hearts */
 const requiredPoints = [1, 3, 6, 9, 15, 24, 39, 63, 99, 162] as const;
@@ -13,35 +16,44 @@ export async function addFriendshipPoints(
 },
 	quid1: Quid,
 	quid2: Quid,
+	displaynameOptions: Parameters<typeof getDisplayname>[1],
 ): Promise<void> {
 
+	let friendship = await Friendship.findOne({
+		where: {
+			quidId1: { [Op.in]: [quid1.id, quid2.id] },
+			quidId2: { [Op.in]: [quid1.id, quid2.id] },
+		},
+	});
+	if (!friendship) {
+		friendship = await Friendship.create({ id: generateId(), quidId1: quid1.id, quidId2: quid2.id });
+	}
+
 	/* Based on current friendship, the friendship points are calculated. */
-	const previousFriendshipPoints = getFriendshipPoints(quid1.mentions[quid2.id] || [], quid2.mentions[quid1.id] || []);
+	const previousFriendshipPoints = getFriendshipPoints(friendship.quid1_mentions, friendship.quid1_mentions);
 
 	/* It's updating the database with the new mention, and then grabbing the updated data from the database. */
-	await userData1.update(
-		(u) => {
-			const q = getMapData(u.quids, quid1.id);
-			const cmentions = q.mentions[quid2.id];
-			if (!cmentions) { q.mentions[quid2.id] = [message.createdTimestamp]; }
-			else { cmentions.push(message.createdTimestamp); }
-		},
-	);
+	checkOldMentions(friendship);
+	friendship[quid1.id === friendship.quidId1 ? 'quid1_mentions' : 'quid2_mentions'].push(message.createdTimestamp);
+	await friendship.save();
 
-	await checkOldMentions(quid1, quid2);
-	const newFriendshipPoints = getFriendshipPoints(quid1.mentions[quid2.id] || [], quid2.mentions[quid1.id] || []);
+	const newFriendshipPoints = getFriendshipPoints(friendship.quid1_mentions, friendship.quid1_mentions);
 
 	/* A message is sent to the users if the friendship has more hearts now than it had before. */
-	if (getFriendshipHearts(previousFriendshipPoints) < getFriendshipHearts(newFriendshipPoints)) {
+	const newFriendshipHearts = getFriendshipHearts(newFriendshipPoints);
+	if (getFriendshipHearts(previousFriendshipPoints) < newFriendshipHearts) {
 
 		await message.channel
 			.send({ // Because of this, everything that calls addFriendshipPoints needs to be permission guarded
 				embeds: [new EmbedBuilder()
 					.setColor(quid1.color)
-					.setAuthor({ name: quid1.getDisplayname(), iconURL: quid1.avatarURL })
+					.setAuthor({
+						name: await getDisplayname(quid1, displaynameOptions),
+						iconURL: quid1.avatarURL,
+					})
 					.setTitle(`The friendship between ${quid1.name} and ${quid2.name} grew 💗`)
-					.setDescription('❤️'.repeat(getFriendshipHearts(newFriendshipPoints)) + '🖤'.repeat(10 - getFriendshipHearts(newFriendshipPoints)))
-					.setFooter(getFriendshipHearts(newFriendshipPoints) === 6 ? { text: 'You can now adventure together using the "adventure" command!' } : null)],
+					.setDescription('❤️'.repeat(newFriendshipHearts) + '🖤'.repeat(10 - newFriendshipHearts))
+					.setFooter(newFriendshipHearts === 6 ? { text: 'You can now adventure together using the "adventure" command!' } : null)],
 			});
 	}
 }
@@ -64,24 +76,12 @@ export function getFriendshipPoints(
  * Checks if any mentions stored in a friendship are older than a week, and if they are, remove them.
  */
 export async function checkOldMentions(
-	quid1: Quid,
-	quid2: Quid,
+	friendship: Friendship,
 ): Promise<void> {
 
 	const oneWeekInMs = 604_800_000;
-	await userData1.update(
-		(u) => {
-			let cmentions = getMapData(u.quids, quid1.id).mentions[quid2.id];
-			if (cmentions) { cmentions = cmentions.filter(ts => ts > Date.now() - oneWeekInMs); }
-		},
-	);
-
-	await userData2.update(
-		(u) => {
-			let cmentions = getMapData(u.quids, quid2.id).mentions[quid1.id];
-			if (cmentions) { cmentions = cmentions.filter(ts => ts > Date.now() - oneWeekInMs); }
-		},
-	);
+	friendship.quid1_mentions = friendship.quid1_mentions.filter(ts => ts > (Date.now() - oneWeekInMs));
+	friendship.quid2_mentions = friendship.quid2_mentions.filter(ts => ts > (Date.now() - oneWeekInMs));
 }
 
 /**

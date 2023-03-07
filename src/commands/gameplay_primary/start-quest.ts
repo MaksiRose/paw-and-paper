@@ -1,12 +1,20 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder, Snowflake } from 'discord.js';
 import { speciesInfo } from '../..';
-import { ServerSchema } from '../../typings/data/server';
-import { RankType, UserData } from '../../typings/data/user';
+import Quid from '../../models/quid';
+import quid from '../../models/quid';
+import QuidToServer from '../../models/quidToServer';
+import quidToServer from '../../models/quidToServer';
+import User from '../../models/user';
+import user from '../../models/user';
+import UserToServer from '../../models/userToServer';
+import userToServer from '../../models/userToServer';
+import { RankType } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { SpeciesHabitatType } from '../../typings/main';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
+import { getDisplayname, pronoun, pronounAndPlural, getDisplayspecies } from '../../utils/getQuidInfo';
 import { capitalize, getMapData, getMessageId, respond, setCooldown } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
@@ -55,15 +63,17 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		await sendQuestMessage(interaction, 'reply', userData, serverData, messageContent, restEmbed);
+		await sendQuestMessage(interaction, 'reply', user, quid, userToServer, quidToServer, messageContent, restEmbed);
 	},
 };
 
 export async function sendQuestMessage(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 	respondType: 'update' | 'reply',
-	userData: UserData<never, never>,
-	serverData: ServerSchema,
+	user: User,
+	quid: Quid<true>,
+	userToServer: UserToServer,
+	quidToServer: QuidToServer,
 	messageContent: string,
 	restEmbed: EmbedBuilder[],
 	afterEmbedArray: EmbedBuilder[] = [],
@@ -150,7 +160,7 @@ export async function sendQuestMessage(
 	}, respondType, respondType === 'reply' ? undefined : interaction.isMessageComponent() ? interaction.message.id : alternativeEditId);
 
 	/* The View Channels permissions that are needed for this function to work properly should be checked in all places that reference sendQuestMessage. It can't be checked for in here directly because a botReply must be returned. */
-	saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
+	saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, botReply.id);
 
 	return await (botReply as Message<true> | InteractionResponse<true>)
 		.awaitMessageComponent({
@@ -159,9 +169,9 @@ export async function sendQuestMessage(
 			time: 300_000 })
 		.then(async (int) => {
 
-			await setCooldown(userData, interaction.guildId, true);
-			deleteCommandDisablingInfo(userData, interaction.guildId);
-			return await startQuest(int, userData, serverData, messageContent, restEmbed, afterEmbedArray);
+			await setCooldown(userToServer, true);
+			deleteCommandDisablingInfo(userToServer);
+			return await startQuest(int, user, quid, userToServer, quidToServer, messageContent, restEmbed, afterEmbedArray);
 		})
 		.catch(async () => {
 
@@ -172,8 +182,10 @@ export async function sendQuestMessage(
 
 async function startQuest(
 	interaction: ButtonInteraction<'cached'>,
-	userData: UserData<never, never>,
-	serverData: ServerSchema,
+	user: User,
+	quid: Quid<true>,
+	userToServer: UserToServer,
+	quidToServer: QuidToServer,
 	messageContent: string,
 	embedArray: EmbedBuilder[],
 	afterEmbedArray: EmbedBuilder[],

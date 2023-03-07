@@ -4,13 +4,13 @@ import Quid from './quid';
 
 interface FriendshipAttributes {
 	id: string;
-	quidId_1: string;
-	quidId_2: string;
-	quid_1_mentions: number[];
-	quid_2_mentions: number[];
+	quidId1: string;
+	quidId2: string;
+	quid1_mentions: number[];
+	quid2_mentions: number[];
 }
 
-type FriendshipCreationAttributes = Optional<FriendshipAttributes, 'quid_1_mentions' | 'quid_2_mentions'>
+type FriendshipCreationAttributes = Optional<FriendshipAttributes, 'quid1_mentions' | 'quid2_mentions'>
 
 @Table
 export default class Friendship extends Model<FriendshipAttributes, FriendshipCreationAttributes> {
@@ -19,21 +19,21 @@ export default class Friendship extends Model<FriendshipAttributes, FriendshipCr
 
 	@ForeignKey(() => Quid<false>)
 	@Column({ type: DataType.STRING })
-	declare quidId_1: string;
+	declare quidId1: string;
 
 	@BelongsTo(() => Quid, { foreignKey: 'quidId_1' })
-	declare quid_1: Quid;
+	declare quid1: Quid;
 
 	@ForeignKey(() => Quid<false>)
 	@Column({ type: DataType.STRING })
-	declare quidId_2: string;
+	declare quidId2: string;
 
 	@BelongsTo(() => Quid, { foreignKey: 'quidId_2' })
-	declare quid_2: Quid;
+	declare quid2: Quid;
 
 	@Column({ type: DataType.ARRAY(DataType.BIGINT), defaultValue: [] })
-	declare quid_1_mentions: number[];
+	declare quid1_mentions: number[];
 
 	@Column({ type: DataType.ARRAY(DataType.BIGINT), defaultValue: [] })
-	declare quid_2_mentions: number[];
+	declare quid2_mentions: number[];
 }

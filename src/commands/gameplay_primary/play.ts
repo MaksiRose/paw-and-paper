@@ -420,7 +420,7 @@ export async function executePlaying(
 		await quidToServer.update({ hasQuest: true });
 
 		// This is an update when forceEdit is true, which it is only for the travel-regions command, else this is a reply
-		responseId = await sendQuestMessage(interaction, forceEdit ? 'update' : 'reply', userData1, serverData, messageContent, restEmbed, [...changedCondition.injuryUpdateEmbed, ...levelUpEmbed], changedCondition.statsUpdateText);
+		responseId = await sendQuestMessage(interaction, forceEdit ? 'update' : 'reply', user, quid, userToServer, quidToServer, messageContent, restEmbed, [...changedCondition.injuryUpdateEmbed, ...levelUpEmbed], changedCondition.statsUpdateText);
 	}
 	else {
 
@@ -463,7 +463,7 @@ export async function executePlaying(
 
 	const channel = interaction.channel ?? await interaction.client.channels.fetch(interaction.channelId);
 	if (channel === null || !channel.isTextBased()) { throw new TypeError('interaction.channel is null or not text based'); }
-	if (playedTogether && hasNameAndSpecies(quid2)) { await addFriendshipPoints({ createdTimestamp: SnowflakeUtil.timestampFrom(responseId), channel: channel }, userData1, userData2); } // I have to call SnowflakeUtil since InteractionResponse wrongly misses the createdTimestamp which is hopefully added in the future
+	if (playedTogether && hasNameAndSpecies(quid2)) { await addFriendshipPoints({ createdTimestamp: SnowflakeUtil.timestampFrom(responseId), channel: channel }, quid, quid2, { serverId: interaction.guildId, userToServer, quidToServer, user }); } // I have to call SnowflakeUtil since InteractionResponse wrongly misses the createdTimestamp which is hopefully added in the future
 }
 
 async function findPlayableQuidsToServers(

@@ -258,7 +258,7 @@ export async function getProfileMessageOptions(
 	userId: string,
 	quid: Quid | undefined,
 	isYourself: boolean,
-	options: Parameters<typeof getDisplayname>[1],
+	displaynameOptions: Parameters<typeof getDisplayname>[1],
 	embedArray: Array<EmbedBuilder> = [],
 ): Promise<InteractionReplyOptions> {
 
@@ -281,7 +281,7 @@ export async function getProfileMessageOptions(
 			.setDescription(quid.description || null)
 			.setThumbnail(quid.avatarURL)
 			.setFields([
-				{ name: '**🏷️ Displayname**', value: await getDisplayname(quid, options) },
+				{ name: '**🏷️ Displayname**', value: await getDisplayname(quid, displaynameOptions) },
 				{ name: '**🦑 Species**', value: capitalize(getDisplayspecies(quid)) || '/', inline: true },
 				{ name: '**🔑 Proxy**', value: !quid.proxy_startsWith && !quid.proxy_endsWith ? 'No proxy set' : `${quid.proxy_startsWith}text${quid.proxy_endsWith}`, inline: true },
 				{ name: '**🍂 Pronouns**', value: pronouns.map(pronoun => pronoun.length === 1 ? pronoun[0]! : `${pronoun[0]}/${pronoun[1]} (${pronoun[2]}/${pronoun[3]}/${pronoun[4]})`).join('\n') || '/' },

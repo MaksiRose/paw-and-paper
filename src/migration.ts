@@ -221,7 +221,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 			});
 
 			// quidToServer
-			for (const profile of Object.values(quidToServers) as any[]) {
+			for (const profile of Object.values(quid.profiles) as any[]) {
 
 				if (!serverList.includes(profile.serverId)) { continue; }
 				const quidToServer = await QuidToServer.create({
@@ -358,10 +358,10 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 
 			await Friendship.create({
 				id: generateId(),
-				quidId_1: id_1,
-				quidId_2: id_2,
-				quid_1_mentions: mentions_array,
-				quid_2_mentions: mentions_array_2,
+				quidId1: id_1,
+				quidId2: id_2,
+				quid1_mentions: mentions_array,
+				quid2_mentions: mentions_array_2,
 			});
 
 			delete allMentions[id_2]?.[id_1];
