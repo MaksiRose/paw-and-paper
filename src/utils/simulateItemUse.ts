@@ -10,9 +10,9 @@ import Server from '../models/server';
 import { CommonPlantNames, MaterialNames, RarePlantNames, SpecialPlantNames, SpeciesNames, UncommonPlantNames } from '../typings/data/general';
 import { DenSchema } from '../typings/data/server';
 import { RankType } from '../typings/data/user';
-import { PlantEdibilityType, PlantInfo, SpeciesDietType } from '../typings/main';
+import { PlantEdibilityType, PlantInfo, SpeciesDietType, SpeciesInfo } from '../typings/main';
 import { changeCondition } from './changeCondition';
-import { deepCopyObject, getArrayElement } from './helperFunctions';
+import { deepCopyObject, getArrayElement, keyInObject } from './helperFunctions';
 import { getRandomNumber } from './randomizers';
 import { wearDownAmount } from './wearDownDen';
 
@@ -92,14 +92,13 @@ export async function pickMeat(
 
 	let inventory = [...server.inventory];
 	const quidsToServer = await getProfilesInServer(server.id, false);
-	const meat = Object.keys(speciesInfo);
 
 	const foodDen = await Den.findByPk(server.foodDenId, { rejectOnEmpty: true });
 
 	const neededEatingItems = getNeededHungerItems(quidsToServer, foodDen);
 	for (let i = 0; i < neededEatingItems; i++) {
 
-		const meatInventory = inventory.filter(meat.includes);
+		const meatInventory = inventory.filter(i => keyInObject(speciesInfo, i));
 		if (meatInventory.length === 0) { break; }
 
 		const anyMeatItem = getArrayElement(meatInventory, getRandomNumber(meatInventory.length));
@@ -109,18 +108,18 @@ export async function pickMeat(
 		inventory = inventory.splice(index, 1);
 	}
 
-	const items = new Map<string, number>();
+	const items = new Map<SpeciesNames, number>();
 	inventory.forEach((item) => {
 
-		if (!meat.includes(item)) { return; }
-		if (!options.includes(item as SpeciesNames)) { return; }
+		if (!keyInObject(speciesInfo, item)) { return; }
+		if (!options.includes(item)) { return; }
 
 		const itemCount = items.get(item);
 		if (itemCount) { items.set(item, itemCount + 1); }
 		else { items.set(item, 1); }
 	});
 
-	return pickItem(items) as SpeciesNames;
+	return pickItem(items);
 }
 
 
@@ -272,23 +271,20 @@ export async function pickPlant(
 	inventory = removeLeastUsefulItem(inventory, 'healsSprains', itemInfo, neededSprainItems);
 	inventory = removeLeastUsefulItem(inventory, 'healsPoison', itemInfo, neededPoisonItems);
 
-	const items = new Map<string, number>();
-	const rarePlants = Object.keys(rarePlantsInfo);
-	const uncommonPlants = Object.keys(uncommonPlantsInfo);
-	const commonPlants = Object.keys(commonPlantsInfo);
+	const items = new Map<CommonPlantNames | UncommonPlantNames | RarePlantNames, number>();
 	inventory.forEach((item) => {
 
-		const isRightItemType = (include < 2 ? false : rarePlants.includes(item)) ||
-		(include < 1 ? false : uncommonPlants.includes(item)) ||
-		commonPlants.includes(item);
-		if (!isRightItemType) { return; }
+		if ((include < 2 && keyInObject(rarePlantsInfo, item)) ||
+			(include < 1 && keyInObject(uncommonPlantsInfo, item)) ||
+			keyInObject(commonPlantsInfo, item)) {
 
-		const itemCount = items.get(item);
-		if (itemCount) { items.set(item, itemCount + 1); }
-		else { items.set(item, 1); }
+			const itemCount = items.get(item);
+			if (itemCount) { items.set(item, itemCount + 1); }
+			else { items.set(item, 1); }
+		}
 	});
 
-	return pickItem(items) as CommonPlantNames | UncommonPlantNames | RarePlantNames;
+	return pickItem(items) ;
 }
 
 /**
@@ -306,18 +302,17 @@ export function pickMaterial(
 	// It should first do a getNeededMaterialItems for each type of damage type and each den
 	// then remove all the materials that are needed for that from the server inventory
 
-	const items = new Map<string, number>();
-	const materials = Object.keys(materialsInfo);
+	const items = new Map<MaterialNames, number>();
 	inventory.forEach((item) => {
 
-		if (!materials.includes(item)) { return; }
+		if (!keyInObject(materialsInfo, item)) { return; }
 
 		const itemCount = items.get(item);
 		if (itemCount) { items.set(item, itemCount + 1); }
 		else { items.set(item, 1); }
 	});
 
-	return pickItem(items) as MaterialNames;
+	return pickItem(items);
 }
 
 function findLeastUsefulItem(
@@ -368,7 +363,7 @@ function removeLeastUsefulItem(
 	return inventory;
 }
 
-function pickItem(items: Map<string, number>): string {
+function pickItem<T extends string>(items: Map<T, number>): T {
 
 	// Create an array of [item, count] pairs from the Map
 	const itemsArr = Array.from(items.values());
