@@ -380,6 +380,10 @@ export function keyInObject<T extends Record<PropertyKey, any>, K extends keyof 
 	obj: T,
 	key: PropertyKey,
 ): key is K { return Object.hasOwn(obj, key); }
+export function objectHasKey<T, K extends PropertyKey>(
+	obj: T,
+	key: K,
+): obj is T & Record<K, any> { return typeof obj === 'object' && obj !== null && Object.hasOwn(obj, key); }
 
 function isObject(val: any): val is Record<string | number | symbol, unknown> { return typeof val === 'object' && val !== null; }
 

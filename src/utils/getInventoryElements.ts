@@ -1,10 +1,9 @@
 import { RestOrArray, SelectMenuComponentOptionData } from 'discord.js';
-import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, uncommonPlantsInfo } from '..';
-import { Inventory } from '../typings/data/general';
-import { keyInObject, unsafeKeys, widenValues } from './helperFunctions';
+import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '..';
+import { objectHasKey } from './helperFunctions';
 
 export default function getInventoryElements(
-	inventory: Inventory,
+	inventory: string[],
 	page: 1 | 2 | 3 | 4,
 ): {
     embedDescription: string;
@@ -14,22 +13,22 @@ export default function getInventoryElements(
 	const selectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [];
 	let embedDescription = '';
 
-	const itemTypeToPage = { commonPlants: 1, uncommonPlants: 2, rarePlants: 2, specialPlants: 2, meat: 3, materials: 4 };
-	const itemInfo = { ...commonPlantsInfo, ...uncommonPlantsInfo, ...rarePlantsInfo, ...specialPlantsInfo, ...materialsInfo };
-	const inventory_ = widenValues(inventory);
-	for (const itemType of unsafeKeys(inventory_)) {
+	const itemsInfo = page === 1
+		? Object.entries(commonPlantsInfo)
+		: page === 2
+			? Object.entries({ ...uncommonPlantsInfo, ...rarePlantsInfo, ...specialPlantsInfo })
+			: page === 3
+				? Object.entries(speciesInfo)
+				: Object.entries(materialsInfo);
 
-		if (itemTypeToPage[itemType] !== page) { continue; }
-		for (const item of unsafeKeys(inventory_[itemType])) {
+	for (const [item, itemInfo] of itemsInfo) {
 
-			if (inventory_[itemType][item] > 0) {
+		const amountInInventory = inventory.filter(i => i === item).length;
+		if (amountInInventory === 0) { continue; }
+		const itemDescription = objectHasKey(itemInfo, 'description') ? ` - ${itemInfo.description}` : '';
 
-				const itemDescription = keyInObject(itemInfo, item) ? ` - ${itemInfo[item].description}` : '';
-				embedDescription += `**${item}: ${inventory_[itemType][item]}**${itemDescription}\n`;
-
-				selectMenuOptions.push({ label: item, value: item, description: `${inventory_[itemType][item]}` });
-			}
-		}
+		embedDescription += `**${item}: ${amountInInventory}**${itemDescription}\n`;
+		selectMenuOptions.push({ label: item, value: item, description: `${amountInInventory}` });
 	}
 
 	return { embedDescription, selectMenuOptions };
