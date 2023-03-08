@@ -1,13 +1,9 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder, Snowflake } from 'discord.js';
 import { speciesInfo } from '../..';
 import Quid from '../../models/quid';
-import quid from '../../models/quid';
 import QuidToServer from '../../models/quidToServer';
-import quidToServer from '../../models/quidToServer';
 import User from '../../models/user';
-import user from '../../models/user';
 import UserToServer from '../../models/userToServer';
-import userToServer from '../../models/userToServer';
 import { RankType } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { SpeciesHabitatType } from '../../typings/main';
@@ -15,7 +11,7 @@ import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
 import { getDisplayname, pronoun, pronounAndPlural, getDisplayspecies } from '../../utils/getQuidInfo';
-import { capitalize, getMapData, getMessageId, respond, setCooldown } from '../../utils/helperFunctions';
+import { capitalize, getMessageId, respond, setCooldown } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from './attack';
@@ -38,8 +34,11 @@ export const command: SlashCommand = {
 		]) === true) { return; }
 
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (serverData === null) { throw new Error('serverData is null'); }
+		if (server === undefined) { throw new Error('serverData is null'); }
+		if (!user) { throw new TypeError('user is undefined'); }
+		if (!userToServer) { throw new TypeError('userToServer is undefined'); }
 		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
+		if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
@@ -193,12 +192,7 @@ async function startQuest(
 	// this would be called from /quest, /explore and /play
 	// Quest would send in the main interaction so that it would edit it, while for explore and play it would send in the button interaction so it would respond to the button click, which also has the side effect that the stats you lost etc would already be displayed under the original "you found a quest" message.
 
-	await userData.update(
-		(u) => {
-			const p = getMapData(getMapData(u.quids, quid.id).profiles, interaction.guildId);
-			p.hasQuest = false;
-		},
-	);
+	await quidToServer.update({ hasQuest: false });
 
 	const embed = new EmbedBuilder()
 		.setColor(quid.color)
@@ -238,12 +232,14 @@ async function startQuest(
 	}
 	else { throw new Error('No rank type found'); }
 
-	return await interactionCollector(interaction, userData, serverData, 0);
+	return await interactionCollector(interaction, user, quid, userToServer, quidToServer, 0);
 
 	async function interactionCollector(
 		interaction: ButtonInteraction<'cached'>,
-		userData: UserData<never, never>,
-		serverData: ServerSchema,
+		user: User,
+		quid: Quid<true>,
+		userToServer: UserToServer,
+		quidToServer: QuidToServer,
 		cycleIndex: number,
 		previousQuestComponents?: ActionRowBuilder<ButtonBuilder>,
 		newInteraction?: ButtonInteraction<'cached'>,
@@ -349,12 +345,7 @@ async function startQuest(
 
 			if (quidToServer.unlockedRanks < 3) {
 
-				await userData.update(
-					(u) => {
-						const p = getMapData(getMapData(u.quids, quid.id).profiles, interaction.guildId);
-						p.unlockedRanks += 1;
-					},
-				);
+				await quidToServer.update({ unlockedRanks: quidToServer.unlockedRanks + 1 });
 			}
 
 			if (quidToServer.rank === RankType.Youngling) {
@@ -431,15 +422,12 @@ async function startQuest(
 						break;
 				}
 
-				await userData.update(
-					(u) => {
-						const p = getMapData(getMapData(u.quids, quid.id).profiles, interaction.guildId);
-						p.maxHealth += maxHealthPoints;
-						p.maxEnergy += maxEnergyPoints;
-						p.maxHunger += maxHungerPoints;
-						p.maxThirst += maxThirstPoints;
-					},
-				);
+				await quidToServer.update({
+					maxHealth: quidToServer.maxHealth + maxHealthPoints,
+					maxEnergy: quidToServer.maxEnergy + maxEnergyPoints,
+					maxHunger: quidToServer.maxHunger + maxHungerPoints,
+					maxThirst: quidToServer.maxThirst + maxThirstPoints,
+				});
 			}
 			else { throw new Error('No rank type found'); }
 
@@ -514,7 +502,7 @@ async function startQuest(
 		}
 		else {
 
-			return await interactionCollector(interaction, userData, serverData, cycleIndex += 1, questComponents, newInteraction);
+			return await interactionCollector(interaction, user, quid, userToServer, quidToServer, cycleIndex += 1, questComponents, newInteraction);
 		}
 	}
 }
