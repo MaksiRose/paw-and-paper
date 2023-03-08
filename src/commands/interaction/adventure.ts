@@ -9,7 +9,7 @@ import { addFriendshipPoints, checkOldMentions, getFriendshipHearts, getFriendsh
 import { getMapData } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
-import { getHighestItem, remindOfAttack } from '../gameplay_primary/attack';
+import { removeByHighestItem, remindOfAttack } from '../gameplay_primary/attack';
 import { pickPlant } from '../../utils/simulateItemUse';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
@@ -373,7 +373,7 @@ export const command: SlashCommand = {
 						let outcome: string | 1 | 2;
 						const losingHealthPoints = Math.min(maxHP, losingUserData.quidToServer.health);
 
-						const { itemType, itemName } = getHighestItem(losingUserData.quidToServer.inventory);
+						const { itemType, itemName } = removeByHighestItem(losingUserData.quidToServer.inventory);
 						const inventory_ = widenValues(losingUserData.quidToServer.inventory);
 						if (itemType && itemName && pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
 

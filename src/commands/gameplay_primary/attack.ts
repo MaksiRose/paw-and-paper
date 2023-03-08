@@ -8,7 +8,6 @@ import QuidToServer from '../../models/quidToServer';
 import Server from '../../models/server';
 import User from '../../models/user';
 import UserToServer from '../../models/userToServer';
-import { Inventory } from '../../typings/data/general';
 import { RankType } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
@@ -19,7 +18,7 @@ import { disableCommandComponent } from '../../utils/componentDisabling';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { createFightGame } from '../../utils/gameBuilder';
 import { getDisplayname, pronounAndPlural, pronoun, getDisplayspecies } from '../../utils/getQuidInfo';
-import { getMessageId, KeyOfUnion, respond, sendErrorMessage, setCooldown, unsafeKeys, ValueOf, widenValues } from '../../utils/helperFunctions';
+import { getMessageId, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -241,19 +240,8 @@ async function executeAttacking(
 
 			if (winLoseRatio < 1) {
 
-				const inventory_ = widenValues(server.inventory);
-				const { itemType, itemName } = getHighestItem(inventory_);
-				if (itemType && itemName) {
-
-					const minusAmount = Math.ceil(inventory_[itemType][itemName] / 10);
-					minusItemText += `\n-${minusAmount} ${itemName} for ${interaction.guild.name}`;
-					inventory_[itemType][itemName] -= minusAmount;
-				}
-
-				serverData = await serverModel.findOneAndUpdate(
-					s => s.id === serverData.id,
-					(s) => s.inventory = inventory_,
-				);
+				minusItemText += removeByHighestItem(server, interaction.guild.name);
+				await server.update({ inventory: server.inventory });
 			}
 
 			embed.setDescription(`*The battle between the human and ${quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${getDisplayspecies(quid)} tries to jump at them, but the human manages to dodge. ${winLoseRatio < 1 ? `Quickly they run in the direction of the food den. They escaped from ${pronoun(quid, 1)}!*` : 'Quickly they back off from the tricky situation.*'}`);
@@ -405,27 +393,15 @@ export async function startAttack(
 						.setTitle('The humans are stealing items!')
 						.setDescription(`*Before anyone could stop them, ${serverAttackInfo.idleHumans} humans run into the food den, and take whatever they can grab.*`);
 
-					let server = await Server.findByPk(interaction.guildId, { rejectOnEmpty: true });
+					const server = await Server.findByPk(interaction.guildId, { rejectOnEmpty: true });
 
 					let footerText = '';
-					const inventory_ = widenValues(server.inventory);
 					for (let i = 0; i < serverAttackInfo.idleHumans; i++) {
 
-						const { itemType, itemName } = getHighestItem(inventory_);
-
-						if (itemType && itemName) {
-
-							const minusAmount = Math.ceil(inventory_[itemType][itemName] / 10);
-							footerText += `\n-${minusAmount} ${itemName} for ${interaction.guild.name}`;
-							inventory_[itemType][itemName] -= minusAmount;
-						}
+						footerText += removeByHighestItem(server, interaction.guild.name);
 					}
 					if (footerText.length > 0) { embed.setFooter({ text: footerText }); }
-
-					server = await serverModel.findOneAndUpdate(
-						s => s.id === server.id,
-						(s) => { s.inventory = inventory_; },
-					);
+					await server.update({ inventory: server.inventory });
 
 					try {
 
@@ -509,34 +485,19 @@ async function remainingHumans(
 		.setTitle('The attack is over!')
 		.setDescription(`*Before anyone could stop them, the last ${serverAttackInfo.idleHumans	} humans run into the food den, take whatever they can grab and run away. The battle wasn't easy, but it is over at last.*`);
 
-	let server = await Server.findByPk(interaction.guildId, { rejectOnEmpty: true });
+	const server = await Server.findByPk(interaction.guildId, { rejectOnEmpty: true });
 
 	let footerText = '';
-	const inventory_ = widenValues(server.inventory);
 	while (serverAttackInfo.idleHumans > 0) {
 
-		const { itemType, itemName } = getHighestItem(inventory_);
-
-		if (itemType && itemName) {
-
-			const minusAmount = Math.ceil(inventory_[itemType][itemName] / 10);
-			footerText += `\n-${minusAmount} ${itemName} for ${interaction.guild.name}`;
-			inventory_[itemType][itemName] -= minusAmount;
-		}
-
+		footerText += removeByHighestItem(server, interaction.guild.name);
 		serverAttackInfo.idleHumans -= 1;
 	}
 	if (footerText.length > 0) { embed.setFooter({ text: footerText }); }
 
-	serverMap.delete(interaction.guild.id);
+	await server.update({ inventory: server.inventory, nextPossibleAttackTimestamp: Date.now() + 86_400_000 /* 24 hours */ });
 
-	server = await serverModel.findOneAndUpdate(
-		s => s.id === server.id,
-		(s) => {
-			s.inventory = inventory_,
-			s.nextPossibleAttack = Date.now() + 86_400_000; // 24 hours
-		},
-	);
+	serverMap.delete(interaction.guild.id);
 
 	try {
 
@@ -556,26 +517,37 @@ async function remainingHumans(
 /**
  * Finds whichever item there is most of, and returns its type and name.
  */
-export function getHighestItem(
-	inventoryObject: Inventory,
-) {
+export function removeByHighestItem(
+	server: Server,
+	name: string,
+): string {
 
-	let itemType: keyof Inventory| null = null;
-	let itemName: KeyOfUnion<ValueOf<Inventory>> | null = null;
-	let itemAmount = 0;
+	const arr = [...server.inventory];
+	if (arr.length <= 0) { return ''; }
 
-	const inventory_ = widenValues(inventoryObject);
-	for (const itype of unsafeKeys(inventory_)) {
+	const obj: Record<string, number> = {};
+	let maxStr: string = arr[0]!;
+	let maxVal = 1;
+	for (const v of arr) {
 
-		for (const item of unsafeKeys(inventory_[itype])) {
+		obj[v] = ++obj[v] || 1;
 
-			if (inventory_[itype][item] > itemAmount) {
-				itemAmount = inventory_[itype][item];
-				itemType = itype;
-				itemName = item;
-			}
+		if (obj[v]! > maxVal) {
+
+			maxStr = v;
+			maxVal = obj[v]!;
 		}
 	}
 
-	return { itemType, itemName };
+	const minusAmount = Math.ceil(maxVal / 10);
+	let foundCount = 0;
+	server.inventory = server.inventory.filter((item) => {
+		if (item === maxStr && foundCount < maxVal) {
+			foundCount++;
+			return false;
+		}
+		return true;
+	});
+
+	return `\n-${minusAmount} ${maxStr} for ${name}`;
 }
