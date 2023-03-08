@@ -1,9 +1,15 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, AnySelectMenuInteraction, SlashCommandBuilder, InteractionResponse, SnowflakeUtil } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, AnySelectMenuInteraction, SlashCommandBuilder, InteractionResponse, SnowflakeUtil, GuildMember } from 'discord.js';
+import { Op } from 'sequelize';
 import { serverActiveUsersMap } from '../../events/interactionCreate';
-import serverModel from '../../oldModels/serverModel';
+import DiscordUser from '../../models/discordUser';
+import DiscordUserToServer from '../../models/discordUserToServer';
+import Quid from '../../models/quid';
+import QuidToServer from '../../models/quidToServer';
+import Server from '../../models/server';
+import User from '../../models/user';
+import UserToServer from '../../models/userToServer';
 import { Inventory } from '../../typings/data/general';
-import { ServerSchema } from '../../typings/data/server';
-import { RankType, UserData } from '../../typings/data/user';
+import { RankType } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
@@ -12,7 +18,8 @@ import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { disableCommandComponent } from '../../utils/componentDisabling';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { createFightGame } from '../../utils/gameBuilder';
-import { getMapData, getMessageId, Math.min, KeyOfUnion, respond, sendErrorMessage, setCooldown, unsafeKeys, ValueOf, widenValues } from '../../utils/helperFunctions';
+import { getDisplayname, pronounAndPlural, pronoun, getDisplayspecies } from '../../utils/getQuidInfo';
+import { getMessageId, KeyOfUnion, respond, sendErrorMessage, setCooldown, unsafeKeys, ValueOf, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -35,14 +42,14 @@ export const command: SlashCommand = {
 	modifiesServerProfile: true,
 	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
 
-		await executeAttacking(interaction, userData, serverData);
+		await executeAttacking(interaction, user, quid, userToServer, quidToServer, server);
 	},
 	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer, server }) {
 
 		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
 		if (interaction.isButton() && customId?.args[0] === 'new') {
 
-			await executeAttacking(interaction, userData, serverData);
+			await executeAttacking(interaction, user, quid, userToServer, quidToServer, server);
 		}
 	},
 };
@@ -50,8 +57,11 @@ export const command: SlashCommand = {
 
 async function executeAttacking(
 	interaction: ChatInputCommandInteraction | ButtonInteraction,
-	userData: UserData<undefined, ''> | null,
-	serverData: ServerSchema | null,
+	user: User | undefined,
+	quid: Quid | undefined,
+	userToServer: UserToServer | undefined,
+	quidToServer: QuidToServer | undefined,
+	server: Server | undefined,
 ): Promise<void> {
 
 	if (await missingPermissions(interaction, [
@@ -59,8 +69,11 @@ async function executeAttacking(
 	]) === true) { return; }
 
 	/* This ensures that the user is in a guild and has a completed account. */
-	if (serverData === null) { throw new Error('serverData is null'); }
+	if (server === undefined) { throw new Error('serverData is null'); }
+	if (!user) { throw new TypeError('user is undefined'); }
+	if (!userToServer) { throw new TypeError('userToServer is undefined'); }
 	if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
+	if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
 	/* It's disabling all components if userData exists and the command is set to disable a previous command. */
 	if (command.disablePreviousCommand) { await disableCommandComponent(userToServer); }
@@ -124,12 +137,15 @@ async function executeAttacking(
 	let winLoseRatio = 0;
 	let botReply: Message | InteractionResponse;
 
-	botReply = await interactionCollector(interaction, userData, serverData, serverAttackInfo, restEmbed);
+	botReply = await interactionCollector(interaction, user, quid, userToServer, quidToServer, server, serverAttackInfo, restEmbed);
 
 	async function interactionCollector(
 		interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
-		userData: UserData<never, never>,
-		serverData: ServerSchema,
+		user: User,
+		quid: Quid,
+		userToServer: UserToServer,
+		quidToServer: QuidToServer,
+		server: Server,
 		serverAttackInfo: serverMapInfo,
 		restEmbed: EmbedBuilder[],
 		newInteraction?: ButtonInteraction | AnySelectMenuInteraction,
@@ -206,7 +222,7 @@ async function executeAttacking(
 
 		if (totalCycles < 5) {
 
-			botReply = await interactionCollector(interaction, userData, serverData, serverAttackInfo, restEmbed, newInteraction, fightGame.fightComponent, fightGame.thisRoundCycleIndex);
+			botReply = await interactionCollector(interaction, user, quid, userToServer, quidToServer, server, serverAttackInfo, restEmbed, newInteraction, fightGame.fightComponent, fightGame.thisRoundCycleIndex);
 			return botReply;
 		}
 
@@ -225,7 +241,7 @@ async function executeAttacking(
 
 			if (winLoseRatio < 1) {
 
-				const inventory_ = widenValues(serverData.inventory);
+				const inventory_ = widenValues(server.inventory);
 				const { itemType, itemName } = getHighestItem(inventory_);
 				if (itemType && itemName) {
 
@@ -248,33 +264,46 @@ async function executeAttacking(
 
 				if (pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
 
-					quidToServer.injuries.wounds += 1;
+					quidToServer.injuries_wounds += 1;
 
 					embed.setDescription(`*The battle between the human and ${quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${getDisplayspecies(quid)} tries to jump at them, but the human manages to dodge. Unfortunately, a rock is directly in ${quid.name}'s jump line. A sharp pain runs through ${pronoun(quid, 2)} hip. A red spot slowly spreads where ${pronoun(quid, 0)} hit the rock. Meanwhile, the human runs into the food den.*`);
 					injuryText = `-${healthPoints} HP (from wound)\n`;
 				}
 				else {
 
-					quidToServer.injuries.sprains += 1;
+					quidToServer.injuries_sprains += 1;
 
 					embed.setDescription(`*The battle between the human and ${quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${getDisplayspecies(quid)} tries to jump at them, but the human manages to dodge. ${quid.name} is not prepared for the fall. A sharp pain runs through ${pronoun(quid, 2)} arm as it bends in the fall. Meanwhile, the human runs into the food den.*`);
 					injuryText = `-${healthPoints} HP (from sprain)\n`;
 				}
 
-				await userData.update(
-					(u) => {
-						const p = getMapData(getMapData(u.quids, quid.id).profiles, interaction.guildId);
-						p.health -= healthPoints;
-						p.injuries = quidToServer.injuries;
-					},
-				);
+				await quidToServer.update({
+					health: quidToServer.health - healthPoints,
+					injuries_wounds: quidToServer.injuries_wounds,
+					injuries_sprains: quidToServer.injuries_sprains,
+				});
 			}
 
 			serverAttackInfo.idleHumans += 1;
 		}
 		embed.setFooter({ text: injuryText + changedCondition.statsUpdateText + '\n' + minusItemText + `\n${serverAttackInfo.idleHumans} humans remaining` });
 
-		const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
+		const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
+		const discordUserToServer = await DiscordUserToServer.findAll({
+			where: {
+				serverId: interaction.guildId,
+				isMember: true,
+				discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
+			},
+		});
+
+		const members = (await Promise.all(discordUserToServer
+			.map(async (duts) => (await interaction.guild.members.fetch(duts.discordUserId).catch(() => {
+				duts.update({ isMember: false });
+				return null;
+			}))))).filter(function(v): v is GuildMember { return v !== null; });
+
+		const levelUpEmbed = await checkLevelUp(interaction, quid, quidToServer, members);
 
 		// This is an editReply if the last awaitMessageComponent event timed out (For this reason, an editMessageId is always provided), else it is an update to the message with the button. newInteraction is undefined when every event timed out.
 		botReply = await respond(newInteraction ?? interaction, {
@@ -287,7 +316,7 @@ async function executeAttacking(
 			components: [fightGame.fightComponent,
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.id, ['new']))
+						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, user.id, ['new']))
 						.setLabel('Attack again')
 						.setStyle(ButtonStyle.Primary))],
 		}, 'update', newInteraction?.message.id ?? getMessageId(botReply));
@@ -318,10 +347,7 @@ async function executeAttacking(
 		if (serverAttackInfo.endingTimeout) { clearTimeout(serverAttackInfo.endingTimeout); }
 		serverMap.delete(interaction.guild.id);
 
-		serverData = await serverModel.findOneAndUpdate(
-			s => s.id === serverData?.id,
-			(s) => s.nextPossibleAttack = Date.now() + 86_400_000, // 24 hours
-		);
+		await server.update({ nextPossibleAttackTimestamp: Date.now() + 86_400_000 /* 24 hours */ });
 	}
 	else if (serverAttackInfo.endingTimeout == null && serverAttackInfo.ongoingFights <= 0) {
 
@@ -379,10 +405,10 @@ export async function startAttack(
 						.setTitle('The humans are stealing items!')
 						.setDescription(`*Before anyone could stop them, ${serverAttackInfo.idleHumans} humans run into the food den, and take whatever they can grab.*`);
 
-					let serverData = await serverModel.findOne(s => s.serverId === interaction.guildId);
+					let server = await Server.findByPk(interaction.guildId, { rejectOnEmpty: true });
 
 					let footerText = '';
-					const inventory_ = widenValues(serverData.inventory);
+					const inventory_ = widenValues(server.inventory);
 					for (let i = 0; i < serverAttackInfo.idleHumans; i++) {
 
 						const { itemType, itemName } = getHighestItem(inventory_);
@@ -396,8 +422,8 @@ export async function startAttack(
 					}
 					if (footerText.length > 0) { embed.setFooter({ text: footerText }); }
 
-					serverData = await serverModel.findOneAndUpdate(
-						s => s.id === serverData.id,
+					server = await serverModel.findOneAndUpdate(
+						s => s.id === server.id,
 						(s) => { s.inventory = inventory_; },
 					);
 
@@ -483,10 +509,10 @@ async function remainingHumans(
 		.setTitle('The attack is over!')
 		.setDescription(`*Before anyone could stop them, the last ${serverAttackInfo.idleHumans	} humans run into the food den, take whatever they can grab and run away. The battle wasn't easy, but it is over at last.*`);
 
-	let serverData = await serverModel.findOne(s => s.serverId === interaction.guildId);
+	let server = await Server.findByPk(interaction.guildId, { rejectOnEmpty: true });
 
 	let footerText = '';
-	const inventory_ = widenValues(serverData.inventory);
+	const inventory_ = widenValues(server.inventory);
 	while (serverAttackInfo.idleHumans > 0) {
 
 		const { itemType, itemName } = getHighestItem(inventory_);
@@ -504,8 +530,8 @@ async function remainingHumans(
 
 	serverMap.delete(interaction.guild.id);
 
-	serverData = await serverModel.findOneAndUpdate(
-		s => s.id === serverData.id,
+	server = await serverModel.findOneAndUpdate(
+		s => s.id === server.id,
 		(s) => {
 			s.inventory = inventory_,
 			s.nextPossibleAttack = Date.now() + 86_400_000; // 24 hours
