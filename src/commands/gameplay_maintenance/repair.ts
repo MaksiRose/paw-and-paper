@@ -1,9 +1,14 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, StringSelectMenuBuilder, SlashCommandBuilder, WebhookEditMessageOptions } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, StringSelectMenuBuilder, SlashCommandBuilder, WebhookEditMessageOptions, ChatInputCommandInteraction, ButtonInteraction, GuildMember } from 'discord.js';
+import { Op } from 'sequelize';
 import { materialsInfo } from '../..';
-import serverModel from '../../oldModels/serverModel';
+import Den from '../../models/den';
+import DiscordUser from '../../models/discordUser';
+import DiscordUserToServer from '../../models/discordUserToServer';
+import Quid from '../../models/quid';
+import QuidToServer from '../../models/quidToServer';
+import Server from '../../models/server';
 import { MaterialNames } from '../../typings/data/general';
-import { ServerSchema } from '../../typings/data/server';
-import { RankType, UserData } from '../../typings/data/user';
+import { RankType } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
@@ -11,7 +16,8 @@ import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents } from '../../utils/componentDisabling';
 import getInventoryElements from '../../utils/getInventoryElements';
-import { getArrayElement, Math.min, respond } from '../../utils/helperFunctions';
+import { getDisplayname, getDisplayspecies, pronoun } from '../../utils/getQuidInfo';
+import { getArrayElement, keyInObject, respond } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -39,8 +45,11 @@ export const command: SlashCommand = {
 		]) === true) { return; }
 
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (serverData === null) { throw new Error('serverData is null'); }
+		if (server === undefined) { throw new Error('serverData is null'); }
+		if (!user) { throw new TypeError('user is undefined'); }
+		if (!userToServer) { throw new TypeError('userToServer is undefined'); }
 		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
+		if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
@@ -64,7 +73,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		if (Object.values(serverData.inventory.materials).filter(value => value > 0).length <= 0) {
+		if (server.inventory.filter(i => keyInObject(materialsInfo, i)).length <= 0) {
 
 			// This is always a reply
 			await respond(interaction, {
@@ -84,7 +93,7 @@ export const command: SlashCommand = {
 		const chosenDen = interaction.options.getString('den');
 
 		// This is always a reply
-		const botReply = await respond(interaction, (chosenDen !== 'sleepingDens' && chosenDen !== 'medicineDen' && chosenDen !== 'foodDen') ? {
+		const botReply = await respond(interaction, (chosenDen !== 'sleepingDenId' && chosenDen !== 'medicineDenId' && chosenDen !== 'foodDenId') ? {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(quid.color)
@@ -93,56 +102,74 @@ export const command: SlashCommand = {
 					iconURL: quid.avatarURL,
 				})
 				.setDescription(`*${quid.name} roams around the pack, looking if any dens need to be repaired.*`)],
-			components: [getDenButtons(userData.id)],
+			components: [getDenButtons(user.id)],
 			fetchReply: true,
-		} : getMaterials(userData, serverData, chosenDen, restEmbed, messageContent));
+		} : await getMaterials(interaction, quid, server, chosenDen, { serverId: interaction.guildId, userToServer, quidToServer, user }, restEmbed, messageContent));
 
-		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
+		saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, botReply.id);
 	},
 	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer, server }) {
 
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (serverData === null) { throw new Error('serverData is null'); }
+		if (server === undefined) { throw new Error('serverData is null'); }
+		if (!user) { throw new TypeError('user is undefined'); }
+		if (!userToServer) { throw new TypeError('userToServer is undefined'); }
 		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
+		if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
 		if (interaction.isButton()) {
 
 			const chosenDen = getArrayElement(interaction.customId.split('_'), 1);
-			if (chosenDen !== 'sleepingDens' && chosenDen !== 'medicineDen' && chosenDen !== 'foodDen') { throw new Error('chosenDen is not a den'); }
+			if (chosenDen !== 'sleepingDenId' && chosenDen !== 'medicineDenId' && chosenDen !== 'foodDenId') { throw new Error('chosenDen is not a den'); }
 
 			// This is always an update to the message with the button
-			await respond(interaction, getMaterials(userData, serverData, chosenDen, [], ''), 'update', interaction.message.id);
+			await respond(interaction, await getMaterials(interaction, quid, server, chosenDen, { serverId: interaction.guildId, userToServer, quidToServer, user }, [], ''), 'update', interaction.message.id);
 			return;
 		}
 
 		if (interaction.isStringSelectMenu()) {
 
-			const chosenDen = getArrayElement(interaction.customId.split('_'), 2);
-			if (chosenDen !== 'sleepingDens' && chosenDen !== 'medicineDen' && chosenDen !== 'foodDen') { throw new Error('chosenDen is not a den'); }
+			const chosenDenId = getArrayElement(interaction.customId.split('_'), 2);
+			if (chosenDenId !== 'sleepingDenId' && chosenDenId !== 'medicineDenId' && chosenDenId !== 'foodDenId') { throw new Error('chosenDen is not a den'); }
 
 			const chosenItem = getArrayElement(interaction.values, 0) as MaterialNames;
 
 			const repairKind = materialsInfo[chosenItem].reinforcesStructure ? 'structure' : materialsInfo[chosenItem].improvesBedding ? 'bedding' : materialsInfo[chosenItem].thickensWalls ? 'thickness' : materialsInfo[chosenItem].removesOverhang ? 'evenness' : undefined;
 			if (repairKind === undefined) { throw new TypeError('repairKind is undefined'); }
 
-			const repairAmount = Math.min(addMaterialPoints(), 100 - serverData.dens[chosenDen][repairKind]);
+			const chosenDen = await Den.findByPk(server[chosenDenId], { rejectOnEmpty: true });
+			const repairAmount = Math.min(addMaterialPoints(), 100 - chosenDen[repairKind]);
 
 			/** True when the repairAmount is bigger than zero. If the user isn't of  rank Hunter or Elderly, a weighted table decided whether they are successful. */
-			const isSuccessful = repairAmount > 0 && !isUnlucky(userData);
+			const isSuccessful = repairAmount > 0 && !isUnlucky(quidToServer);
 
-			serverData = await serverModel.findOneAndUpdate(
-				s => s.id === serverData?.id,
-				(s) => {
-					s.inventory.materials[chosenItem] -= 1;
-					if (isSuccessful) { s.dens[chosenDen][repairKind] += repairAmount; }
-				},
-			);
+			const itemIndex = server.inventory.findIndex(i => i === chosenItem);
+			if (itemIndex < 0) { throw new Error('chosenItem does not exist in server.inventory'); }
+
+			if (isSuccessful) { await chosenDen.update({ [repairKind]: chosenDen[repairKind] + repairAmount }); }
+			await server.update({ inventory: server.inventory.filter((_, idx) => idx !== itemIndex) });
 
 			const experiencePoints = isSuccessful === false ? 0 : getRandomNumber(5, quidToServer.levels + 8);
 			const changedCondition = await changeCondition(quidToServer, quid, experiencePoints);
-			const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
 
-			const denName = chosenDen.split(/(?=[A-Z])/).join(' ').toLowerCase();
+			const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
+			const discordUserToServer = await DiscordUserToServer.findAll({
+				where: {
+					serverId: interaction.guildId,
+					isMember: true,
+					discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
+				},
+			});
+
+			const members = (await Promise.all(discordUserToServer
+				.map(async (duts) => (await interaction.guild.members.fetch(duts.discordUserId).catch(() => {
+					duts.update({ isMember: false });
+					return null;
+				}))))).filter(function(v): v is GuildMember { return v !== null; });
+
+			const levelUpEmbed = await checkLevelUp(interaction, quid, quidToServer, members);
+
+			const denName = chosenDenId.split(/(?=[A-Z])/).join(' ').toLowerCase();
 
 			// This is always an update to the message with the select menu
 			await respond(interaction, {
@@ -154,7 +181,7 @@ export const command: SlashCommand = {
 							iconURL: quid.avatarURL,
 						})
 						.setDescription(`*${quid.name} takes a ${chosenItem} and tries to ${repairKind === 'structure' ? 'tuck it into parts of the walls and ceiling that look less stable.' : repairKind === 'bedding' ? 'spread it over parts of the floor that look harsh and rocky.' : repairKind === 'thickness' ? 'cover parts of the walls that look a little thin with it.' : 'drag it over parts of the walls with bumps and material sticking out.'} ` + (isSuccessful ? `Immediately you can see the ${repairKind} of the den improving. What a success!*` : `After a few attempts, the material breaks into little pieces, rendering it useless. Looks like the ${getDisplayspecies(quid)} has to try again...*`))
-						.setFooter({ text: `${changedCondition.statsUpdateText}\n\n-1 ${chosenItem} for ${interaction.guild.name}\n${isSuccessful ? `+${repairAmount}% ${repairKind} for ${denName} (${serverData.dens[chosenDen][repairKind]}%  total)` : ''}` }),
+						.setFooter({ text: `${changedCondition.statsUpdateText}\n\n-1 ${chosenItem} for ${interaction.guild.name}\n${isSuccessful ? `+${repairAmount}% ${repairKind} for ${denName} (${chosenDen[repairKind]}%  total)` : ''}` }),
 					...changedCondition.injuryUpdateEmbed,
 					...levelUpEmbed,
 				],
@@ -172,20 +199,19 @@ export const command: SlashCommand = {
 
 
 function getDenButtons(
-	_id: string,
+	userId: string,
 ) {
-
 	return new ActionRowBuilder<ButtonBuilder>()
 		.addComponents([new ButtonBuilder()
-			.setCustomId(`repair_sleepingDens_@${_id}`)
+			.setCustomId(`repair_sleepingDenId_@${userId}`)
 			.setLabel('Sleeping Dens')
 			.setStyle(ButtonStyle.Secondary),
 		new ButtonBuilder()
-			.setCustomId(`repair_foodDen_@${_id}`)
+			.setCustomId(`repair_foodDenId_@${userId}`)
 			.setLabel('Food Den')
 			.setStyle(ButtonStyle.Secondary),
 		new ButtonBuilder()
-			.setCustomId(`repair_medicineDen_@${_id}`)
+			.setCustomId(`repair_medicineDenId_@${userId}`)
 			.setLabel('Medicine Den')
 			.setStyle(ButtonStyle.Secondary)]);
 }
@@ -193,15 +219,18 @@ function getDenButtons(
 /**
  * Displays the condition of the currently chosen den, as well as a list of the packs materials.
  */
-function getMaterials(
-	userData: UserData<never, never>,
-	serverData: ServerSchema,
-	chosenDen: 'sleepingDens' | 'foodDen' | 'medicineDen',
+async function getMaterials(
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
+	quid: Quid,
+	server: Server,
+	chosenDenType: 'sleepingDenId' | 'medicineDenId' | 'foodDenId',
+	displaynameOptions: Parameters<typeof getDisplayname>[1],
 	restEmbed: EmbedBuilder[],
 	messageContent: string,
-): Omit<InteractionReplyOptions & WebhookEditMessageOptions, 'flags'> {
+): Promise<Omit<InteractionReplyOptions & WebhookEditMessageOptions, 'flags'>> {
 
-	const { selectMenuOptions, embedDescription: description } = getInventoryElements(serverData.inventory, 4);
+	const { selectMenuOptions, embedDescription: description } = getInventoryElements(server.inventory, 4);
+	const chosenDen = await Den.findByPk(server[chosenDenType], { rejectOnEmpty: true });
 
 	return {
 		content: messageContent,
@@ -210,23 +239,23 @@ function getMaterials(
 			new EmbedBuilder()
 				.setColor(quid.color)
 				.setAuthor({
-					name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
+					name: await getDisplayname(quid, displaynameOptions),
 					iconURL: quid.avatarURL,
 				})
 				.setDescription(`*${quid.name} patrols around the den, looking for anything that has to be repaired. The condition isn't perfect, and reinforcing it would definitely improve its quality. But what would be the best way?*`)
-				.setFooter({ text: `Structure: ${serverData.dens[chosenDen].structure}%\nBedding: ${serverData.dens[chosenDen].bedding}%\nThickness: ${serverData.dens[chosenDen].thickness}%\nEvenness: ${serverData.dens[chosenDen].evenness}%` }),
+				.setFooter({ text: `Structure: ${chosenDen.structure}%\nBedding: ${chosenDen.bedding}%\nThickness: ${chosenDen.thickness}%\nEvenness: ${chosenDen.evenness}%` }),
 			new EmbedBuilder()
 				.setColor(quid.color)
-				.setTitle(`Inventory of ${serverData.name} - Materials`)
+				.setTitle(`Inventory of ${interaction.guild.name} - Materials`)
 				.setDescription(description || null)
 				.setFooter({ text: 'Choose one of the materials above to repair the den with it!' }),
 		],
 		components: [
-			getDenButtons(userData.id),
+			getDenButtons(quid.userId),
 			...selectMenuOptions.length > 0
 				? [new ActionRowBuilder<StringSelectMenuBuilder>()
 					.setComponents(new StringSelectMenuBuilder()
-						.setCustomId(`repair_options_${chosenDen}_@${userData.id}`)
+						.setCustomId(`repair_options_${chosenDen}_@${quid.userId}`)
 						.setPlaceholder('Select an item to repair the den with')
 						.addOptions(selectMenuOptions))]
 				: [],
@@ -237,5 +266,5 @@ function getMaterials(
 export function addMaterialPoints() { return getRandomNumber(5, 6); }
 
 export function isUnlucky(
-	userData: UserData<never, never>,
-): boolean { return quidToServer.rank !== RankType.Hunter && quidToServer.rank !== RankType.Elderly && pullFromWeightedTable({ 0: quidToServer.rank === RankType.Healer ? 90 : 40, 1: 60 + quidToServer.sapling.waterCycles }) === 0; }
+	quidToServer: QuidToServer,
+): boolean { return quidToServer.rank !== RankType.Hunter && quidToServer.rank !== RankType.Elderly && pullFromWeightedTable({ 0: quidToServer.rank === RankType.Healer ? 90 : 40, 1: 60 + quidToServer.sapling_waterCycles }) === 0; }
