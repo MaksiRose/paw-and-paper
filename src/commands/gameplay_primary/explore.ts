@@ -381,7 +381,7 @@ async function executeExploring(
 		}
 		else if (serverMaterialsCount < 36) {
 
-			const foundMaterial = pickMaterial(server);
+			const foundMaterial = await pickMaterial(server);
 			quidToServer.inventory.push(foundMaterial);
 			await quidToServer.update({ inventory: quidToServer.inventory });
 

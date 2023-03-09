@@ -292,14 +292,58 @@ export async function pickPlant(
  * picking from.
  * @returns A MaterialNames
  */
-export function pickMaterial(
+export async function pickMaterial(
 	server: Server,
-): MaterialNames {
+): Promise<MaterialNames> {
+
+
+	const quidsToServer = await getProfilesInServer(server.id, false);
+
+	const medicineDen = await Den.findByPk(server.medicineDenId, { rejectOnEmpty: true });
+	const foodDen = await Den.findByPk(server.foodDenId, { rejectOnEmpty: true });
+	const sleepingDen = await Den.findByPk(server.sleepingDenId, { rejectOnEmpty: true });
+
+
+	const neededItems = getNeededMaterialItems(quidsToServer, medicineDen, foodDen, sleepingDen);
+
+	let foundBeddingCount = 0;
+	server.inventory = server.inventory.filter((item) => {
+		if (keyInObject(materialsInfo, item) && materialsInfo[item].improvesBedding && foundBeddingCount < neededItems.neededBeddingItems) {
+			foundBeddingCount++;
+			return false;
+		}
+		return true;
+	});
+
+	const foundStructureCount = 0;
+	server.inventory = server.inventory.filter((item) => {
+		if (keyInObject(materialsInfo, item) && materialsInfo[item].reinforcesStructure && foundStructureCount < neededItems.neededStructureItems) {
+			foundBeddingCount++;
+			return false;
+		}
+		return true;
+	});
+
+	const foundEvennessCount = 0;
+	server.inventory = server.inventory.filter((item) => {
+		if (keyInObject(materialsInfo, item) && materialsInfo[item].removesOverhang && foundEvennessCount < neededItems.neededEvennessItems) {
+			foundBeddingCount++;
+			return false;
+		}
+		return true;
+	});
+
+	const foundThicknessCount = 0;
+	server.inventory = server.inventory.filter((item) => {
+		if (keyInObject(materialsInfo, item) && materialsInfo[item].thickensWalls && foundThicknessCount < neededItems.neededThicknessItems) {
+			foundBeddingCount++;
+			return false;
+		}
+		return true;
+	});
+
 
 	const inventory = [...server.inventory];
-	error('do the thing below');
-	// It should first do a getNeededMaterialItems for each type of damage type and each den
-	// then remove all the materials that are needed for that from the server inventory
 
 	const items = new Map<MaterialNames, number>();
 	inventory.forEach((item) => {
@@ -312,6 +356,60 @@ export function pickMaterial(
 	});
 
 	return pickItem(items);
+}
+
+function getNeededMaterialItems(
+	quidsToServer: QuidToServer[],
+	medicineDen: Den,
+	foodDen: Den,
+	sleepingDen: Den,
+): { neededBeddingItems: number, neededEvennessItems: number, neededStructureItems: number, neededThicknessItems: number} {
+
+	let neededBeddingItems = 0;
+	let neededEvennessItems = 0;
+	let neededStructureItems = 0;
+	let neededThicknessItems = 0;
+	for (const den of [medicineDen, foodDen, sleepingDen]) {
+
+		while (den.bedding < 100 || den.evenness < 100 || den.structure < 100 || den.thickness < 100) {
+
+			const repairerArray1 = quidsToServer.filter(qts => {
+				return qts.rank !== RankType.Youngling && qts.health > 0 && qts.energy > 0 && qts.hunger > 0 && qts.thirst > 0;
+			});
+			const repairerArray2 = repairerArray1.filter(qts => !quidNeedsHealing(qts));
+			const repairer = repairerArray2.length > 0 ? getArrayElement(repairerArray2, getRandomNumber(repairerArray2.length)) : repairerArray1.length > 0 ? getArrayElement(repairerArray1, getRandomNumber(repairerArray1.length)) : undefined;
+			if (repairer === undefined) { break; }
+
+			const isUnlucky = repairingIsUnlucky(repairer);
+			if (!isUnlucky) {
+
+				const repairAmount = addMaterialPoints();
+				if (den.bedding < 100) {
+
+					den.bedding += repairAmount;
+					neededBeddingItems += 1;
+				}
+				else if (den.evenness < 100) {
+
+					den.evenness += repairAmount;
+					neededEvennessItems += 1;
+				}
+				else if (den.structure < 100) {
+
+					den.structure += repairAmount;
+					neededStructureItems += 1;
+				}
+				else {
+
+					den.thickness += repairAmount;
+					neededThicknessItems += 1;
+				}
+			}
+
+			changeCondition(repairer, repairer.quid, 0, undefined, false, false);
+		}
+	}
+	return { neededBeddingItems, neededEvennessItems, neededStructureItems, neededThicknessItems };
 }
 
 function findLeastUsefulItem(
@@ -405,40 +503,15 @@ export async function simulateMaterialUse(
 ): Promise<number> {
 
 	const quidsToServer = await getProfilesInServer(server.id, activeUsersOnly);
-	let neededItems = 0;
 
 	const medicineDen = await Den.findByPk(server.medicineDenId, { rejectOnEmpty: true });
 	const foodDen = await Den.findByPk(server.foodDenId, { rejectOnEmpty: true });
 	const sleepingDen = await Den.findByPk(server.sleepingDenId, { rejectOnEmpty: true });
 
-	for (const den of [medicineDen, foodDen, sleepingDen]) {
-
-		while (den.bedding < 100 || den.evenness < 100 || den.structure < 100 || den.thickness < 100) {
-
-			const repairerArray1 = quidsToServer.filter(qts => {
-				return qts.rank !== RankType.Youngling && qts.health > 0 && qts.energy > 0 && qts.hunger > 0 && qts.thirst > 0;
-			});
-			const repairerArray2 = repairerArray1.filter(qts => !quidNeedsHealing(qts));
-			const repairer = repairerArray2.length > 0 ? getArrayElement(repairerArray2, getRandomNumber(repairerArray2.length)) : repairerArray1.length > 0 ? getArrayElement(repairerArray1, getRandomNumber(repairerArray1.length)) : undefined;
-			if (repairer === undefined) { break; }
-
-			neededItems += 1;
-			const isUnlucky = repairingIsUnlucky(repairer);
-			if (!isUnlucky) {
-
-				const repairAmount = addMaterialPoints();
-				if (den.bedding < 100) { den.bedding += repairAmount; }
-				else if (den.evenness < 100) { den.evenness += repairAmount; }
-				else if (den.structure < 100) { den.structure += repairAmount; }
-				else { den.thickness += repairAmount; }
-			}
-
-			changeCondition(repairer, repairer.quid, 0, undefined, false, false);
-		}
-	}
-
 	const materialNames = Object.keys(materialsInfo);
 	const existingItems = server.inventory.filter(materialNames.includes).length;
+	const neededItems = Object.values(getNeededMaterialItems(quidsToServer, medicineDen, foodDen, sleepingDen)).reduce((a, b) => a + b, 0);
+
 	const itemDifference = existingItems - neededItems;
 
 	return itemDifference;

@@ -599,10 +599,10 @@ function getShopRoleMessage(
 	const isNotSavable = wayOfEarning === null || requirement === null || roleId === null;
 	const lastRowButtons = [
 		...(isNotSavable ? [] :
-			[new ButtonBuilder()
-				.setCustomId(`server-settings_shop_save_@${interaction.user.id}`)
-				.setLabel('Save')
-				.setStyle(ButtonStyle.Success)]),
+		[new ButtonBuilder()
+			.setCustomId(`server-settings_shop_save_@${interaction.user.id}`)
+			.setLabel('Save')
+			.setStyle(ButtonStyle.Success)]),
 		...(shopRoles.some(shopItem => shopItem.id === roleIdOrAdd) ?
 			[new ButtonBuilder()
 				.setCustomId(`server-settings_shop_delete_@${interaction.user.id}`)
@@ -639,21 +639,21 @@ function getShopRoleMessage(
 					)]),
 			/* When no way of earning is selected, do not have this, if the way of earning is rank, make it a select for a required rank, else make it a button that opens a modal */
 			...(wayOfEarning === null ? [] :
-				[new ActionRowBuilder<StringSelectMenuBuilder | ButtonBuilder>()
-					.setComponents(wayOfEarning === WayOfEarningType.Rank ? [new StringSelectMenuBuilder()
-						.setCustomId(`server-settings_shop_requirements_@${interaction.user.id}`)
-						.setPlaceholder('Select a required rank')
-						.setOptions(
-							{ value: RankType.Youngling, label: RankType.Youngling },
-							{ value: RankType.Apprentice, label: RankType.Apprentice },
-							{ value: RankType.Healer, label: RankType.Healer },
-							{ value: RankType.Hunter, label: RankType.Hunter },
-							{ value: RankType.Elderly, label: RankType.Elderly },
-						)] :
-						[new ButtonBuilder()
-							.setCustomId(`server-settings_shop_requirementsmodal_@${interaction.user.id}`)
-							.setLabel('Set a required number to reach')
-							.setStyle(ButtonStyle.Secondary)])]),
+			[new ActionRowBuilder<StringSelectMenuBuilder | ButtonBuilder>()
+				.setComponents(wayOfEarning === WayOfEarningType.Rank ? [new StringSelectMenuBuilder()
+					.setCustomId(`server-settings_shop_requirements_@${interaction.user.id}`)
+					.setPlaceholder('Select a required rank')
+					.setOptions(
+						{ value: RankType.Youngling, label: RankType.Youngling },
+						{ value: RankType.Apprentice, label: RankType.Apprentice },
+						{ value: RankType.Healer, label: RankType.Healer },
+						{ value: RankType.Hunter, label: RankType.Hunter },
+						{ value: RankType.Elderly, label: RankType.Elderly },
+					)] :
+				[new ButtonBuilder()
+					.setCustomId(`server-settings_shop_requirementsmodal_@${interaction.user.id}`)
+					.setLabel('Set a required number to reach')
+					.setStyle(ButtonStyle.Secondary)])]),
 			/* If it's savable, have a save button to save progress and if it's a shop item that's edited, have a delete button */
 			...(lastRowButtons.length > 0 ? [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(lastRowButtons)] : []),

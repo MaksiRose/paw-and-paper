@@ -219,7 +219,7 @@ async function executeScavenging(
 						}
 						else if (materialCount < 0) {
 
-							const foundMaterial = pickMaterial(server);
+							const foundMaterial = await pickMaterial(server);
 							if (!foundMaterial) {
 								await sendErrorMessage(interaction, new Error('foundMaterial is undefined'))
 									.catch((error) => { console.error(error); });
