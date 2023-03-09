@@ -97,7 +97,7 @@ export const command: SlashCommand = {
 			}
 			else if (interaction.customId.includes('heal')) {
 
-				await getHealResponse(interaction, userData, serverData, messageContent, restEmbed, 0);
+				await getHealResponse(interaction, user, quid, userToServer, quidToServer, server, messageContent, restEmbed, 0);
 			}
 			else if (interaction.customId.includes('drink')) {
 

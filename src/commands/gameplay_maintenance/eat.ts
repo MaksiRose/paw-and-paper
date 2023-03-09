@@ -1,7 +1,7 @@
 import { generateId } from 'crystalid';
 import { ChatInputCommandInteraction, EmbedBuilder, FormattingPatterns, AnySelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import Fuse from 'fuse.js';
-import { commonPlantsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../..';
+import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../..';
 import Den from '../../models/den';
 import DiscordUser from '../../models/discordUser';
 import Quid from '../../models/quid';
@@ -44,7 +44,7 @@ export const command: SlashCommand = {
 
 		if (!quidToServer) { return; }
 		const focusedValue = interaction.options.getFocused();
-		let choices: string[] = [...new Set(quidToServer.inventory)];
+		let choices: string[] = [...new Set(quidToServer.inventory)].filter(i => !keyInObject(materialsInfo, i));
 
 		if (focusedValue.length > 0) { choices = new Fuse(choices).search(focusedValue).map(value => value.item); }
 

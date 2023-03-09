@@ -1,8 +1,43 @@
 
 # Paw and Paper
 
-Paw and Paper is a Discord Bot, an interactive roleplay game with a focus on animals rather than humans. After choosing a name and a species, you will be welcomed to your pack. You start as a Youngling, and your goal is to go up the ranks, gain as much experience as possible, explore all the places and help out your pack. You can go to different biomes, where you can find herbs, stumble upon animals to fight, or do quests. But beware of your stats! If one of them reaches zero, you will pass out and lose all your items.
-This game has a heavy focus on player-to-player interaction, so it's best to bring some friends to play it with!
+## What does Paw and Paper do?
+
+Paw and Paper has two main usages:
+
+Firstly, it has powerful tools to help make your roleplay more immersive. You can create extremely customizable characters including name, avatar, species, pronouns, description, and color. You can also send messages as though they are coming from these characters.
+
+But this is far from the end: Roleplayers can also set custom skills/ability scores, that they can then use to roll dice. Users can also find, visit and talk to people from other servers to get to know more people and roleplay together!
+
+With the same characters that you already created, you can now take part in a community-driven, interactive roleplay game about animals surviving in the wild. Your goal is to go up the ranks, level up, help out your friends and keep your stats high. You can go to different biomes, where you can find herbs, stumble upon animals to fight, or do quests.
+
+## Why choose Paw and Paper?
+
+Paw and Paper is a perfect companion for roleplayers, alterhumans, and anyone who enjoys RPGs.
+
+We do our very best to make the bot as easy to use for everyone, no matter how tech-savvy they are. For this, we use all the tools that Discord gives us to make the experience as immersive as possible.
+
+And if there is something missing that you would like to see added to the bot, you can easily suggest it, and get in touch with the developers. Monthly updates bring exciting new features to ensure the quality of P&P stays top-level.
+
+## How do I use Paw and Paper?
+
+Paw and Paper uses slash commands to communicate with the user. The basic command to get a list of all other commands is `/help`.
+
+Here are some of the most important commands:
+
+- `/name`- (Re)name and create a character
+
+- `/pronouns`, `/avatar`, `/color` and `/description` are your main commands to customize your character
+
+- `/species`- Give your character a species. Depending on the type of roleplay you do, this could also be a class, race, breed, etc. Choosing a species is needed to access the RPG parts of the bot.
+
+- `/profile`- Look up all the available info about a character or change the character you are using.
+
+- `/say` and `/proxy` are useful when you want to talk as a character.
+
+- `/skills`, `/roll` and `/visit` (currently disabled) are great tools to enhance your own roleplay.
+
+- `/stats`- Quick view of your characters condition in the RPG. Everything you need to know about the RPG aspects is explained along the way, after you used the /play command once. Just make sure to read all the tips given to you after creating a species, or consult the help command when you don't know what to do.
 
 **Want to have Paw and Paper on your server? Use this link to invite it:**
 
@@ -11,16 +46,6 @@ https://discord.com/api/oauth2/authorize?client_id=862718885564252212&permission
 **Do you have questions or need support? Join our discord server:**
 
 https://discord.gg/9DENgj8q5Q
-
-## Features
-
-- Extensive profile customization, with up to three profiles per server
-- Exploring (ft. custom minigames), quests, attacking, playing, ranking up
-- Sleeping, eating, drinking, healing, plant watering, personal and server inventory
-- Hugging others, sharing others, playfighting others (playing Tic Tac Toe or Connect Four)
-- Custom roleplaying with others using your quid
-- Visiting other servers
-- Shop to gain roles
 
 ## Contributing
 
@@ -31,7 +56,7 @@ If you just want to suggest a species, [fill out this form](https://github.com/M
 If you want to add a species, [click here to open the appropriate file.](https://github.com/MaksiRose/paw-and-paper/blob/main/src/index.ts)
 
 First click the edit button (in form of a pencil) at the top right of the screen. Then go to the part of the file that starts with `export const speciesInfo`, and at the bottom of it, paste this "species block" behind the last one of those species blocks:
-```
+```ts
 'NAME': {
 	diet: 'SpeciesDietType.Herbivore/SpeciesDietType.Omnivore/SpeciesDietType.Carnivore',
 	habitat: 'SpeciesHabitatType.Cold/SpeciesHabitatType.Warm/SpeciesHabitatType.Water',
@@ -74,7 +99,7 @@ Keep the terminal open, you will need it later.
 In the repository, create a config.json file.
 This needs to include the following information:
 
-```
+```json
 {
 	"token": "your discord token",
 	"test_guild_id": "your test guild",
