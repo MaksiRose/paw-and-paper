@@ -1,11 +1,16 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, GuildMember, SlashCommandBuilder } from 'discord.js';
+import { Op } from 'sequelize';
+import DiscordUser from '../../models/discordUser';
+import DiscordUserToServer from '../../models/discordUserToServer';
+import Quid from '../../models/quid';
 import { RankType } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { checkRankRequirements } from '../../utils/checkRoleRequirements';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
-import { getArrayElement, getMapData, respond } from '../../utils/helperFunctions';
+import { getDisplayname, getDisplayspecies, pronoun, pronounAndPlural } from '../../utils/getQuidInfo';
+import { getArrayElement, respond } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { remindOfAttack } from './attack';
 
@@ -26,8 +31,11 @@ export const command: SlashCommand = {
 		]) === true) { return; }
 
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (serverData === null) { throw new Error('serverData is null'); }
+		if (server === undefined) { throw new Error('serverData is null'); }
+		if (!user) { throw new TypeError('user is undefined'); }
+		if (!userToServer) { throw new TypeError('userToServer is undefined'); }
 		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
+		if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
@@ -37,12 +45,7 @@ export const command: SlashCommand = {
 
 		if (quidToServer.unlockedRanks === 1 && quidToServer.rank === RankType.Youngling) {
 
-			await userData.update(
-				(u) => {
-					const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
-					p.rank = RankType.Apprentice;
-				},
-			);
+			await quidToServer.update({ rank: RankType.Apprentice });
 
 			// This is always a reply
 			await respond(interaction, {
@@ -56,7 +59,22 @@ export const command: SlashCommand = {
 					.setDescription(`*An elderly smiles down at the young ${quidToServer.rank}.*\n"${quid.name}, you have proven strength for the first time. I believe you are ready to explore the wild, and learn your strengths and weaknesses. Good luck in your rank as Apprentice" *they say. ${quid.name}'s chest swells with pride.*`)],
 			});
 
-			await checkRankRequirements(serverData, interaction, interaction.member, RankType.Apprentice, true);
+			const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
+			const discordUserToServer = await DiscordUserToServer.findAll({
+				where: {
+					serverId: interaction.guildId,
+					isMember: true,
+					discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
+				},
+			});
+
+			const members = (await Promise.all(discordUserToServer
+				.map(async (duts) => (await interaction.guild.members.fetch(duts.discordUserId).catch(() => {
+					duts.update({ isMember: false });
+					return null;
+				}))))).filter(function(v): v is GuildMember { return v !== null; });
+
+			await checkRankRequirements(interaction, members, quidToServer, true);
 
 			return;
 		}
@@ -76,12 +94,12 @@ export const command: SlashCommand = {
 				components: [new ActionRowBuilder<ButtonBuilder>()
 					.setComponents([
 						new ButtonBuilder()
-							.setCustomId(`rank-up_Healer_@${userData.id}`)
+							.setCustomId(`rank-up_Healer_@${user.id}`)
 							.setLabel('Healer')
 							.setEmoji('🛡️')
 							.setStyle(ButtonStyle.Success),
 						new ButtonBuilder()
-							.setCustomId(`rank-up_Hunter_@${userData.id}`)
+							.setCustomId(`rank-up_Hunter_@${user.id}`)
 							.setLabel('Hunter')
 							.setEmoji('⚔️')
 							.setStyle(ButtonStyle.Success),
@@ -89,18 +107,13 @@ export const command: SlashCommand = {
 				],
 			});
 
-			saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, id, interaction);
+			saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, id);
 
 			return;
 		}
 		else if (quidToServer.unlockedRanks === 3 && (quidToServer.rank === RankType.Healer || quidToServer.rank === RankType.Hunter)) {
 
-			await userData.update(
-				(u) => {
-					const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
-					p.rank = RankType.Elderly;
-				},
-			);
+			await quidToServer.update({ rank: RankType.Elderly });
 
 			// This is always a reply
 			await respond(interaction, {
@@ -114,7 +127,22 @@ export const command: SlashCommand = {
 					.setDescription(`"We are here to celebrate the nomination of ${quid.name} to the highest rank, Elderly. The ${getDisplayspecies(quid)} has shown incredible skills and persistence, and we congratulate ${pronoun(quid, 1)} to ${pronoun(quid, 2)} new title." *A mixture of howls, crows, meows, roars and squeaks are heard all around the hill, on which the Alpha stoof to announce this special event. It is not every day that a packmate gets the title of Elderly.*`)],
 			});
 
-			await checkRankRequirements(serverData, interaction, interaction.member, RankType.Elderly, true);
+			const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
+			const discordUserToServer = await DiscordUserToServer.findAll({
+				where: {
+					serverId: interaction.guildId,
+					isMember: true,
+					discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
+				},
+			});
+
+			const members = (await Promise.all(discordUserToServer
+				.map(async (duts) => (await interaction.guild.members.fetch(duts.discordUserId).catch(() => {
+					duts.update({ isMember: false });
+					return null;
+				}))))).filter(function(v): v is GuildMember { return v !== null; });
+
+			await checkRankRequirements(interaction, members, quidToServer, true);
 
 			return;
 		}
@@ -151,18 +179,16 @@ export const command: SlashCommand = {
 
 		if (!interaction.isButton()) { return; }
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; }
+		if (server === undefined) { throw new Error('serverData is null'); }
+		if (!user) { throw new TypeError('user is undefined'); }
+		if (!userToServer) { throw new TypeError('userToServer is undefined'); }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
+		if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
 		const rank = getArrayElement(interaction.customId.split('_'), 1);
 		if (rank !== RankType.Hunter && rank !== RankType.Healer) { throw new Error('rank is not of RankType Hunter or Healer'); }
 
-		await userData.update(
-			(u) => {
-				const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
-				p.rank = rank;
-			},
-		);
+		await quidToServer.update({ rank: rank });
 
 		// This is always an update to the message with the button
 		await respond(interaction, {
@@ -176,8 +202,22 @@ export const command: SlashCommand = {
 			components: [],
 		}, 'update', interaction.message.id);
 
-		await checkRankRequirements(serverData, interaction, interaction.member, rank, true);
-		return;
+		const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
+		const discordUserToServer = await DiscordUserToServer.findAll({
+			where: {
+				serverId: interaction.guildId,
+				isMember: true,
+				discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
+			},
+		});
 
+		const members = (await Promise.all(discordUserToServer
+			.map(async (duts) => (await interaction.guild.members.fetch(duts.discordUserId).catch(() => {
+				duts.update({ isMember: false });
+				return null;
+			}))))).filter(function(v): v is GuildMember { return v !== null; });
+
+		await checkRankRequirements(interaction, members, quidToServer, true);
+		return;
 	},
 };
