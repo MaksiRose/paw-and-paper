@@ -2,7 +2,8 @@ import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { getRandomNumber } from '../../utils/randomizers';
 import { respond } from '../../utils/helperFunctions';
 import { SlashCommand } from '../../typings/handle';
-import { UserData } from '../../typings/data/user';
+import QuidToServer from '../../models/quidToServer';
+import { getDisplayname } from '../../utils/getQuidInfo';
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -27,27 +28,27 @@ export const command: SlashCommand = {
 	position: 7,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendAutocomplete: async (interaction, userData) => {
+	sendAutocomplete: async (interaction, { quidToServer }) => {
 
 		const focusedValue = interaction.options.getFocused();
 
 		const choices: string[] = [];
 		if (focusedValue === '') {
-			choices.push(...Object.keys(userData?.quid?.profile?.skills?.global || []).map(v => `+ ${v}`));
-			choices.push(...Object.keys(userData?.quid?.profile?.skills?.global || []).map(v => `- ${v}`));
-			choices.push(...Object.keys(userData?.quid?.profile?.skills?.personal || []).map(v => `+ ${v}`));
-			choices.push(...Object.keys(userData?.quid?.profile?.skills?.personal || []).map(v => `- ${v}`));
+			choices.push(...Object.keys(quidToServer?.skills_global || []).map(v => `+ ${v}`));
+			choices.push(...Object.keys(quidToServer?.skills_global || []).map(v => `- ${v}`));
+			choices.push(...Object.keys(quidToServer?.skills_personal || []).map(v => `+ ${v}`));
+			choices.push(...Object.keys(quidToServer?.skills_personal || []).map(v => `- ${v}`));
 			for (let i = 1; i < 11; i++) {
 				choices.push(`+ ${i}`);
 				choices.push(`- ${i}`);
 			}
 		}
-		else if (focusedValue.startsWith('+')) { choices.push(...findMatches('+', focusedValue.slice(1), userData)); }
-		else if (focusedValue.startsWith('-')) { choices.push(...findMatches('-', focusedValue.slice(1), userData)); }
+		else if (focusedValue.startsWith('+')) { choices.push(...findMatches('+', focusedValue.slice(1), quidToServer)); }
+		else if (focusedValue.startsWith('-')) { choices.push(...findMatches('-', focusedValue.slice(1), quidToServer)); }
 		else {
 
-			choices.push(...findMatches('+', focusedValue, userData));
-			choices.push(...findMatches('-', focusedValue, userData));
+			choices.push(...findMatches('+', focusedValue, quidToServer));
+			choices.push(...findMatches('-', focusedValue, quidToServer));
 		}
 
 		await interaction.respond(
@@ -65,7 +66,7 @@ export const command: SlashCommand = {
 
 			let argstr = args[i];
 			if (argstr === undefined) { continue; }
-			for (const [skill, value] of [...Object.entries(userData?.quid?.profile?.skills?.global || {}), ...Object.entries(userData?.quid?.profile?.skills?.personal || {})]) {
+			for (const [skill, value] of [...Object.entries(quidToServer?.skills_global || {}), ...Object.entries(quidToServer?.skills_personal || {})]) {
 
 				if (argstr.includes(skill)) { argstr = argstr.replace(skill, String(value)); }
 			}
@@ -83,10 +84,10 @@ export const command: SlashCommand = {
 		// This is always a reply
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
-				.setColor(userData?.quid?.color || member?.displayColor || interaction.user.accentColor || '#ffffff')
+				.setColor(quid?.color || member?.displayColor || interaction.user.accentColor || '#ffffff')
 				.setAuthor({
-					name: userData?.quid ? quid.getDisplayname() : member?.displayName || interaction.user.tag,
-					iconURL: userData?.quid?.avatarURL || member?.displayAvatarURL() || interaction.user.avatarURL() || undefined,
+					name: quid ? await getDisplayname(quid, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user }) : member?.displayName || interaction.user.tag,
+					iconURL: quid?.avatarURL || member?.displayAvatarURL() || interaction.user.avatarURL() || undefined,
 				})
 				.setDescription(`🎲 You rolled a \`${result}\`!`)
 				.setFooter({ text: resultFull.length > 2048 ? resultFull.substring(0, 2047) + '…' : resultFull })],
@@ -98,14 +99,14 @@ export const command: SlashCommand = {
 function findMatches(
 	prefix: string,
 	stringToCheck: string,
-	userData: UserData<undefined, ''> | null,
+	quidToServer: QuidToServer | undefined,
 	isComplete = false,
 ): string[] {
 
 	const choices: string[] = [];
 	stringToCheck = stringToCheck.trim();
 
-	for (const skill of [...Object.keys(userData?.quid?.profile?.skills?.global || []), ...Object.keys(userData?.quid?.profile?.skills?.personal || [])]) {
+	for (const skill of [...Object.keys(quidToServer?.skills_global || []), ...Object.keys(quidToServer?.skills_personal || [])]) {
 
 		if ((isComplete && skill === stringToCheck) || (!isComplete && skill.includes(stringToCheck))) { choices.push(`${prefix} ${skill}`); }
 	}
@@ -133,9 +134,9 @@ function findMatches(
 			for (let i = 1; i < substrings.length; i++) {
 
 				const substring1 = substrings.slice(0, i).join('');
-				const choices1 = findMatches(substring1.charAt(0), substring1.slice(1), userData, true);
+				const choices1 = findMatches(substring1.charAt(0), substring1.slice(1), quidToServer, true);
 				const substring2 = substrings.slice(i).join('');
-				const choices2 = findMatches(substring2.charAt(0), substring2.slice(1), userData);
+				const choices2 = findMatches(substring2.charAt(0), substring2.slice(1), quidToServer);
 
 				choices.push(...prepareCartesian(choices1, choices2));
 			}
