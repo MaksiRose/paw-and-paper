@@ -74,7 +74,7 @@ export const command: SlashCommand = {
 			}
 			else {
 
-				await sendEatMessage(interaction, selectOptionId, userData, serverData, '', []);
+				await sendEatMessage(interaction, selectOptionId, user, quid, userToServer, quidToServer, server, '', []);
 				return;
 			}
 		}

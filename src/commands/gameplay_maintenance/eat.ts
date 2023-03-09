@@ -1,17 +1,23 @@
+import { generateId } from 'crystalid';
 import { ChatInputCommandInteraction, EmbedBuilder, FormattingPatterns, AnySelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import Fuse from 'fuse.js';
 import { commonPlantsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../..';
 import Den from '../../models/den';
-import serverModel from '../../oldModels/serverModel';
-import { userModel, getUserData } from '../../oldModels/userModel';
-import { ServerSchema } from '../../typings/data/server';
-import { CurrentRegionType, StatIncreaseType, UserData } from '../../typings/data/user';
+import DiscordUser from '../../models/discordUser';
+import Quid from '../../models/quid';
+import QuidToServer from '../../models/quidToServer';
+import Server from '../../models/server';
+import TemporaryStatIncrease from '../../models/temporaryStatIncrease';
+import User from '../../models/user';
+import UserToServer from '../../models/userToServer';
+import { CurrentRegionType, StatIncreaseType } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { PlantEdibilityType, SpeciesDietType } from '../../typings/main';
 import { hasName, hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { disableAllComponents } from '../../utils/componentDisabling';
-import { capitalize, Math.max, getMapData, Math.min, keyInObject, respond, unsafeKeys, widenValues } from '../../utils/helperFunctions';
+import { getDisplayname, getDisplayspecies, pronoun, pronounAndPlural } from '../../utils/getQuidInfo';
+import { capitalize, keyInObject, respond } from '../../utils/helperFunctions';
 import { getRandomNumber } from '../../utils/randomizers';
 import { wearDownDen } from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -34,24 +40,13 @@ export const command: SlashCommand = {
 	position: 3,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
-	sendAutocomplete: async (interaction, userData, serverData) => {
+	sendAutocomplete: async (interaction, { quidToServer }) => {
 
-		if (!serverData) { return; }
+		if (!quidToServer) { return; }
 		const focusedValue = interaction.options.getFocused();
-		let choices: string[] = [];
+		let choices: string[] = [...new Set(quidToServer.inventory)];
 
-		const inventory_ = widenValues(serverData.inventory);
-		for (const itemType of unsafeKeys(serverData.inventory)) {
-
-			if (itemType === 'materials') { continue; }
-			for (const item of unsafeKeys(inventory_[itemType])) {
-
-				if (inventory_[itemType][item] > 0) { choices.push(item); }
-			}
-		}
-
-		const fuse = new Fuse(choices);
-		if (focusedValue.length > 0) { choices = fuse.search(focusedValue).map(value => value.item); }
+		if (focusedValue.length > 0) { choices = new Fuse(choices).search(focusedValue).map(value => value.item); }
 
 		await interaction.respond(
 			choices.slice(0, 25).map(choice => ({ name: choice, value: choice })),
@@ -60,8 +55,11 @@ export const command: SlashCommand = {
 	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
 
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (serverData === null) { throw new Error('serverData is null'); }
+		if (server === undefined) { throw new Error('serverData is null'); }
+		if (!user) { throw new TypeError('user is undefined'); }
+		if (!userToServer) { throw new TypeError('userToServer is undefined'); }
 		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
+		if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
@@ -87,15 +85,18 @@ export const command: SlashCommand = {
 
 		const chosenFood = interaction.options.getString('food');
 
-		await sendEatMessage(interaction, chosenFood ?? '', userData, serverData, messageContent, restEmbed);
+		await sendEatMessage(interaction, chosenFood ?? '', user, quid, userToServer, quidToServer, server, messageContent, restEmbed);
 	},
 };
 
 export async function sendEatMessage(
 	interaction: ChatInputCommandInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	chosenFood: string,
-	userData: UserData<never, never>,
-	serverData: ServerSchema,
+	user: User,
+	quid: Quid<true>,
+	userToServer: UserToServer,
+	quidToServer: QuidToServer,
+	server: Server,
 	messageContent: string,
 	restEmbed: EmbedBuilder[],
 ): Promise<void> {
@@ -110,12 +111,15 @@ export async function sendEatMessage(
 	const mentionedUserMatch = chosenFood.match(FormattingPatterns.User);
 	if (mentionedUserMatch) {
 
-		const _taggedUserData = userModel.findOne(u => Object.keys(u.userIds).includes(mentionedUserMatch[1] || ''));
-		const taggedUserData = getUserData(_taggedUserData, interaction.guildId, _taggedUserData.quids[_taggedUserData.servers[interaction.guildId ?? '']?.currentQuid ?? '']);
+		const taggedDiscordUser = await DiscordUser.findByPk(interaction.user.id, {
+			include: [{ model: User, as: 'user' }],
+		}) ?? undefined;
+		const taggedUser = taggedDiscordUser?.user;
+		const taggedQuid: Quid | null = taggedUser?.lastGlobalActiveQuidId ? await Quid.findByPk(taggedUser.lastGlobalActiveQuidId) : null;
 
-		if (hasName(taggedUserData)) {
+		if (hasName(taggedQuid)) {
 
-			embed.setDescription(`*${taggedUserData.quid.name} looks down at ${taggedUserData.quid.name} as ${taggedUserData.pronounAndPlural(quid, 0, 'nom')} on the ${taggedUserData.getDisplayspecies(quid)}'s leg.* "No eating packmates here!" *${taggedUserData.quid.name} chuckled, shaking off ${taggedUserData.quid.name}.*`);
+			embed.setDescription(`*${quid.name} looks down at ${taggedQuid.name} as ${pronounAndPlural(taggedQuid, 0, 'nom')} on the ${getDisplayspecies(quid)}'s leg.* "No eating packmates here!" *${quid.name} chuckled, shaking off ${taggedQuid.name}.*`);
 
 			// If the interaction is a ChatInputCommand, this is a reply, else this is an update to the message with the component
 			await respond(interaction, {
@@ -135,27 +139,10 @@ export async function sendEatMessage(
 	let increasedMaxStatType: StatIncreaseType | null = null;
 
 	let footerText = '';
-	const inventory_ = widenValues(serverData.inventory);
 
 	if (keyInObject(allPlantsInfo, chosenFood)) {
 
-		let plantType: 'commonPlants' | 'uncommonPlants' | 'rarePlants' | 'specialPlants';
-
-		if (keyInObject(commonPlantsInfo, chosenFood)) {
-
-			plantType = 'commonPlants';
-		}
-		else if (keyInObject(uncommonPlantsInfo, chosenFood)) {
-
-			plantType = 'uncommonPlants';
-		}
-		else if (keyInObject(rarePlantsInfo, chosenFood)) {
-
-			plantType = 'rarePlants';
-		}
-		else if (keyInObject(specialPlantsInfo, chosenFood)) {
-
-			plantType = 'specialPlants';
+		if (keyInObject(specialPlantsInfo, chosenFood)) {
 
 			const statArray = ['health', 'energy', 'hunger', 'thirst'] as const;
 
@@ -167,26 +154,22 @@ export async function sendEatMessage(
 			if (pickIncreasedMaxStatType === undefined) { throw new TypeError('pickIncreasedMaxStatType is undefined'); }
 			increasedMaxStatType = pickIncreasedMaxStatType;
 
-			await userData.update(
-				(u) => {
-					const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
-					p.temporaryStatIncrease[Date.now()] = increasedMaxStatType!;
-				},
-			);
+			await TemporaryStatIncrease.create({ id: generateId(), type: increasedMaxStatType, startedTimestamp: Date.now(), quidToServerId: quidToServer.id });
 		}
-		else { throw new Error('chosenFood could not be assigned to any plant type'); }
 
-		if (inventory_[plantType][chosenFood] <= 0) {
+		if (server.inventory.filter(i => i === chosenFood).length <= 0) {
 
 			// If this is a ChatInputCommand, this is a reply, else this is an update to the message with the component
-			await sendNoItemMessage(embed, userData, chosenFood, interaction, messageContent, restEmbed);
+			await sendNoItemMessage(embed, quid, chosenFood, interaction, messageContent, restEmbed);
 			return;
 		}
-		inventory_[plantType][chosenFood] -= 1;
+		server.inventory.splice(server.inventory.findIndex(i => i === chosenFood), 1);
+
+		const foodDen = await Den.findByPk(server.foodDenId, { rejectOnEmpty: true });
 
 		if (allPlantsInfo[chosenFood].edibility === PlantEdibilityType.Toxic) {
 
-			finalHungerPoints = Math.max(-quidToServer.hunger, getRandomNumber(3, -5) - removeHungerPoints(serverData));
+			finalHungerPoints = Math.max(-quidToServer.hunger, getRandomNumber(3, -5) - removeHungerPoints(foodDen));
 			finalHealthPoints = Math.max(-quidToServer.health, getRandomNumber(3, -10));
 
 			embed.setDescription(`*A yucky feeling drifts down ${quid.name}'s throat. ${capitalize(pronounAndPlural(quid, 0, 'shakes and spits', 'shake and spit'))} it out, trying to rid ${pronoun(quid, 2)} mouth of the taste. The plant is poisonous!*`);
@@ -194,7 +177,7 @@ export async function sendEatMessage(
 
 		if (allPlantsInfo[chosenFood].edibility === PlantEdibilityType.Inedible) {
 
-			finalHungerPoints = Math.max(-quidToServer.hunger, getRandomNumber(3, -3) - removeHungerPoints(serverData));
+			finalHungerPoints = Math.max(-quidToServer.hunger, getRandomNumber(3, -3) - removeHungerPoints(foodDen));
 
 			embed.setDescription(`*${quid.name} slowly opens ${pronoun(quid, 2)} mouth and chomps onto the ${chosenFood}. The ${getDisplayspecies(quid)} swallows it, but ${pronoun(quid, 2)} face has a look of disgust. That wasn't very tasty!*`);
 		}
@@ -203,13 +186,13 @@ export async function sendEatMessage(
 
 			if (speciesInfo[quid.species].diet === SpeciesDietType.Carnivore) {
 
-				finalHungerPoints = Math.max(-quidToServer.hunger, Math.min(quidToServer.maxHunger - quidToServer.hunger, addIncorrectDietHungerPoints() - removeHungerPoints(serverData)));
+				finalHungerPoints = Math.max(-quidToServer.hunger, Math.min(quidToServer.maxHunger - quidToServer.hunger, addIncorrectDietHungerPoints() - removeHungerPoints(foodDen)));
 
 				embed.setDescription(`*${quid.name} plucks a ${chosenFood} from the pack storage and nibbles away at it. It has a bitter, foreign taste, not the usual meaty meal the ${getDisplayspecies(quid)} prefers.*`);
 			}
 			else {
 
-				finalHungerPoints = Math.min(quidToServer.maxHunger - quidToServer.hunger, addCorrectDietHungerPoints() - removeHungerPoints(serverData));
+				finalHungerPoints = Math.min(quidToServer.maxHunger - quidToServer.hunger, addCorrectDietHungerPoints() - removeHungerPoints(foodDen));
 
 				embed.setDescription(`*Leaves flutter into the storage den, landing near ${quid.name}'s feet. The ${getDisplayspecies(quid)} searches around the inventory determined to find the perfect meal, and that ${pronounAndPlural(quid, 0, 'does', 'do')}. ${quid.name} plucks a ${chosenFood} from the pile and eats until ${pronoun(quid, 2)} stomach is pleased.*`);
 			}
@@ -229,52 +212,47 @@ export async function sendEatMessage(
 	}
 	else if (keyInObject(speciesInfo, chosenFood)) {
 
-		if (inventory_.meat[chosenFood] <= 0) {
+		if (server.inventory.filter(i => i === chosenFood).length <= 0) {
 
 			// If this is a ChatInputCommand, this is a reply, else this is an update to the message with the component
-			await sendNoItemMessage(embed, userData, chosenFood, interaction, messageContent, restEmbed);
+			await sendNoItemMessage(embed, quid, chosenFood, interaction, messageContent, restEmbed);
 			return;
 		}
-		inventory_.meat[chosenFood] -= 1;
+		server.inventory.splice(server.inventory.findIndex(i => i === chosenFood), 1);
+
+		const foodDen = await Den.findByPk(server.foodDenId, { rejectOnEmpty: true });
 
 		if (speciesInfo[quid.species].diet === SpeciesDietType.Herbivore) {
 
-			finalHungerPoints = Math.max(-quidToServer.hunger, Math.min(quidToServer.maxHunger - quidToServer.hunger, addIncorrectDietHungerPoints() - removeHungerPoints(serverData)));
+			finalHungerPoints = Math.max(-quidToServer.hunger, Math.min(quidToServer.maxHunger - quidToServer.hunger, addIncorrectDietHungerPoints() - removeHungerPoints(foodDen)));
 
 			embed.setDescription(`*${quid.name} stands by the storage den, eyeing the varieties of food. A ${chosenFood} catches ${pronoun(quid, 2)} attention. The ${getDisplayspecies(quid)} walks over to it and begins to eat.* "This isn't very good!" *${quid.name} whispers to ${pronoun(quid, 4)} and leaves the den, stomach still growling, and craving for plants to grow.*`);
 		}
 		else {
 
-			finalHungerPoints = Math.min(quidToServer.maxHunger - quidToServer.hunger, addCorrectDietHungerPoints() - removeHungerPoints(serverData));
+			finalHungerPoints = Math.min(quidToServer.maxHunger - quidToServer.hunger, addCorrectDietHungerPoints() - removeHungerPoints(foodDen));
 
 			embed.setDescription(`*${quid.name} sits chewing maliciously on a ${chosenFood}. A dribble of blood escapes out of ${pronoun(quid, 2)} jaw as the ${getDisplayspecies(quid)} finishes off the meal. It was a delicious feast, but very messy!*`);
 		}
 	}
 	else {
 
-		await showInventoryMessage(interaction, userData, serverData, 1, false);
+		await showInventoryMessage(interaction, userToServer, quidToServer, server, 1, false);
 		return;
 	}
 
 	const previousRegion = quidToServer.currentRegion;
-	await userData.update(
-		(u) => {
-			u.advice.eating = true;
-			const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
-			p.currentRegion = CurrentRegionType.FoodDen;
-			p.hunger += finalHungerPoints;
-			p.energy += finalEnergyPoints;
-			p.health += finalHealthPoints;
-			if (increasedMaxStatType) { p[increasedMaxStatType] += 10; }
+	if (user.advice_eating === false) { await user.update({ advice_eating: true }); }
+	await quidToServer.update({
+		...{
+			currentRegion: CurrentRegionType.FoodDen,
+			hunger: quidToServer.hunger + finalHungerPoints,
+			energy: quidToServer.energy + finalEnergyPoints,
+			health: quidToServer.health + finalHealthPoints,
 		},
-	);
-
-	serverData = await serverModel.findOneAndUpdate(
-		s => s.id === serverData.id,
-		(s) => {
-			s.inventory = inventory_;
-		},
-	);
+		...(increasedMaxStatType ? { [increasedMaxStatType]: quidToServer[increasedMaxStatType] + 10 } : {}),
+	});
+	await server.update({ inventory: server.inventory });
 
 	footerText += `${finalHungerPoints >= 0 ? '+' : ''}${finalHungerPoints} hunger (${quidToServer.hunger}/${quidToServer.maxHunger})`;
 
@@ -282,7 +260,7 @@ export async function sendEatMessage(
 	if (finalHealthPoints !== 0) { footerText += `\n${finalHealthPoints} health (${quidToServer.health}/${quidToServer.maxHealth})`; }
 	if (increasedMaxStatType !== null && increasedStatType !== null) { footerText += `\n+10 maximum ${increasedStatType} (${quidToServer[increasedMaxStatType]}) for one week`; }
 	if (previousRegion !== CurrentRegionType.FoodDen) { footerText += '\nYou are now at the food den'; }
-	embed.setFooter({ text: `${footerText}\n\n${await wearDownDen(serverData, CurrentRegionType.FoodDen)}\n-1 ${chosenFood} for ${interaction.guild.name}` });
+	embed.setFooter({ text: `${footerText}\n\n${await wearDownDen(server, CurrentRegionType.FoodDen)}\n-1 ${chosenFood} for ${interaction.guild.name}` });
 
 	// If interaction is a ChatInputCommand, this is a reply, else this is an update to the message with the component
 	await respond(interaction, {
@@ -295,7 +273,7 @@ export async function sendEatMessage(
 
 async function sendNoItemMessage(
 	embed: EmbedBuilder,
-	userData: UserData<never, never>,
+	quid: Quid,
 	chosenFood: string,
 	interaction: ChatInputCommandInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	messageContent: string,

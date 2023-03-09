@@ -116,6 +116,7 @@ export const command: SlashCommand = {
 
 		if (interaction.customId.includes('store')) {
 
+			if (!server) { throw new TypeError('server is undefined'); }
 			if (!user) { throw new TypeError('user is undefined'); }
 			if (!userToServer) { throw new TypeError('userToServer is undefined'); }
 			if (!hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; }
@@ -124,7 +125,7 @@ export const command: SlashCommand = {
 			const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
 			if (restEmbed === false) { return; }
 
-			await sendStoreMessage(interaction, userData, serverData, restEmbed);
+			await sendStoreMessage(interaction, user, quid, userToServer, quidToServer, server, restEmbed);
 		}
 	},
 };

@@ -1,33 +1,30 @@
 // @ts-check
-import serverModel from '../oldModels/serverModel';
-import { ServerSchema } from '../typings/data/server';
+import Den from '../models/den';
+import Server from '../models/server';
 import { CurrentRegionType } from '../typings/data/user';
-import { Math.min } from './helperFunctions';
 import { getRandomNumber } from './randomizers';
 
 /**
  * It randomly selects one of the four den stats, and then randomly selects a number between 1 and 5, and then subtracts that number from the selected stat
  */
 export async function wearDownDen(
-	serverData: ServerSchema,
+	server: Server,
 	denKind: CurrentRegionType.SleepingDens | CurrentRegionType.FoodDen | CurrentRegionType.MedicineDen,
 ): Promise<string> {
 
-	const denName = (['sleepingDens', 'foodDen', 'medicineDen'] as const)[
+	const denName = (['sleepingDenId', 'foodDenId', 'medicineDenId'] as const)[
 		[CurrentRegionType.SleepingDens, CurrentRegionType.FoodDen, CurrentRegionType.MedicineDen].indexOf(denKind)
 	];
 	if (denName === undefined) { throw new TypeError('denName is undefined'); }
 	const denStatkind = (['structure', 'bedding', 'thickness', 'evenness'] as const)[getRandomNumber(4)];
 	if (denStatkind === undefined) { throw new TypeError('denStatkind is undefined'); }
 
-	const denWeardownPoints = wearDownAmount(serverData.dens[denName][denStatkind]);
+	const den = await Den.findByPk(server[denName], { rejectOnEmpty: true });
+	const denWeardownPoints = wearDownAmount(den[denStatkind]);
 
-	serverData = await serverModel.findOneAndUpdate(
-		s => s.id === serverData.id,
-		(s) => { s.dens[denName][denStatkind] -= denWeardownPoints; },
-	);
+	await den.update({ [denStatkind]: den[denStatkind] - denWeardownPoints });
 
-	return `-${denWeardownPoints}% ${denStatkind} for ${denKind} (${serverData.dens[denName][denStatkind]}% total)`;
+	return `-${denWeardownPoints}% ${denStatkind} for ${denKind} (${den[denStatkind]}% total)`;
 }
 
 export function wearDownAmount(

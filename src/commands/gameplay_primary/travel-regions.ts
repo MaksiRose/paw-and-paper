@@ -88,11 +88,11 @@ export const command: SlashCommand = {
 			}
 			else if (interaction.customId.includes('inventory')) {
 
-				await showInventoryMessage(interaction, userData, serverData, 1);
+				await showInventoryMessage(interaction, userToServer, quidToServer, server, 1);
 			}
 			else if (interaction.customId.includes('store')) {
 
-				await sendStoreMessage(interaction, userData, serverData, restEmbed);
+				await sendStoreMessage(interaction, user, quid, userToServer, quidToServer, server, restEmbed);
 			}
 			else if (interaction.customId.includes('heal')) {
 
