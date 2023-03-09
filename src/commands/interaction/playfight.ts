@@ -142,6 +142,7 @@ export const command: SlashCommand = {
 		await setCooldown(userData2, interaction.guildId, true);
 		deleteCommandDisablingInfo(userData1, interaction.guildId);
 		deleteCommandDisablingInfo(userData2, interaction.guildId);
+		
 		const decreasedStatsData1 = await changeCondition(quidToServer, quid1, 0, CurrentRegionType.Prairie, true);
 		const decreasedStatsData2 = await changeCondition(quidToServer, quid2, 0, CurrentRegionType.Prairie, true);
 
