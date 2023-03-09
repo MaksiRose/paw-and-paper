@@ -19,6 +19,6 @@ export async function execute(
 
 		const quid = await Quid.findByPk(quidToServer.quidId);
 
-		if (hasNameAndSpecies(quid)) { await sendReminder(quid, quidToServer); }
+		if (hasNameAndSpecies(quid)) { await sendReminder(quidToServer); }
 	}
 }

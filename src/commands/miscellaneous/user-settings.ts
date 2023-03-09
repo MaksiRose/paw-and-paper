@@ -98,7 +98,7 @@ export const command: SlashCommand = {
 
 							if (isOn) {
 
-								if (hasNameAndSpecies(quid) && quidToServer.sapling_exists && typeof quidToServer.sapling_lastChannelId === 'string' && !quidToServer.sapling_sentReminder) { sendReminder(user); }
+								if (hasNameAndSpecies(quid) && quidToServer.sapling_exists && typeof quidToServer.sapling_lastChannelId === 'string' && !quidToServer.sapling_sentReminder) { sendReminder(quidToServer); }
 							}
 							else { stopReminder(quid.id, quidToServer.serverId); }
 						}
