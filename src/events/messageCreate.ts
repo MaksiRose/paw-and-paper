@@ -50,7 +50,7 @@ export const event: DiscordEvent = {
 
 		if (replaceMessage && hasName(quid) && (message.content.length > 0 || message.attachments.size > 0)) {
 
-			const isSuccessful = await sendMessage(message.channel, message.content, quid, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined)
+			const isSuccessful = await sendMessage(message.channel, message.content, quid, message.author.id, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined)
 				.catch(error => { console.error(error); });
 
 			if (!isSuccessful) { return; }
