@@ -1,11 +1,12 @@
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
+import { StatIncreaseType } from '../typings/data/user';
 import QuidToServer from './quidToServer';
 
 interface TemporaryStatIncreaseAttributes {
 	id: string;
 	quidToServerId: string;
 	startedTimestamp: number;
-	type: string;
+	type: StatIncreaseType;
 }
 
 @Table
@@ -24,5 +25,5 @@ export default class TemporaryStatIncrease extends Model<TemporaryStatIncreaseAt
 	declare startedTimestamp: number;
 
 	@Column({ type: DataType.STRING })
-	declare type: string;
+	declare type: StatIncreaseType;
 }

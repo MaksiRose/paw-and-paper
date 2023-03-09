@@ -1,17 +1,22 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, Message, RepliableInteraction, SlashCommandBuilder } from 'discord.js';
 import { client } from '../..';
+import Den from '../../models/den';
+import Quid from '../../models/quid';
 import QuidToServer from '../../models/quidToServer';
+import Server from '../../models/server';
+import User from '../../models/user';
 import UserToServer from '../../models/userToServer';
 import { CurrentRegionType } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasCooldown, isPassedOut } from '../../utils/checkValidity';
-import { capitalize, getMapData, respond, sendErrorMessage, userDataServersObject } from '../../utils/helperFunctions';
+import { getDisplayname, pronoun, pronounAndPlural } from '../../utils/getQuidInfo';
+import { capitalize, respond, sendErrorMessage } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { wearDownDen } from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
-const restingIntervalMap: Map<string, NodeJS.Timeout> = new Map();
+const restingIntervalMap = new Map<string, NodeJS.Timeout>();
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -23,25 +28,33 @@ export const command: SlashCommand = {
 	position: 5,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
-	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server, discordUser }) => {
 
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (serverData === null) { throw new Error('serverData is null'); }
+		if (server === undefined) { throw new Error('serverData is null'); }
+		if (!discordUser) { throw new TypeError('discordUser is undefined'); }
+		if (!user) { throw new TypeError('user is undefined'); }
+		if (!userToServer) { throw new TypeError('userToServer is undefined'); }
 		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
+		if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
 		/* Checks if the profile is on a cooldown or passed out. */
 		if (await isPassedOut(interaction, user, userToServer, quid, quidToServer, false)) { return; }
-		if (await hasCooldown(interaction, userData)) { return; }
+		if (await hasCooldown(interaction, user, userToServer, quid, quidToServer)) { return; }
 
-		await executeResting(interaction, userData, serverData);
+		await executeResting(interaction, discordUser.id, user, quid, userToServer, quidToServer, server);
 	},
 };
 
 // This is either called directly via the command, or via the "Rest" button in the travel-regions command
 export async function executeResting(
 	interaction: RepliableInteraction<'cached'>,
-	userData: UserData<never, never>,
-	serverData: ServerSchema,
+	discordUserId: string,
+	user: User,
+	quid: Quid,
+	userToServer: UserToServer,
+	quidToServer: QuidToServer,
+	server: Server,
 ) {
 
 	if (await missingPermissions(interaction, [
@@ -50,7 +63,7 @@ export async function executeResting(
 
 	const messageContent = remindOfAttack(interaction.guildId);
 
-	if (isResting(userData)) {
+	if (isResting(userToServer)) {
 
 		// This is an update to the button if the interaction is a button from the travel-regions command, or a reply if the interaction is a ChatInputCommand
 		await respond(interaction, {
@@ -84,22 +97,26 @@ export async function executeResting(
 		return;
 	}
 
-	await startResting(interaction, userData, serverData, messageContent, false);
+	await startResting(interaction, discordUserId, user, quid, userToServer, quidToServer, server, messageContent, false);
 }
 
 // This is either called from above or from the interval
 export async function startResting(
 	interaction: RepliableInteraction<'cached'> | undefined,
-	userData: UserData<never, never>,
-	serverData: ServerSchema,
+	discordUserId: string,
+	user: User,
+	quid: Quid,
+	userToServer: UserToServer,
+	quidToServer: QuidToServer,
+	server: Server,
 	messageContent: string,
 	isAutomatic: boolean,
 ) {
 
 	const component = new ActionRowBuilder<ButtonBuilder>()
 		.setComponents(new ButtonBuilder()
-			.setCustomId(`user-settings_reminders_resting_${userData.settings.reminders.resting === true ? 'off' : 'on'}_@${userData.id}`)
-			.setLabel(`Turn automatic resting pings ${userData.settings.reminders.resting === true ? 'off' : 'on'}`)
+			.setCustomId(`user-settings_reminders_resting_${user.reminders_resting === true ? 'off' : 'on'}_@${user.id}`)
+			.setLabel(`Turn automatic resting pings ${user.reminders_resting === true ? 'off' : 'on'}`)
 			.setStyle(ButtonStyle.Secondary));
 	const prePreviousRegionText = 'You are now at the ';
 
@@ -107,11 +124,11 @@ export async function startResting(
 	let previousRegion: CurrentRegionType;
 	let weardownText: string;
 	let energyPoints: number;
-	if (userData.serverInfo?.restingMessageId && userData.serverInfo?.restingChannelId) {
+	if (userToServer.resting_messageId && userToServer.resting_channelId) {
 
-		const channel = await client.channels.fetch(userData.serverInfo.restingChannelId);
+		const channel = await client.channels.fetch(userToServer.resting_channelId);
 		if (!channel || !channel.isTextBased()) { throw new TypeError('channel is not TextBasedChannel'); }
-		botReply = await channel.messages.fetch(userData.serverInfo.restingMessageId);
+		botReply = await channel.messages.fetch(userToServer.resting_messageId);
 
 		const embedFooterLines = botReply.embeds[0]?.footer?.text.split('\n');
 		isAutomatic = embedFooterLines?.[1]?.includes('inactive') === true || embedFooterLines?.[2]?.includes('inactive') === true;
@@ -122,20 +139,15 @@ export async function startResting(
 	else {
 
 		previousRegion = quidToServer.currentRegion;
-		weardownText = await wearDownDen(serverData, CurrentRegionType.SleepingDens);
+		weardownText = await wearDownDen(server, CurrentRegionType.SleepingDens);
 		energyPoints = 0;
 
-		await userData.update(
-			(u) => {
-				const p = getMapData(getMapData(u.quids, getMapData(u.servers, serverData.serverId).currentQuid ?? '').profiles, serverData.serverId);
-				p.currentRegion = CurrentRegionType.SleepingDens;
-				u.advice.resting = true;
-			},
-		);
+		await user.update({ advice_resting: true });
+		await quidToServer.update({ currentRegion: CurrentRegionType.SleepingDens });
 
 		const messageOptions = {
 			content: messageContent,
-			embeds: [getRestingEmbed(userData, energyPoints, prePreviousRegionText, previousRegion, isAutomatic, weardownText)],
+			embeds: [await getRestingEmbed(quid, quidToServer, { serverId: server.id, userToServer, quidToServer, user }, energyPoints, prePreviousRegionText, previousRegion, isAutomatic, weardownText)],
 			components: isAutomatic ? [component] : [],
 		};
 
@@ -145,9 +157,9 @@ export async function startResting(
 			const shouldUpdate = interaction.isButton() && isAutomatic === false;
 			botReply = await respond(interaction, { ...messageOptions, fetchReply: true }, shouldUpdate ? 'update' : 'reply', (shouldUpdate && interaction.isMessageComponent()) ? interaction.message.id : undefined);
 		}
-		else if (userData.serverInfo?.lastInteractionChannelId) {
+		else if (userToServer.lastInteraction_channelId) {
 
-			const channel = await client.channels.fetch(userData.serverInfo.lastInteractionChannelId);
+			const channel = await client.channels.fetch(userToServer.lastInteraction_channelId);
 			if (!channel || !channel.isTextBased()) { throw new TypeError('channel is not TextBasedChannel'); }
 			botReply = await channel.send(messageOptions);
 		}
@@ -156,34 +168,21 @@ export async function startResting(
 			throw new Error('Resting could not be started because no messageId and/or channelId of an existing message have been logged, interaction is undefined and lastInteractionChannelId is null');
 		}
 
-		await userData.update(
-			(u) => {
-				u.servers[serverData.serverId] = {
-					...userDataServersObject(u, serverData.serverId),
-					restingChannelId: botReply.channelId,
-					restingMessageId: botReply.id,
-				};
-			},
-		);
+		await userToServer.update({ resting_channelId: botReply.channelId, resting_messageId: botReply.id });
 	}
 
 	// This is just a safety net to make absolutely sure that no two restingIntervals are running at the same time
-	clearInterval(restingIntervalMap.get(userData.id + quidToServer.serverId));
-	restingIntervalMap.delete(userData.id + quidToServer.serverId);
+	clearInterval(restingIntervalMap.get(user.id + quidToServer.serverId));
+	restingIntervalMap.delete(user.id + quidToServer.serverId);
 
 	const intervalId = setInterval(async function(): Promise<void> {
 		try {
 
 			energyPoints += 1;
 
-			await userData.update(
-				(u) => {
-					const p = getMapData(getMapData(u.quids, getMapData(u.servers, serverData.serverId).currentQuid ?? '').profiles, serverData.serverId);
-					p.energy += 1;
-				},
-			);
+			await quidToServer.update({ energy: quidToServer.energy + 1 });
 
-			const embed = getRestingEmbed(userData, energyPoints, prePreviousRegionText, previousRegion, isAutomatic, weardownText);
+			const embed = await getRestingEmbed(quid, quidToServer, { serverId: server.id, userToServer, quidToServer, user }, energyPoints, prePreviousRegionText, previousRegion, isAutomatic, weardownText);
 			await botReply.edit({ // TO DO: At a later point, this and botReply.delete() could check if there is an interaction or lastInteractionToken and whether it's not older than 15 minutes, than edit/delete based off of that and do this as backup if not or if there is an error
 				embeds: [embed],
 			});
@@ -191,18 +190,13 @@ export async function startResting(
 			/* It checks if the user has reached their maximum energy, and if they have, it stops the resting process. */
 			if (quidToServer.energy >= quidToServer.maxEnergy) {
 
-				stopResting(userData);
-				userData.update(
-					(u) => {
-						const p = getMapData(getMapData(u.quids, getMapData(u.servers, serverData.serverId).currentQuid ?? '').profiles, serverData.serverId);
-						p.currentRegion = previousRegion;
-					},
-				);
+				stopResting(userToServer);
+				await quidToServer.update({ currentRegion: previousRegion });
 
 				await botReply.delete();
 
 				await botReply.channel.send({
-					content: userData.settings.reminders.resting ? (interaction?.user.toString() || `<@${Object.keys(userData.userIds)[0]}>`) : undefined,
+					content: user.reminders_resting ? (interaction?.user.toString() || `<@${discordUserId}>`) : undefined,
 					embeds: [embed.setDescription(`*${quid.name}'s eyes blink open, ${pronounAndPlural(quid, 0, 'sit')} up to stretch and then walk out into the light and buzz of late morning camp. Younglings are spilling out of the nursery, ambitious to start the day, Hunters and Healers are traveling in and out of the camp border. It is the start of the next good day!*`)],
 					components: isAutomatic ? [component] : [],
 				});
@@ -212,7 +206,7 @@ export async function startResting(
 		}
 		catch (error) {
 
-			stopResting(userData);
+			stopResting(userToServer);
 			clearInterval(intervalId); // This is another safety net to make sure that an infinite loop doesn't happen, so the interval ID of this exact interval is saved seperately and cleared here
 			if (interaction !== undefined) {
 
@@ -221,8 +215,8 @@ export async function startResting(
 			}
 			else { console.error(error); }
 		}
-	}, 30_000 + await getExtraRestingTime(serverData.serverId));
-	restingIntervalMap.set(userData.id + quidToServer.serverId, intervalId);
+	}, 30_000 + await getExtraRestingTime(server));
+	restingIntervalMap.set(user.id + quidToServer.serverId, intervalId);
 }
 
 /**
@@ -235,19 +229,21 @@ export async function startResting(
  * @param {string} weardownText - This is the text that shows up at the bottom of the embed. It's a string that's generated by the weardown function.
  * @returns A function that returns an embed builder
  */
-function getRestingEmbed(
-	userData: UserData<never, never>,
+async function getRestingEmbed(
+	quid: Quid,
+	quidToServer: QuidToServer,
+	displaynameOptions: Parameters<typeof getDisplayname>[1],
 	energyPoints: number,
 	prePreviousRegionText: string,
 	previousRegion: CurrentRegionType,
 	isAutomatic: boolean,
 	weardownText: string,
-): EmbedBuilder {
+): Promise<EmbedBuilder> {
 
 	return new EmbedBuilder()
 		.setColor(quid.color)
 		.setAuthor({
-			name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
+			name: await getDisplayname(quid, displaynameOptions),
 			iconURL: quid.avatarURL,
 		})
 		.setDescription(`*${quid.name}'s chest rises and falls with the crickets. Snoring bounces off each wall, finally exiting the den and rising free to the clouds.*`)
@@ -284,12 +280,11 @@ export function isResting(
  * @returns {Promise<number>} the amount of time in milliseconds that the user will be resting for.
  */
 async function getExtraRestingTime(
-	guildId: string,
+	server: Server,
 ): Promise<number> {
 
-	const serverData = await serverModel.findOne(s => s.serverId === guildId);
-
-	const denStats = serverData.dens.sleepingDens.structure + serverData.dens.sleepingDens.bedding + serverData.dens.sleepingDens.thickness + serverData.dens.sleepingDens.evenness;
+	const sleepinDen = await Den.findByPk(server.sleepingDenId, { rejectOnEmpty: true });
+	const denStats = sleepinDen.structure + sleepinDen.bedding + sleepinDen.thickness + sleepinDen.evenness;
 	const multiplier = denStats / 400;
 	return 30_000 - Math.round(30_000 * multiplier);
 }

@@ -27,7 +27,7 @@ interface QuidToServerAttributes {
 	unlockedRanks: number;
 	tutorials_play: boolean;
 	tutorials_explore: boolean;
-	currentRegion: string;
+	currentRegion: CurrentRegionType;
 	sapling_exists: boolean;
 	sapling_health: number;
 	sapling_waterCycles: number;
@@ -119,7 +119,7 @@ export default class QuidToServer extends Model<QuidToServerAttributes, QuidToSe
 	declare tutorials_explore: boolean;
 
 	@Column({ type: DataType.STRING, defaultValue: CurrentRegionType.Ruins })
-	declare currentRegion: string;
+	declare currentRegion: CurrentRegionType;
 
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })
 	declare sapling_exists: boolean;

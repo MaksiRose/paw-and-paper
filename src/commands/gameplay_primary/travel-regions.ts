@@ -84,7 +84,8 @@ export const command: SlashCommand = {
 
 			if (interaction.customId.includes('rest')) {
 
-				await executeResting(interaction, userData, serverData);
+				if (discordUser === undefined) { throw new TypeError('discordUser is undefined'); }
+				await executeResting(interaction, discordUser.id, user, quid, userToServer, quidToServer, server);
 			}
 			else if (interaction.customId.includes('inventory')) {
 
