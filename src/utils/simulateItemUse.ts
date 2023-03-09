@@ -8,7 +8,6 @@ import Quid from '../models/quid';
 import QuidToServer from '../models/quidToServer';
 import Server from '../models/server';
 import { CommonPlantNames, MaterialNames, RarePlantNames, SpecialPlantNames, SpeciesNames, UncommonPlantNames } from '../typings/data/general';
-import { DenSchema } from '../typings/data/server';
 import { RankType } from '../typings/data/user';
 import { PlantEdibilityType, PlantInfo, SpeciesDietType } from '../typings/main';
 import { changeCondition } from './changeCondition';
