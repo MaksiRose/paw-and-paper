@@ -23,8 +23,8 @@ export const command: SlashCommand = {
 	modifiesServerProfile: false,
 	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
 
+		if (!hasName(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
 		if (!user) { throw new TypeError('user is undefined'); }
-		if (!hasName(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // this would always be a reply
 
 		/* Checking if the user has sent a valid hex code. If they have not, it will send an error message. */
 		const hexColor = interaction.options.getString('hex');

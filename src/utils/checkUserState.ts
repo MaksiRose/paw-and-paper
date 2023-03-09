@@ -38,7 +38,7 @@ export function hasNameAndSpecies(
 ): quid is Quid<true> {
 
 	if (!hasName(quid, options)) { return false; }
-	if (quid.species === '' || quid.species === null) {
+	if (quid.species === null) {
 
 		if (options) {
 

@@ -10,9 +10,9 @@ import Server from '../models/server';
 import { CommonPlantNames, MaterialNames, RarePlantNames, SpecialPlantNames, SpeciesNames, UncommonPlantNames } from '../typings/data/general';
 import { DenSchema } from '../typings/data/server';
 import { RankType } from '../typings/data/user';
-import { PlantEdibilityType, PlantInfo, SpeciesDietType, SpeciesInfo } from '../typings/main';
+import { PlantEdibilityType, PlantInfo, SpeciesDietType } from '../typings/main';
 import { changeCondition } from './changeCondition';
-import { deepCopyObject, getArrayElement, keyInObject } from './helperFunctions';
+import { getArrayElement, keyInObject } from './helperFunctions';
 import { getRandomNumber } from './randomizers';
 import { wearDownAmount } from './wearDownDen';
 
@@ -375,7 +375,7 @@ function pickItem<T extends string>(items: Map<T, number>): T {
 	const max = Math.max(...itemsArr);
 	const median = itemsArr[Math.floor(itemsArr.length / 2)] || 1;
 
-	const inventoryMap = new Map<number, string[]>();
+	const inventoryMap = new Map<number, T[]>();
 	for (const [item, inventory] of items) {
 
 		const entry = inventoryMap.get(inventory);
@@ -383,7 +383,7 @@ function pickItem<T extends string>(items: Map<T, number>): T {
 		else { entry.push(item); }
 	}
 
-	const result = [];
+	const result: T[] = [];
 	for (let i = min; i <= max; i++) {
 
 		const items = inventoryMap.get(i) || [];
@@ -401,22 +401,25 @@ function pickItem<T extends string>(items: Map<T, number>): T {
  * @returns The difference between the amount of material in the server's inventory and the amount of material needed
  */
 export async function simulateMaterialUse(
-	serverData: ServerSchema,
+	server: Server,
 	activeUsersOnly: boolean,
 ): Promise<number> {
 
-	const serverData_ = deepCopyObject(serverData);
-	const users = await getProfilesInServer(serverData_.serverId, activeUsersOnly);
+	const quidsToServer = await getProfilesInServer(server.id, activeUsersOnly);
 	let neededItems = 0;
 
-	for (const den of Object.values(serverData_.dens) as DenSchema[]) {
+	const medicineDen = await Den.findByPk(server.medicineDenId, { rejectOnEmpty: true });
+	const foodDen = await Den.findByPk(server.foodDenId, { rejectOnEmpty: true });
+	const sleepingDen = await Den.findByPk(server.sleepingDenId, { rejectOnEmpty: true });
 
-		while ((Object.values(den) as number[]).every(stat => stat >= 100) === false) {
+	for (const den of [medicineDen, foodDen, sleepingDen]) {
 
-			const repairerArray1 = users.filter(u => {
-				return u.quidToServer.rank !== RankType.Youngling && u.quidToServer.health > 0 && u.quidToServer.energy > 0 && u.quidToServer.hunger > 0 && u.quidToServer.thirst > 0;
+		while (den.bedding < 100 || den.evenness < 100 || den.structure < 100 || den.thickness < 100) {
+
+			const repairerArray1 = quidsToServer.filter(qts => {
+				return qts.rank !== RankType.Youngling && qts.health > 0 && qts.energy > 0 && qts.hunger > 0 && qts.thirst > 0;
 			});
-			const repairerArray2 = repairerArray1.filter(u => !quidNeedsHealing(u));
+			const repairerArray2 = repairerArray1.filter(qts => !quidNeedsHealing(qts));
 			const repairer = repairerArray2.length > 0 ? getArrayElement(repairerArray2, getRandomNumber(repairerArray2.length)) : repairerArray1.length > 0 ? getArrayElement(repairerArray1, getRandomNumber(repairerArray1.length)) : undefined;
 			if (repairer === undefined) { break; }
 
@@ -431,11 +434,12 @@ export async function simulateMaterialUse(
 				else { den.thickness += repairAmount; }
 			}
 
-			changeCondition(repairer, 0, undefined, false, false);
+			changeCondition(repairer, repairer.quid, 0, undefined, false, false);
 		}
 	}
 
-	const existingItems = calculateInventorySize(server.inventory, ([key]) => key === 'materials');
+	const materialNames = Object.keys(materialsInfo);
+	const existingItems = server.inventory.filter(materialNames.includes).length;
 	const itemDifference = existingItems - neededItems;
 
 	return itemDifference;

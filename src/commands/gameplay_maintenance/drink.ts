@@ -27,9 +27,9 @@ export const command: SlashCommand = {
 	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
 
 		/* This ensures that the user is in a guild and has a completed account. */
+		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
 		if (!user) { throw new TypeError('user is undefined'); }
 		if (!userToServer) { throw new TypeError('userToServer is undefined'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
 		if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */

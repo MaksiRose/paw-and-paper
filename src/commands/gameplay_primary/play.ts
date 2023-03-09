@@ -75,10 +75,10 @@ export async function executePlaying(
 
 	/* This ensures that the user is in a guild and has a completed account. */
 	if (server === undefined) { throw new Error('server is undefined'); }
+	if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
 	if (!discordUser) { throw new TypeError('discordUser is undefined'); }
 	if (!user) { throw new TypeError('user is undefined'); }
 	if (!userToServer) { throw new TypeError('userToServer is undefined'); }
-	if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; }
 	if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
 	/* It's disabling all components if userData exists and the command is set to disable a previous command. */

@@ -33,8 +33,8 @@ export const command: SlashCommand = {
 	sendCommand: async (interaction, { user, quid }) => {
 
 		if (!isInGuild(interaction)) { return; } // This is always a reply
-		if (user === undefined) { throw new Error('user is undefined'); }
-		if (!hasName(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
+		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
+		if (!user) { throw new TypeError('user is undefined'); }
 
 		const shopRoles = await ShopRole.findAll({ where: { serverId: interaction.guildId } });
 		const shopInfo = getShopInfo(shopRoles);
@@ -59,14 +59,14 @@ export const command: SlashCommand = {
 
 		if (!interaction.isStringSelectMenu()) { return; }
 		if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
-		if (user === undefined) { throw new Error('user is undefined'); }
 
 		const selectOptionId = deconstructSelectOptions<SelectOptionArgs>(interaction)[0];
 		if (selectOptionId === undefined) { throw new TypeError('selectOptionId is undefined'); }
 
 		if (selectOptionId[0] === 'nextpage') {
 
-			if (!hasName(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
+			if (!hasName(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
+			if (!user) { throw new TypeError('user is undefined'); }
 
 			const shopKindPage = Number(selectOptionId[1]);
 			const nestedPage = Number(selectOptionId[2]);
@@ -83,7 +83,8 @@ export const command: SlashCommand = {
 			if (await missingPermissions(interaction, [
 				'ManageRoles', // Needed to give out roles configured in this shop
 			]) === true) { return; }
-			if (!hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // This is always a reply
+			if (!hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
+			if (!user) { throw new TypeError('user is undefined'); }
 
 			const shopRoles = await ShopRole.findAll({ where: { serverId: interaction.guildId } });
 			const roleId = selectOptionId[0];
@@ -228,7 +229,6 @@ export const command: SlashCommand = {
 			}
 			return;
 		}
-
 	},
 };
 
