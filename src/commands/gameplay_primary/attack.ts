@@ -501,8 +501,8 @@ async function remainingHumans(
 /**
  * Finds whichever item there is most of, and returns its type and name.
  */
-export function removeByHighestItem(
-	server: Server,
+function removeByHighestItem(
+	server: {inventory: string[]},
 	name: string,
 ): string {
 
