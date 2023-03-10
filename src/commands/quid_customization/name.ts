@@ -1,7 +1,7 @@
-import { EmbedBuilder, GuildMember, SlashCommandBuilder } from 'discord.js';
+import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
 import { respond } from '../../utils/helperFunctions';
-import { checkLevelRequirements, checkRankRequirements } from '../../utils/checkRoleRequirements';
+import { checkLevelRequirements, checkRankRequirements, updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { getRandomNumber } from '../../utils/randomizers';
 import { generateId } from 'crystalid';
 import { SlashCommand } from '../../typings/handle';
@@ -13,7 +13,6 @@ import DiscordUserToServer from '../../models/discordUserToServer';
 import Quid from '../../models/quid';
 import QuidToServer from '../../models/quidToServer';
 import UserToServer from '../../models/userToServer';
-import { Op } from 'sequelize';
 const { version } = require('../../../package.json');
 const { default_color, error_color } = require('../../../config.json');
 
@@ -112,23 +111,9 @@ export const command: SlashCommand = {
 		});
 
 		/* This is checking if the user is in a guild, if the server has data saved in the database, and if the guildmember data is cached. If all of these are true, it will check if the user has reached the requirements to get roles based on their rank and level. */
-		if (interaction.inCachedGuild() && quidToServer && (interaction.member instanceof GuildMember)) {
+		if (interaction.inCachedGuild() && quidToServer) {
 
-			const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
-			const discordUserToServer = await DiscordUserToServer.findAll({
-				where: {
-					serverId: interaction.guildId,
-					isMember: true,
-					discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
-				},
-			});
-
-			const members = (await Promise.all(discordUserToServer
-				.map(async (duts) => (await interaction.guild.members.fetch(duts.discordUserId).catch(() => {
-					duts.update({ isMember: false });
-					return null;
-				}))))).filter(function(v): v is GuildMember { return v !== null; });
-
+			const members = await updateAndGetMembers(user.id, interaction.guild);
 			await checkRankRequirements(interaction, members, quidToServer, true);
 			await checkLevelRequirements(interaction, members, quidToServer, true);
 		}

@@ -1,9 +1,6 @@
 import { AsyncQueue } from '@sapphire/async-queue';
-import { ActionRowBuilder, APIActionRowComponent, APIButtonComponent, APISelectMenuComponent, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, GuildMember, InteractionResponse, Message, SlashCommandBuilder } from 'discord.js';
-import { Op } from 'sequelize';
+import { ActionRowBuilder, APIActionRowComponent, APIButtonComponent, APISelectMenuComponent, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder } from 'discord.js';
 import { commonPlantsInfo, rarePlantsInfo, specialPlantsInfo, uncommonPlantsInfo } from '../..';
-import DiscordUser from '../../models/discordUser';
-import DiscordUserToServer from '../../models/discordUserToServer';
 import Quid from '../../models/quid';
 import QuidToServer from '../../models/quidToServer';
 import User from '../../models/user';
@@ -11,6 +8,7 @@ import UserToServer from '../../models/userToServer';
 import { SlashCommand } from '../../typings/handle';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition, DecreasedStatsData } from '../../utils/changeCondition';
+import { updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
@@ -386,21 +384,7 @@ export const command: SlashCommand = {
 								.setFooter({ text: `${changedCondition.statsUpdateText}\n${injuryText}` });
 						}
 
-						const discordUsers = await DiscordUser.findAll({ where: { userId: quid.userId } });
-						const discordUserToServer = await DiscordUserToServer.findAll({
-							where: {
-								serverId: interaction.guildId,
-								isMember: true,
-								discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
-							},
-						});
-
-						const members = (await Promise.all(discordUserToServer
-							.map(async (duts) => (await interaction.guild.members.fetch(duts.discordUserId).catch(() => {
-								duts.update({ isMember: false });
-								return null;
-							}))))).filter(function(v): v is GuildMember { return v !== null; });
-
+						const members = await updateAndGetMembers(user.id, interaction.guild);
 						const levelUpEmbed = await checkLevelUp(lastInteraction, quid, quidToServer, members);
 
 						botReply = await respond(lastInteraction, {

@@ -1,6 +1,6 @@
-import { ActionRowBuilder, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder, GuildMember } from 'discord.js';
+import { ActionRowBuilder, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { respond } from '../../utils/helperFunctions';
-import { checkRoleCatchBlock } from '../../utils/checkRoleRequirements';
+import { checkRoleCatchBlock, updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { hasName, hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
@@ -11,10 +11,7 @@ import Quid from '../../models/quid';
 import ShopRole from '../../models/shopRole';
 import QuidToServerToShopRole from '../../models/quidToServerToShopRole';
 import QuidToServer from '../../models/quidToServer';
-import DiscordUser from '../../models/discordUser';
-import DiscordUserToServer from '../../models/discordUserToServer';
 import { generateId } from 'crystalid';
-import { Op } from 'sequelize';
 const { error_color, default_color } = require('../../../config.json');
 
 type CustomIdArgs = []
@@ -105,24 +102,7 @@ export const command: SlashCommand = {
 					});
 					await quidToServerRoleToBuy.destroy();
 
-					const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
-					const discordUserToServer = await DiscordUserToServer.findAll({
-						where: {
-							serverId: interaction.guildId,
-							isMember: true,
-							discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
-						},
-					});
-
-					const members = (await Promise.all(discordUserToServer
-						.map(async (duts) => (await interaction.guild.members.fetch(duts.discordUserId).catch(() => {
-							duts.update({ isMember: false });
-							return null;
-						}))))).filter(function(v): v is GuildMember { return v !== null; });
-					for (const member of members) {
-						if (member.roles.cache.has(roleToBuy.id)) { await member.roles.remove(roleToBuy.id); }
-					}
-
+					const members = await updateAndGetMembers(user.id, interaction.guild);
 					const levelUpEmbed = await checkLevelUp(interaction, quid, quidToServer, members);
 
 					// This is always a reply
@@ -167,19 +147,7 @@ export const command: SlashCommand = {
 					});
 					await QuidToServerToShopRole.create({ id: generateId(), quidToServerId: quidToServer.id, shopRoleId: roleToBuy.id });
 
-					const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
-					const discordUserToServer = await DiscordUserToServer.findAll({
-						where: {
-							serverId: interaction.guildId,
-							isMember: true,
-							discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
-						} });
-
-					const members = (await Promise.all(discordUserToServer
-						.map(async (duts) => (await interaction.guild.members.fetch(duts.discordUserId).catch(() => {
-							duts.update({ isMember: false });
-							return null;
-						}))))).filter(function(v): v is GuildMember { return v !== null; });
+					const members = await updateAndGetMembers(user.id, interaction.guild);
 					for (const member of members) {
 						if (!member.roles.cache.has(roleToBuy.id)) { await member.roles.add(roleToBuy.id); }
 					}

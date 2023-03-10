@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder, SnowflakeUtil, GuildMember } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder, SnowflakeUtil } from 'discord.js';
 import Fuse from 'fuse.js';
 import { Op } from 'sequelize';
 import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../..';
@@ -16,6 +16,7 @@ import { SlashCommand } from '../../typings/handle';
 import { PlantEdibilityType } from '../../typings/main';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition, infectWithChance } from '../../utils/changeCondition';
+import { updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo, componentDisablingInteractions } from '../../utils/componentDisabling';
@@ -598,21 +599,7 @@ export async function getHealResponse(
 	const changedCondition = await changeCondition(user.id === user2.id ? quidToServer2 : quidToServer, user.id === user2.id ? quid2 : quid, experiencePoints); // userToHeal is used here when a user is healing themselves to take into account the changes to the injuries & health
 	const infectedEmbed = user.id !== user2.id ? await infectWithChance(quidToServer, quid, quidToServer2, quid2) : [];
 
-	const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
-	const discordUserToServer = await DiscordUserToServer.findAll({
-		where: {
-			serverId: interaction.guildId,
-			isMember: true,
-			discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
-		},
-	});
-
-	const members = (await Promise.all(discordUserToServer
-		.map(async (duts) => (await interaction.guild.members.fetch(duts.discordUserId).catch(() => {
-			duts.update({ isMember: false });
-			return null;
-		}))))).filter(function(v): v is GuildMember { return v !== null; });
-
+	const members = await updateAndGetMembers(user.id, interaction.guild);
 	const levelUpEmbed = await checkLevelUp(interaction, quid, quidToServer, members);
 
 	const content = (user.id !== user2.id && isSuccessful === true ? `<@${discordUser2}>\n` : '') + messageContent;

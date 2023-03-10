@@ -1,6 +1,6 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageComponentInteraction, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle, RoleSelectMenuBuilder, ChannelSelectMenuBuilder, channelMention, GuildMember } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageComponentInteraction, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle, RoleSelectMenuBuilder, ChannelSelectMenuBuilder, channelMention } from 'discord.js';
 import { respond, sendErrorMessage } from '../../utils/helperFunctions';
-import { checkLevelRequirements, checkRankRequirements } from '../../utils/checkRoleRequirements';
+import { checkLevelRequirements, checkRankRequirements, updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
 import { RankType, WayOfEarningType } from '../../typings/data/user';
@@ -8,11 +8,8 @@ import Server from '../../models/server';
 import ShopRole from '../../models/shopRole';
 import QuidToServer from '../../models/quidToServer';
 import Quid from '../../models/quid';
-import DiscordUser from '../../models/discordUser';
-import DiscordUserToServer from '../../models/discordUserToServer';
 import QuidToServerToShopRole from '../../models/quidToServerToShopRole';
 import ProxyLimits from '../../models/proxyLimits';
-import { Op } from 'sequelize';
 const { default_color, update_channel_id } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -203,31 +200,19 @@ export const command: SlashCommand = {
 									include: [{ model: Quid, as: 'quid' }],
 								});
 
-								const users: Map<string, { qtsData: QuidToServer[], discordUsers: DiscordUser[]; }> = new Map();
+								const users = new Map<string, QuidToServer[]>();
 								for (const qts of quidToServerData) {
 									const u = users.get(qts.quid.userId);
-									if (u !== undefined) { u.qtsData.push(qts); }
-									else { users.set(qts.quid.userId, { qtsData: [qts], discordUsers: await DiscordUser.findAll({ where: { userId: qts.quid.userId } }) }); }
+									if (u !== undefined) { u.push(qts); }
+									else { users.set(qts.quid.userId, [qts]); }
 								}
 
 								// for each profile, get the user associated with it in a list, and then the discordusers as well
 								// for each discorduser, get the member and also put it in the list, then do the loop except if its already in the list
-								for (const [, u] of users) {
+								for (const [userId, quidsToServer] of users) {
 
-									const discordUserToServer = await DiscordUserToServer.findAll({
-										where: {
-											serverId: interaction.guildId,
-											isMember: true,
-											discordUserId: { [Op.in]: u.discordUsers.map(du => du.id) },
-										},
-									});
-									const members = (await Promise.all(discordUserToServer
-										.map(async (duts) => (await i.guild.members.fetch(duts.discordUserId).catch(() => {
-											duts.update({ isMember: false });
-											return null;
-										}))))).filter(function(v): v is GuildMember { return v !== null; });
-
-									for (const qts of u.qtsData) {
+									const members = await updateAndGetMembers(userId, i.guild);
+									for (const qts of quidsToServer) {
 
 										/* Giving users the role if they meet the requirements. */
 										if (wayOfEarning === WayOfEarningType.Levels) {

@@ -1,5 +1,8 @@
 import { generateId } from 'crystalid';
-import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, GuildMember, AnySelectMenuInteraction } from 'discord.js';
+import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, GuildMember, AnySelectMenuInteraction, Collection, Guild } from 'discord.js';
+import { Op } from 'sequelize';
+import DiscordUser from '../models/discordUser';
+import DiscordUserToServer from '../models/discordUserToServer';
 import QuidToServer from '../models/quidToServer';
 import QuidToServerToShopRole from '../models/quidToServerToShopRole';
 import ShopRole from '../models/shopRole';
@@ -162,4 +165,53 @@ export async function checkRoleCatchBlock(
 		await sendErrorMessage(interaction, error)
 			.catch(e => { console.error(e); });
 	}
+}
+
+export async function updateAndGetMembers(
+	userId: string,
+	guild: Guild,
+): Promise<GuildMember[]> {
+
+	const discordUsers = await DiscordUser.findAll({ where: { userId: userId } });
+
+	const discordUsersToServer = (await DiscordUserToServer.findAll({
+		where: {
+			serverId: guild.id,
+			discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
+		},
+	}));
+
+	const sortedDiscordUsersToServer = new Collection(discordUsers.map(du => [du.id, discordUsersToServer.find(duts => duts.discordUserId === du.id)]));
+	const members: GuildMember[] = [];
+
+	for (let [discordUserId, discordUserToServer] of sortedDiscordUsersToServer) {
+
+		if (discordUserToServer && discordUserToServer.isMember) {
+
+			await guild.members
+				.fetch(discordUserId)
+				.then(member => members.push(member))
+				.catch(() => { discordUserToServer!.update({ isMember: false, lastUpdatedTimestamp: Date.now() }); });
+		}
+		/* If there is no discordUserToServer entry or if the entry was last updated more than a month ago */
+		else if (!discordUserToServer || discordUserToServer.lastUpdatedTimestamp < Date.now() - 2_629_746_000) {
+
+			const member = await guild.members.fetch(discordUserId).catch(() => { return null; });
+			if (member) { members.push(member); }
+
+			if (!discordUserToServer) {
+
+				discordUserToServer = await DiscordUserToServer.create({
+					id: generateId(),
+					discordUserId: discordUserId,
+					serverId: guild.id,
+					isMember: member !== null,
+					lastUpdatedTimestamp: Date.now(),
+				});
+			}
+			else if (discordUserToServer) { await discordUserToServer.update({ isMember: member !== null, lastUpdatedTimestamp: Date.now() }); }
+		}
+	}
+
+	return members;
 }

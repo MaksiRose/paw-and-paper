@@ -1,7 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, AnySelectMenuInteraction, SlashCommandBuilder, Message, InteractionResponse, GuildMember } from 'discord.js';
-import { Op } from 'sequelize';
-import DiscordUser from '../../models/discordUser';
-import DiscordUserToServer from '../../models/discordUserToServer';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, AnySelectMenuInteraction, SlashCommandBuilder, Message, InteractionResponse } from 'discord.js';
 import Quid from '../../models/quid';
 import QuidToServer from '../../models/quidToServer';
 import User from '../../models/user';
@@ -10,6 +7,7 @@ import { RankType } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
+import { updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
@@ -243,21 +241,7 @@ export const command: SlashCommand = {
 			}
 			if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 
-			const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
-			const discordUserToServer = await DiscordUserToServer.findAll({
-				where: {
-					serverId: interaction.guildId,
-					isMember: true,
-					discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
-				},
-			});
-
-			const members = (await Promise.all(discordUserToServer
-				.map(async (duts) => (await interaction.guild.members.fetch(duts.discordUserId).catch(() => {
-					duts.update({ isMember: false });
-					return null;
-				}))))).filter(function(v): v is GuildMember { return v !== null; });
-
+			const members = await updateAndGetMembers(user.id, interaction.guild);
 			const levelUpEmbed = await checkLevelUp(interaction, quid, quidToServer, members);
 
 			// This is always an update

@@ -1,6 +1,6 @@
 import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, AnySelectMenuInteraction, GuildMember } from 'discord.js';
 import { capitalize, respond } from './helperFunctions';
-import { checkLevelRequirements, checkRoleCatchBlock } from './checkRoleRequirements';
+import { checkLevelRequirements, checkRoleCatchBlock, updateAndGetMembers } from './checkRoleRequirements';
 import { missingPermissions } from './permissionHandler';
 import { WayOfEarningType } from '../typings/data/user';
 import QuidToServer from '../models/quidToServer';
@@ -9,8 +9,6 @@ import { pronounAndPlural } from './getQuidInfo';
 import QuidToServerToShopRole from '../models/quidToServerToShopRole';
 import ShopRole from '../models/shopRole';
 import { Op } from 'sequelize';
-import DiscordUser from '../models/discordUser';
-import DiscordUserToServer from '../models/discordUserToServer';
 const { default_color } = require('../../config.json');
 
 /**
@@ -76,20 +74,7 @@ export async function decreaseLevel(
 	const guild = interaction.guild || await interaction.client.guilds.fetch(interaction.guildId);
 
 	const quid = await Quid.findByPk(quidToServer.quidId, { rejectOnEmpty: true });
-	const discordUsers = await DiscordUser.findAll({ where: { userId: quid.userId } });
-	const discordUserToServer = await DiscordUserToServer.findAll({
-		where: {
-			serverId: interaction.guildId,
-			isMember: true,
-			discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
-		},
-	});
-
-	const members = (await Promise.all(discordUserToServer
-		.map(async (duts) => (await guild.members.fetch(duts.discordUserId).catch(() => {
-			duts.update({ isMember: false });
-			return null;
-		}))))).filter(function(v): v is GuildMember { return v !== null; });
+	const members = await updateAndGetMembers(quid.userId, guild);
 
 	const roleConnections = await QuidToServerToShopRole.findAll({ where: { quidToServerId: quidToServer.id } });
 	const roles = await ShopRole.findAll({

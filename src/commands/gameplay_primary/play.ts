@@ -1,8 +1,7 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, GuildMember, InteractionResponse, Message, SlashCommandBuilder, Snowflake, SnowflakeUtil } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder, Snowflake, SnowflakeUtil } from 'discord.js';
 import { Op } from 'sequelize';
 import { speciesInfo } from '../..';
 import DiscordUser from '../../models/discordUser';
-import DiscordUserToServer from '../../models/discordUserToServer';
 import Quid from '../../models/quid';
 import QuidToServer from '../../models/quidToServer';
 import Server from '../../models/server';
@@ -13,6 +12,7 @@ import { SlashCommand } from '../../typings/handle';
 import { SpeciesHabitatType } from '../../typings/main';
 import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { userFindsQuest, changeCondition, infectWithChance, addExperience } from '../../utils/changeCondition';
+import { updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { disableCommandComponent } from '../../utils/componentDisabling';
@@ -398,21 +398,7 @@ export async function executePlaying(
 
 	await setCooldown(userToServer, false);
 
-	const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
-	const discordUserToServer = await DiscordUserToServer.findAll({
-		where: {
-			serverId: interaction.guildId,
-			isMember: true,
-			discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
-		},
-	});
-
-	const members = (await Promise.all(discordUserToServer
-		.map(async (duts) => (await interaction.guild.members.fetch(duts.discordUserId).catch(() => {
-			duts.update({ isMember: false });
-			return null;
-		}))))).filter(function(v): v is GuildMember { return v !== null; });
-
+	const members = await updateAndGetMembers(user.id, interaction.guild);
 	const levelUpEmbed = await checkLevelUp(interaction, quid, quidToServer, members);
 
 	if (foundQuest) {

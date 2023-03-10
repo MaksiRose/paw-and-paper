@@ -1,11 +1,8 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, GuildMember, SlashCommandBuilder } from 'discord.js';
-import { Op } from 'sequelize';
-import DiscordUser from '../../models/discordUser';
-import DiscordUserToServer from '../../models/discordUserToServer';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import Quid from '../../models/quid';
 import { RankType } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
-import { checkRankRequirements } from '../../utils/checkRoleRequirements';
+import { checkRankRequirements, updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
@@ -59,21 +56,7 @@ export const command: SlashCommand = {
 					.setDescription(`*An elderly smiles down at the young ${quidToServer.rank}.*\n"${quid.name}, you have proven strength for the first time. I believe you are ready to explore the wild, and learn your strengths and weaknesses. Good luck in your rank as Apprentice" *they say. ${quid.name}'s chest swells with pride.*`)],
 			});
 
-			const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
-			const discordUserToServer = await DiscordUserToServer.findAll({
-				where: {
-					serverId: interaction.guildId,
-					isMember: true,
-					discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
-				},
-			});
-
-			const members = (await Promise.all(discordUserToServer
-				.map(async (duts) => (await interaction.guild.members.fetch(duts.discordUserId).catch(() => {
-					duts.update({ isMember: false });
-					return null;
-				}))))).filter(function(v): v is GuildMember { return v !== null; });
-
+			const members = await updateAndGetMembers(user.id, interaction.guild);
 			await checkRankRequirements(interaction, members, quidToServer, true);
 
 			return;
@@ -127,21 +110,7 @@ export const command: SlashCommand = {
 					.setDescription(`"We are here to celebrate the nomination of ${quid.name} to the highest rank, Elderly. The ${getDisplayspecies(quid)} has shown incredible skills and persistence, and we congratulate ${pronoun(quid, 1)} to ${pronoun(quid, 2)} new title." *A mixture of howls, crows, meows, roars and squeaks are heard all around the hill, on which the Alpha stoof to announce this special event. It is not every day that a packmate gets the title of Elderly.*`)],
 			});
 
-			const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
-			const discordUserToServer = await DiscordUserToServer.findAll({
-				where: {
-					serverId: interaction.guildId,
-					isMember: true,
-					discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
-				},
-			});
-
-			const members = (await Promise.all(discordUserToServer
-				.map(async (duts) => (await interaction.guild.members.fetch(duts.discordUserId).catch(() => {
-					duts.update({ isMember: false });
-					return null;
-				}))))).filter(function(v): v is GuildMember { return v !== null; });
-
+			const members = await updateAndGetMembers(user.id, interaction.guild);
 			await checkRankRequirements(interaction, members, quidToServer, true);
 
 			return;
@@ -202,21 +171,7 @@ export const command: SlashCommand = {
 			components: [],
 		}, 'update', interaction.message.id);
 
-		const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
-		const discordUserToServer = await DiscordUserToServer.findAll({
-			where: {
-				serverId: interaction.guildId,
-				isMember: true,
-				discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
-			},
-		});
-
-		const members = (await Promise.all(discordUserToServer
-			.map(async (duts) => (await interaction.guild.members.fetch(duts.discordUserId).catch(() => {
-				duts.update({ isMember: false });
-				return null;
-			}))))).filter(function(v): v is GuildMember { return v !== null; });
-
+		const members = await updateAndGetMembers(user.id, interaction.guild);
 		await checkRankRequirements(interaction, members, quidToServer, true);
 		return;
 	},

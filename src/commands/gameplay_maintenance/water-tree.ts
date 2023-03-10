@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, GuildMember, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { Op } from 'sequelize';
 import { client } from '../..';
 import DiscordUser from '../../models/discordUser';
@@ -8,6 +8,7 @@ import QuidToServer from '../../models/quidToServer';
 import User from '../../models/user';
 import UserToServer from '../../models/userToServer';
 import { SlashCommand } from '../../typings/handle';
+import { updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { getDisplayname, getDisplayspecies, pronounAndPlural } from '../../utils/getQuidInfo';
@@ -165,21 +166,7 @@ export const command: SlashCommand = {
 			health: quidToServer.health + healthPoints,
 		});
 
-		const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
-		const discordUserToServer = await DiscordUserToServer.findAll({
-			where: {
-				serverId: interaction.guildId,
-				isMember: true,
-				discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
-			},
-		});
-
-		const members = (await Promise.all(discordUserToServer
-			.map(async (duts) => (await interaction.guild.members.fetch(duts.discordUserId).catch(() => {
-				duts.update({ isMember: false });
-				return null;
-			}))))).filter(function(v): v is GuildMember { return v !== null; });
-
+		const members = await updateAndGetMembers(user.id, interaction.guild);
 		const levelUpEmbed = await checkLevelUp(interaction, quid, quidToServer, members);
 
 		// This is always a reply

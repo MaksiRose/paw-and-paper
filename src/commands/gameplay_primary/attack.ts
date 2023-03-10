@@ -1,8 +1,5 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, AnySelectMenuInteraction, SlashCommandBuilder, InteractionResponse, SnowflakeUtil, GuildMember } from 'discord.js';
-import { Op } from 'sequelize';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, AnySelectMenuInteraction, SlashCommandBuilder, InteractionResponse, SnowflakeUtil } from 'discord.js';
 import { serverActiveUsersMap } from '../../events/interactionCreate';
-import DiscordUser from '../../models/discordUser';
-import DiscordUserToServer from '../../models/discordUserToServer';
 import Quid from '../../models/quid';
 import QuidToServer from '../../models/quidToServer';
 import Server from '../../models/server';
@@ -12,6 +9,7 @@ import { RankType } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
+import { updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { disableCommandComponent } from '../../utils/componentDisabling';
@@ -276,21 +274,7 @@ async function executeAttacking(
 		}
 		embed.setFooter({ text: injuryText + changedCondition.statsUpdateText + '\n' + minusItemText + `\n${serverAttackInfo.idleHumans} humans remaining` });
 
-		const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
-		const discordUserToServer = await DiscordUserToServer.findAll({
-			where: {
-				serverId: interaction.guildId,
-				isMember: true,
-				discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
-			},
-		});
-
-		const members = (await Promise.all(discordUserToServer
-			.map(async (duts) => (await interaction.guild.members.fetch(duts.discordUserId).catch(() => {
-				duts.update({ isMember: false });
-				return null;
-			}))))).filter(function(v): v is GuildMember { return v !== null; });
-
+		const members = await updateAndGetMembers(user.id, interaction.guild);
 		const levelUpEmbed = await checkLevelUp(interaction, quid, quidToServer, members);
 
 		// This is an editReply if the last awaitMessageComponent event timed out (For this reason, an editMessageId is always provided), else it is an update to the message with the button. newInteraction is undefined when every event timed out.

@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, GuildMember, InteractionResponse, Message, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder } from 'discord.js';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { capitalize, getMessageId, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
@@ -27,8 +27,7 @@ import UserToServer from '../../models/userToServer';
 import Server from '../../models/server';
 import { getDisplayname, pronoun, pronounAndPlural, getDisplayspecies } from '../../utils/getQuidInfo';
 import { Op } from 'sequelize';
-import DiscordUser from '../../models/discordUser';
-import DiscordUserToServer from '../../models/discordUserToServer';
+import { updateAndGetMembers } from '../../utils/checkRoleRequirements';
 
 type CustomIdArgs = ['new'] | ['new', string]
 type Position = { row: number, column: number; };
@@ -900,21 +899,7 @@ async function executeExploring(
 
 	await setCooldown(userToServer, false);
 
-	const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
-	const discordUserToServer = await DiscordUserToServer.findAll({
-		where: {
-			serverId: interaction.guildId,
-			isMember: true,
-			discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
-		},
-	});
-
-	const members = (await Promise.all(discordUserToServer
-		.map(async (duts) => (await interaction.guild.members.fetch(duts.discordUserId).catch(() => {
-			duts.update({ isMember: false });
-			return null;
-		}))))).filter(function(v): v is GuildMember { return v !== null; });
-
+	const members = await updateAndGetMembers(user.id, interaction.guild);
 	const levelUpEmbed = await checkLevelUp(interaction, quid, quidToServer, members);
 
 	if (foundQuest) {

@@ -1,9 +1,6 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, StringSelectMenuBuilder, SlashCommandBuilder, WebhookEditMessageOptions, ChatInputCommandInteraction, ButtonInteraction, GuildMember } from 'discord.js';
-import { Op } from 'sequelize';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, StringSelectMenuBuilder, SlashCommandBuilder, WebhookEditMessageOptions, ChatInputCommandInteraction, ButtonInteraction } from 'discord.js';
 import { materialsInfo } from '../..';
 import Den from '../../models/den';
-import DiscordUser from '../../models/discordUser';
-import DiscordUserToServer from '../../models/discordUserToServer';
 import Quid from '../../models/quid';
 import QuidToServer from '../../models/quidToServer';
 import Server from '../../models/server';
@@ -12,6 +9,7 @@ import { RankType } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
+import { updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents } from '../../utils/componentDisabling';
@@ -152,21 +150,7 @@ export const command: SlashCommand = {
 			const experiencePoints = isSuccessful === false ? 0 : getRandomNumber(5, quidToServer.levels + 8);
 			const changedCondition = await changeCondition(quidToServer, quid, experiencePoints);
 
-			const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
-			const discordUserToServer = await DiscordUserToServer.findAll({
-				where: {
-					serverId: interaction.guildId,
-					isMember: true,
-					discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
-				},
-			});
-
-			const members = (await Promise.all(discordUserToServer
-				.map(async (duts) => (await interaction.guild.members.fetch(duts.discordUserId).catch(() => {
-					duts.update({ isMember: false });
-					return null;
-				}))))).filter(function(v): v is GuildMember { return v !== null; });
-
+			const members = await updateAndGetMembers(user.id, interaction.guild);
 			const levelUpEmbed = await checkLevelUp(interaction, quid, quidToServer, members);
 
 			const denName = chosenDenId.split(/(?=[A-Z])/).join(' ').toLowerCase();
