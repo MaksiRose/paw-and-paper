@@ -184,19 +184,9 @@ src
 │   │   ...
 │
 └───database
-│   └───profiles
+│   └───open_tickets
 │	│	...
-│	│
-│   └───servers
-│	│	...
-│	│
-│   └───toDelete
-│	│	...
-│	│
-│   └───bannedList.json
-│   └───toDeleteList.json
-│   └───voteCache.json
-│   └───webhookCache.json
+│
 ```
 
 - `index.ts` is the main files. This is where the bot is connected to discord, and the handlers are called.
@@ -208,7 +198,7 @@ src
 - `models`: This creates a schema and the functions to find or update something in the database.
 - `commands` is separated based on how the commands are used. It contains files for all the commands.
 - `utils` contains files with code that is used in several files to reduce code length and increase consistency.
-- `database` contains `profiles` and `servers`, which then contain the documents of all servers and users, as well as `toDelete` and `toDeleteList.json`, which is responsible for storing files that will be deleted at a later point (when the bot leaves a server or a member leaves a server for example). It also has `bannedList.json` which contains users and servers that are banned from using the bot, `voteCache.json` which contains data about which users votes where and when, and `webhookCache.json` which contains data about which webhook messages were created because of which user.
+- `database` contains `open_tickets`, which are text files of the ticket conversations had with users.
 ## Feedback
 
 If you have any feedback, please [open a ticket](https://github.com/MaksiRose/paw-and-paper/issues/new?assignees=&labels=improvement&template=feature_request.yaml&title=New+feature%3A+) or tell it to me directly on [the Bots Discord server](https://discord.gg/9DENgj8q5Q).

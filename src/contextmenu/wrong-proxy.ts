@@ -127,13 +127,6 @@ export const command: ContextMenuCommand = {
 	},
 };
 
-/**
- * It takes a user's quids, a page number, and a message ID, and returns a select menu builder with the user's quids as options
- * @param {UserSchema} userData - The user's data
- * @param {number} quidsPage - The page of quids to show.
- * @param {string} targetMessageId - The message ID of the message that the user wants to replace the quid in
- * @returns A StringSelectMenuBuilder object
- */
 function getQuidsPage(
 	quids: Quid[],
 	quidsPage: number,

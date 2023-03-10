@@ -1,11 +1,11 @@
 import rateLimit from 'express-rate-limit';
-import { VoteList } from '../typings/data/general';
 const bfd = require('bfd-api-redux');
 import express from 'express';
-import { readFileSync, writeFileSync } from 'fs';
 import AutoPoster from 'topgg-autoposter';
 import { Api, Webhook } from '@top-gg/sdk';
 import { client, handle } from '..';
+import DiscordUser from '../models/discordUser';
+import User from '../models/user';
 
 /** Updates server count on vote websites, starts event listeners to store successful votes, and adds structure to client to request individual votes */
 export async function execute(
@@ -26,18 +26,17 @@ export async function execute(
 		bfdApp.use(express.json());
 		bfdApp.use(limiter);
 
-		bfdApp.post('/discords', (request, response) => {
+		bfdApp.post('/discords', async (request, response) => {
 
 			if (request.headers.authorization === handle.votes.bfd?.authorization) {
 
-				const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8')) as VoteList;
+				const discordUser = await DiscordUser.findByPk(request.body.user, {
+					include: [{ model: User, as: 'user' }],
+				}) ?? undefined;
+				const user = discordUser?.user;
 
-				voteCache['id_' + request.body.user] = {
-					...voteCache['id_' + request.body.user],
-					lastRecordedDiscordsVote: Date.now(),
-				};
-
-				writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
+				if (user) { await user.update({ lastRecordedDiscordsVote: Date.now() }); }
+				else { console.error(new Error(`Couldn't update lastRecordedDiscordsVote: No database entry was found for ${request.body.user}`)); }
 			}
 
 			response.status(200).end();
@@ -64,14 +63,13 @@ export async function execute(
 
 		topApp.post('/top', webhook.listener(async vote => {
 
-			const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8')) as VoteList;
+			const discordUser = await DiscordUser.findByPk(vote.user, {
+				include: [{ model: User, as: 'user' }],
+			}) ?? undefined;
+			const user = discordUser?.user;
 
-			voteCache['id_' + vote.user] = {
-				...voteCache['id_' + vote.user],
-				lastRecordedTopVote: Date.now(),
-			};
-
-			writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
+			if (user) { await user.update({ lastRecordedTopVote: Date.now() }); }
+			else { console.error(new Error(`Couldn't update lastRecordedTopVote: No database entry was found for ${vote.user}`)); }
 		}));
 
 		topApp.on('error', (err) => {
@@ -88,18 +86,17 @@ export async function execute(
 		dblApp.use(express.json());
 		dblApp.use(limiter);
 
-		dblApp.post('/dbl', (request, response) => {
+		dblApp.post('/dbl', async (request, response) => {
 
 			if (request.headers.authorization === handle.votes.dbl?.authorization) {
 
-				const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8')) as VoteList;
+				const discordUser = await DiscordUser.findByPk(request.body.id, {
+					include: [{ model: User, as: 'user' }],
+				}) ?? undefined;
+				const user = discordUser?.user;
 
-				voteCache['id_' + request.body.id] = {
-					...voteCache['id_' + request.body.id],
-					lastRecordedDblVote: Date.now(),
-				};
-
-				writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
+				if (user) { await user.update({ lastRecordedDblVote: Date.now() }); }
+				else { console.error(new Error(`Couldn't update lastRecordedDblVote: No database entry was found for ${request.body.id}`)); }
 			}
 
 			response.status(200).end();

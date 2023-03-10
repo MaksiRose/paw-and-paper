@@ -1,5 +1,5 @@
 import { EmbedBuilder } from 'discord.js';
-import { getArrayElement, Math.max, Math.min } from './helperFunctions';
+import { getArrayElement } from './helperFunctions';
 import { getRandomNumber, pullFromWeightedTable } from './randomizers';
 import { CurrentRegionType } from '../typings/data/user';
 import QuidToServer from '../models/quidToServer';
@@ -55,13 +55,6 @@ function calculateThirstDecrease(
 	return energyDependentThirstDecrease > 0 ? Math.min(getRandomNumber(3, energyDependentThirstDecrease), quidToServer.thirst) : 0;
 }
 
-/**
- * It decreases the health of a profile based on its injuries
- * @param {UserSchema} userData - The user's data
- * @param {Quid} quidData - The quid data of the user
- * @param {Profile} profileData - The profile data of the user
- * @returns An object with an embed and profileData
- */
 function decreaseHealth(
 	quidToServer: QuidToServer,
 	quid: Quid,
@@ -216,16 +209,6 @@ export async function addExperience(
 	return `+${experienceIncrease} XP (${quidToServer.experience}/${quidToServer.levels * 50})`;
 }
 
-/**
- * It changes the user's experience, energy, hunger, thirst and returns a string based on these changes, decreases the health of a profile based on its injuries, and returns an embed containing those changes if so, and returns an updated profileData.
- * @param userData - UserSchema - The user's data
- * @param quidData - Quid - The quid that the profile belongs to
- * @param profileData - The profile of the quid that is being changed
- * @param experienceIncrease - number - The amount of experience to add to the profile.
- * @param [currentRegion] - The region the user will be in
- * @param [secondPlayer] - Whether there is a second player. If true, stats will include who the stat is for
- * @returns DecreasedStatsData
- */
 export async function changeCondition(
 	quidToServer: QuidToServer,
 	quid: Quid,
@@ -282,15 +265,6 @@ export async function changeCondition(
 	return { statsUpdateText, injuryUpdateEmbed };
 }
 
-/**
- * If user 1 does not have a cold, but user 2 does, there's a chance that user 1 will get infected. Updates user 1's account with a lower health and the added cold, and returns an embed if true
- * @param {UserSchema} userData1 - The user data of the user who is being infected.
- * @param {Quid} quidData1 - The quid that is being infected.
- * @param {Profile} profileData1 - The profile of the user who is being infected.
- * @param {Quid} quidData2 - Quid - The quid that is coughing
- * @param {Profile} profileData2 - The profile of the quid that is coughing.
- * @returns EmbedBuilder | null
- */
 export async function infectWithChance(
 	quidToServer1: QuidToServer,
 	quid1: Quid,

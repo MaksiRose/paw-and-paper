@@ -5,24 +5,8 @@ import ErrorInfo from '../models/errorInfo';
 import Server from '../models/server';
 import User from '../models/user';
 import UserToServer from '../models/userToServer';
-import { UserSchema } from '../typings/data/user';
 const { error_color } = require('../../config.json');
 const { version } = require('../../package.json');
-
-/**
- * It takes a map and a key, and returns the value associated with the key. If the value is undefined, it throws a type error instead.
- * @param map - An object with unknown keys and a property T
- * @param key - The key of the object to get T from
- * @returns T as the property from the key from the object
- */
-export function getMapData<T>(
-	map: Record<PropertyKey, T>,
-	key: PropertyKey,
-): T {
-	const element = map[key];
-	if (element === undefined) throw new TypeError('element is undefined');
-	return element;
-}
 
 /**
  * It takes an array and an index, and returns the element at that index. If the element is undefined, it throws a type error instead.
@@ -37,16 +21,6 @@ export function getArrayElement<T>(
 	const element = array[index];
 	if (element === undefined) throw new TypeError('element is undefined');
 	return element;
-}
-
-export function getUserIds(
-	message: Message,
-): Array<string> {
-
-	const array1 = message.mentions.users.map(u => u.id);
-	const array2 = (message.content.match(/<@!?(\d{17,19})>/g) || [])?.map(mention => mention.replace('<@', '').replace('>', '').replace('!', ''));
-
-	return [...new Set([...array1, ...array2])];
 }
 
 /**
@@ -191,7 +165,7 @@ export async function sendErrorMessage(
 		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to execute \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 	}
 	else if (interaction.isAnySelectMenu()) {
-		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to select \x1b[31m${interaction.values.join(', ')} \x1b[0mfrom the menu \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to select \x1b[31m${addCommasAndAnd(interaction.values)} \x1b[0mfrom the menu \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 	}
 	else if (interaction.isButton()) {
 		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to click the button \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
@@ -307,69 +281,8 @@ export async function sendErrorMessage(
 		});
 }
 
-/**
- * It recursively copies an object, array, date, or regular expression, and returns a copy of the original
- * @param {T} object - The object to be copied.
- * @returns A deep copy of the object.
- */
-export function deepCopyObject<T>(
-	object: T,
-): T {
 
-	let returnValue: T;
-
-	switch (typeof object) {
-		case 'object':
-
-			if (object === null) {
-
-				returnValue = null as unknown as T;
-			}
-			else {
-
-				switch (Object.prototype.toString.call(object)) {
-					case '[object Array]':
-
-						returnValue = (object as unknown as any[]).map(deepCopyObject) as unknown as T;
-						break;
-					case '[object Date]':
-
-						returnValue = new Date(object as unknown as Date) as unknown as T;
-						break;
-					case '[object RegExp]':
-
-						returnValue = new RegExp(object as unknown as RegExp) as unknown as T;
-						break;
-					default:
-
-						returnValue = Object.keys(object).reduce(function(prev: Record<string, any>, key) {
-							prev[key] = deepCopyObject((object as unknown as Record<string, any>)[key]);
-							return prev;
-						}, {}) as unknown as T;
-						break;
-				}
-			}
-			break;
-		default:
-
-			returnValue = object;
-			break;
-	}
-
-	return returnValue;
-}
-
-export type KeyOfUnion<T> = T extends object ? T extends T ? keyof T : never : never; // `T extends object` to filter out primitives like `string`
-/* What this does is for every key in the inventory (like commonPlants, uncommonPlants etc.), it takes every single sub-key of all the keys and adds it to it. KeyOfUnion is used to combine all those sub-keys from all the keys. In the case that they are not part of the property, they will be of type never, meaning that they can't accidentally be assigned anything (which makes the type-checking still work) */
-export type WidenValues<T> = {
-	[K in keyof T]: {
-		[K2 in KeyOfUnion<T[keyof T]>]: K2 extends keyof T[K] ? T[K][K2] : never;
-	};
-};
-export function widenValues<T>(obj: T): WidenValues<T> { return obj as any; }
-export function unsafeKeys<T extends Record<PropertyKey, any>>(obj: T): KeyOfUnion<T>[] { return Object.keys(obj) as KeyOfUnion<T>[]; }
-
-export type ValueOf<T> = T[keyof T];
+type ValueOf<T> = T[keyof T];
 export function valueInObject<T extends Record<PropertyKey, any>, V extends ValueOf<T>>(
 	obj: T,
 	value: any,
@@ -402,26 +315,6 @@ export function addCommasAndAnd<T>(
 
 	if (list.length < 3) { return list.join(' and '); }
 	return `${list.slice(0, -1).join(', ')}, and ${getArrayElement(list, list.length - 1)}`;
-}
-
-export function userDataServersObject(
-	u: UserSchema,
-	guildId: string,
-): UserSchema['servers'][string] {
-
-	return {
-		currentQuid: u.servers[guildId]?.currentQuid ?? null,
-		lastInteractionTimestamp: u.servers[guildId]?.lastInteractionTimestamp ?? null,
-		lastInteractionToken: null,
-		lastInteractionChannelId: u.servers[guildId]?.lastInteractionChannelId ?? null,
-		restingMessageId: u.servers[guildId]?.restingMessageId ?? null,
-		restingChannelId: u.servers[guildId]?.restingChannelId ?? null,
-		componentDisablingChannelId: u.servers[guildId]?.componentDisablingChannelId ?? null,
-		componentDisablingMessageId: u.servers[guildId]?.componentDisablingMessageId ?? null,
-		componentDisablingToken: null,
-		hasCooldown: u.servers[guildId]?.hasCooldown ?? false,
-		lastProxied: u.servers[guildId]?.lastProxied ?? null,
-	};
 }
 
 export async function setCooldown(

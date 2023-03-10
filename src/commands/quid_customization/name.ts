@@ -1,11 +1,9 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { readFileSync, writeFileSync } from 'fs';
 import { respond } from '../../utils/helperFunctions';
 import { checkLevelRequirements, checkRankRequirements, updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { getRandomNumber } from '../../utils/randomizers';
 import { generateId } from 'crystalid';
 import { SlashCommand } from '../../typings/handle';
-import { GivenIdList } from '../../typings/data/general';
 import BannedUser from '../../models/bannedUser';
 import User from '../../models/user';
 import DiscordUser from '../../models/discordUser';
@@ -13,6 +11,7 @@ import DiscordUserToServer from '../../models/discordUserToServer';
 import Quid from '../../models/quid';
 import QuidToServer from '../../models/quidToServer';
 import UserToServer from '../../models/userToServer';
+import Group from '../../models/group';
 const { version } = require('../../../package.json');
 const { default_color, error_color } = require('../../../config.json');
 
@@ -126,16 +125,16 @@ export const command: SlashCommand = {
 export async function createId(): Promise<string> {
 
 	const legend = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-	let _id = '';
+	let id = '';
 
-	for (let index = 0; index < 6; index++) { _id += legend[getRandomNumber(legend.length)]; }
+	for (let index = 0; index < 6; index++) { id += legend[getRandomNumber(legend.length)]; }
 
-	const givenIds = JSON.parse(readFileSync('./database/givenIds.json', 'utf-8')) as GivenIdList;
+	const givenIds = [
+		...(await Quid.findAll({ attributes: ['id'] })).map(q => q.id),
+		...(await Group.findAll({ attributes: ['id'] })).map(g => g.id),
+	];
 
-	if (givenIds.includes(_id)) { return await createId(); }
+	if (givenIds.includes(id)) { return await createId(); }
 
-	givenIds.push(_id);
-	writeFileSync('./database/givenIds.json', JSON.stringify(givenIds, null, '\t'));
-
-	return _id;
+	return id;
 }

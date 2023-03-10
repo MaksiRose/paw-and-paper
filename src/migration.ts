@@ -23,6 +23,7 @@ import Webhook from './models/webhook';
 import BannedUser from './models/bannedUser';
 import BannedServer from './models/bannedServer';
 import { generateId } from 'crystalid';
+import { StatIncreaseType } from './typings/data/user';
 const { database_password } = require('../config.json');
 
 const tablePath = path.join(__dirname, './models/');
@@ -271,7 +272,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 						id: generateId(),
 						quidToServerId: quidToServer.id,
 						startedTimestamp: Number(timestamp),
-						type: statKind as string,
+						type: statKind as StatIncreaseType,
 					});
 				}
 

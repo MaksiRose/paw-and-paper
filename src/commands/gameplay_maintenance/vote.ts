@@ -1,8 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, StringSelectMenuBuilder, SlashCommandBuilder } from 'discord.js';
-import { readFileSync, writeFileSync } from 'fs';
 import { handle } from '../..';
 import Quid from '../../models/quid';
-import { VoteList } from '../../typings/data/general';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
@@ -86,30 +84,29 @@ export const command: SlashCommand = {
 		if (!user) { throw new TypeError('user is undefined'); }
 		if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
-		const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8')) as VoteList;
 		const twelveHoursInMs = 43_200_000;
 
 		const successfulTopVote = interaction.values[0] === 'top.gg'
 		&& (
-			(voteCache['id_' + interaction.user.id]?.lastRecordedTopVote ?? 0) > Date.now() - twelveHoursInMs
+			(user.lastRecordedTopVote ?? 0) > Date.now() - twelveHoursInMs
 			|| await handle.votes.top?.client?.hasVoted(interaction.user.id)
 		);
 		const redeemedTopVote = successfulTopVote
-		&& Date.now() <= (voteCache['id_' + interaction.user.id]?.nextRedeemableTopVote ?? 0);
+		&& Date.now() <= (user.nextRedeemableTopVote ?? 0);
 
 		const discordsVote: { voted: boolean, votes: Array<{ expires: number; }>; } | undefined = await handle.votes.bfd?.client?.checkVote(interaction.user.id);
 		const successfulDiscordsVote = interaction.values[0] === 'discords.com'
 		&& (
-			(voteCache['id_' + interaction.user.id]?.lastRecordedDiscordsVote ?? 0) > Date.now() - twelveHoursInMs
+			(user.lastRecordedDiscordsVote ?? 0) > Date.now() - twelveHoursInMs
 			|| discordsVote?.voted
 		);
 		const redeemedDiscordsVote = successfulDiscordsVote
-		&& Date.now() <= (voteCache['id_' + interaction.user.id]?.nextRedeemableDiscordsVote ?? 0);
+		&& Date.now() <= (user.nextRedeemableDiscordsVote ?? 0);
 
 		const successfulDblVote = interaction.values[0] === 'discordbotlist.com'
-		&& (voteCache['id_' + interaction.user.id]?.lastRecordedDblVote ?? 0) > Date.now() - twelveHoursInMs;
+		&& (user.lastRecordedDblVote ?? 0) > Date.now() - twelveHoursInMs;
 		const redeemedDblVote = successfulDblVote
-		&& Date.now() <= (voteCache['id_' + interaction.user.id]?.nextRedeemableDblVote ?? 0);
+		&& Date.now() <= (user.nextRedeemableDblVote ?? 0);
 
 		if (successfulTopVote || successfulDiscordsVote || successfulDblVote) {
 
@@ -123,14 +120,9 @@ export const command: SlashCommand = {
 				return;
 			}
 
-			const newUserVoteCache = voteCache['id_' + interaction.user.id] ?? {};
-
-			if (successfulTopVote) { newUserVoteCache.nextRedeemableTopVote = (voteCache['id_' + interaction.user.id]?.lastRecordedTopVote ?? Date.now()) + twelveHoursInMs; }
-			if (successfulDiscordsVote === true) { newUserVoteCache.nextRedeemableDiscordsVote = (voteCache['id_' + interaction.user.id]?.lastRecordedDiscordsVote ?? Date.now()) + twelveHoursInMs; }
-			if (successfulDblVote === true) { newUserVoteCache.nextRedeemableDblVote = (voteCache['id_' + interaction.user.id]?.lastRecordedDblVote ?? Date.now()) + twelveHoursInMs; }
-
-			voteCache['id_' + interaction.user.id] = newUserVoteCache;
-			writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
+			if (successfulTopVote) { await user.update({ nextRedeemableTopVote: (user.lastRecordedTopVote || Date.now()) + twelveHoursInMs }); }
+			if (successfulDiscordsVote) { await user.update({ nextRedeemableDiscordsVote: (user.lastRecordedDiscordsVote || Date.now()) + twelveHoursInMs }); }
+			if (successfulDblVote) { await user.update({ nextRedeemableDblVote: (user.lastRecordedDblVote || Date.now()) + twelveHoursInMs }); }
 
 			const energyPoints = Math.min(quidToServer.maxEnergy - quidToServer.energy, 30);
 

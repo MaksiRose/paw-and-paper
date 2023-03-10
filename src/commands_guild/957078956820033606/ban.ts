@@ -1,5 +1,5 @@
 import { PermissionFlagsBits, SlashCommandBuilder, User } from 'discord.js';
-import { respond } from '../../utils/helperFunctions';
+import { addCommasAndAnd, respond } from '../../utils/helperFunctions';
 import { client } from '../..';
 import { SlashCommand } from '../../typings/handle';
 import BannedUser from '../../models/bannedUser';
@@ -86,7 +86,7 @@ export const command: SlashCommand = {
 				for (const quid of quids) {
 
 					await Webhook.destroy({ where: { quidId: quid.id } });
-					await Friendship.destroy({ where: { [Op.or]: [{ quidId_1: quid.id }, { quidId_2: quid.id }] } });
+					await Friendship.destroy({ where: { [Op.or]: [{ quidId1: quid.id }, { quidId2: quid.id }] } });
 					await GroupToQuid.destroy({ where: { quidId: quid.id } });
 					const quidToServers = await QuidToServer.findAll({ where: { quidId: quid.id } });
 					for (const quidToServer of quidToServers) {
@@ -110,7 +110,7 @@ export const command: SlashCommand = {
 
 			// This is always a reply
 			await respond(interaction, {
-				content: notified.length > 0 ? `Banned user(s) ${notified.join(', ')}, deleted their account and was able to notify them about it.` : userData !== undefined ? `Banned user(s) ${discordUserIds.join(', ')} and deleted their account but was not able to notify them about it.` : `Banned user ${notified[0] ?? id} but couldn't find an account associated with them.`,
+				content: notified.length > 0 ? `Banned user(s) ${addCommasAndAnd(notified)}, deleted their account and was able to notify them about it.` : userData !== undefined ? `Banned user(s) ${addCommasAndAnd(discordUserIds)} and deleted their account but was not able to notify them about it.` : `Banned user ${notified[0] ?? id} but couldn't find an account associated with them.`,
 			});
 		}
 

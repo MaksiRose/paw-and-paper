@@ -9,7 +9,6 @@ import { MaterialInfo, PlantEdibilityType, PlantInfo, SpeciesDietType, SpeciesHa
 import { Octokit } from '@octokit/rest';
 import { execute as executeCommandHandler } from './handlers/commands';
 import { execute as executeEventHandler } from './handlers/events';
-import { execute as executeDatabaseHandler } from './handlers/database';
 const { token, bfd_token, bfd_authorization, top_token, top_authorization, dbl_token, dbl_authorization, github_token, database_password } = require('../config.json');
 const bfd = require('bfd-api-redux/src/main');
 
@@ -51,7 +50,11 @@ export const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 });
 
 sequelize.authenticate()
-	.then(function() { console.log('Connection has been established successfully.'); })
+	.then(function() {
+
+		console.log('Connection has been established successfully.');
+		sequelize.sync();
+	})
 	.catch(function(error) { console.error('Unable to connect to the database:', error); });
 
 
@@ -966,8 +969,6 @@ export const speciesInfo: { [key in SpeciesNames]: SpeciesInfo } = {
 		biome3OpponentArray: ['hawk', 'snow leopard'],
 	},
 };
-
-executeDatabaseHandler();
 
 executeEventHandler()
 	.then(function() {

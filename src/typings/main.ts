@@ -75,6 +75,3 @@ export interface SpeciesInfo {
 	/** Opponents that the species meets in biome 3 */
 	biome3OpponentArray: Array<SpeciesNames>;
 }
-
-
-export type OmitFirstArgAndChangeReturn<F, Return> = F extends (x: any, ...args: infer P) => any ? (...args: P) => Return : never

@@ -74,11 +74,6 @@ export async function eatAdvice(
 	}
 }
 
-/**
- * It checks if the user has already seen the advice, if not, it sends the advice and sets the user's advice.coloredbuttons to true
- * @param interaction - The interaction this is triggered from
- * @param {UserSchema} userData - The user's data from the database.
- */
 export async function coloredButtonsAdvice(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 	user: User,
