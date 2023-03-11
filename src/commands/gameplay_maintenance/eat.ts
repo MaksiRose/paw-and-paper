@@ -17,7 +17,7 @@ import { hasName, hasNameAndSpecies, isInGuild } from '../../utils/checkUserStat
 import { isInvalid } from '../../utils/checkValidity';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { getDisplayname, getDisplayspecies, pronoun, pronounAndPlural } from '../../utils/getQuidInfo';
-import { capitalize, keyInObject, respond } from '../../utils/helperFunctions';
+import { capitalize, keyInObject, now, respond } from '../../utils/helperFunctions';
 import { getRandomNumber } from '../../utils/randomizers';
 import { wearDownDen } from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -154,7 +154,7 @@ export async function sendEatMessage(
 			if (pickIncreasedMaxStatType === undefined) { throw new TypeError('pickIncreasedMaxStatType is undefined'); }
 			increasedMaxStatType = pickIncreasedMaxStatType;
 
-			await TemporaryStatIncrease.create({ id: generateId(), type: increasedMaxStatType, startedTimestamp: Date.now(), quidToServerId: quidToServer.id });
+			await TemporaryStatIncrease.create({ id: generateId(), type: increasedMaxStatType, startedTimestamp: now(), quidToServerId: quidToServer.id });
 		}
 
 		if (server.inventory.filter(i => i === chosenFood).length <= 0) {

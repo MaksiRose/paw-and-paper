@@ -68,7 +68,7 @@ export default class UserToServer extends Model<UserToServerAttributes, UserToSe
 	@Column({ type: DataType.STRING, defaultValue: '' })
 	declare tag: string;
 
-	@Column({ type: DataType.BIGINT, allowNull: true, defaultValue: null })
+	@Column({ type: DataType.INTEGER, allowNull: true, defaultValue: null })
 	declare lastInteraction_timestamp: number | null;
 
 	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })

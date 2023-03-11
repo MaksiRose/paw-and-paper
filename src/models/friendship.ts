@@ -31,9 +31,9 @@ export default class Friendship extends Model<FriendshipAttributes, FriendshipCr
 	@BelongsTo(() => Quid, { foreignKey: 'quidId_2' })
 	declare quid2: Quid;
 
-	@Column({ type: DataType.ARRAY(DataType.BIGINT), defaultValue: [] })
+	@Column({ type: DataType.ARRAY(DataType.INTEGER), defaultValue: [] })
 	declare quid1_mentions: number[];
 
-	@Column({ type: DataType.ARRAY(DataType.BIGINT), defaultValue: [] })
+	@Column({ type: DataType.ARRAY(DataType.INTEGER), defaultValue: [] })
 	declare quid2_mentions: number[];
 }

@@ -7,7 +7,7 @@ import QuidToServer from '../models/quidToServer';
 import QuidToServerToShopRole from '../models/quidToServerToShopRole';
 import ShopRole from '../models/shopRole';
 import { RankType, WayOfEarningType } from '../typings/data/user';
-import { respond, sendErrorMessage } from './helperFunctions';
+import { now, respond, sendErrorMessage } from './helperFunctions';
 import { missingPermissions } from './permissionHandler';
 const { default_color, error_color } = require('../../config.json');
 
@@ -191,10 +191,10 @@ export async function updateAndGetMembers(
 			await guild.members
 				.fetch(discordUserId)
 				.then(member => members.push(member))
-				.catch(() => { discordUserToServer!.update({ isMember: false, lastUpdatedTimestamp: Date.now() }); });
+				.catch(() => { discordUserToServer!.update({ isMember: false, lastUpdatedTimestamp: now() }); });
 		}
 		/* If there is no discordUserToServer entry or if the entry was last updated more than a month ago */
-		else if (!discordUserToServer || discordUserToServer.lastUpdatedTimestamp < Date.now() - 2_629_746_000) {
+		else if (!discordUserToServer || discordUserToServer.lastUpdatedTimestamp < now() - 2_629_746) {
 
 			const member = await guild.members.fetch(discordUserId).catch(() => { return null; });
 			if (member) { members.push(member); }
@@ -206,10 +206,10 @@ export async function updateAndGetMembers(
 					discordUserId: discordUserId,
 					serverId: guild.id,
 					isMember: member !== null,
-					lastUpdatedTimestamp: Date.now(),
+					lastUpdatedTimestamp: now(),
 				});
 			}
-			else if (discordUserToServer) { await discordUserToServer.update({ isMember: member !== null, lastUpdatedTimestamp: Date.now() }); }
+			else if (discordUserToServer) { await discordUserToServer.update({ isMember: member !== null, lastUpdatedTimestamp: now() }); }
 		}
 	}
 

@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Collection, EmbedBuilder, ModalBuilder, NonThreadGuildBasedChannel, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { respond } from '../../utils/helperFunctions';
+import { deepCopy, respond } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
 import { missingPermissions } from '../../utils/permissionHandler';
@@ -256,9 +256,10 @@ export const command: SlashCommand = {
 				}
 				else {
 
-					if (!hasChannel) { userToServer[listType].push(channelId); }
-					else { userToServer[listType] = userToServer[listType].filter(cid => cid !== channelId); }
-					await userToServer.update({ [listType]: [...userToServer[listType]] });
+					let newList = deepCopy(userToServer[listType]);
+					if (!hasChannel) { newList.push(channelId); }
+					else { newList = newList.filter(cid => cid !== channelId); }
+					await userToServer.update({ [listType]: newList });
 				}
 
 				// This is always an update to the message with the select menu

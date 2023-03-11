@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, SlashCommandBuilder, Snowflake } from 'discord.js';
-import { delay, getArrayElement, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
+import { deepCopy, delay, getArrayElement, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
@@ -230,7 +230,7 @@ export const command: SlashCommand = {
 		deleteCommandDisablingInfo(userToServer);
 		deleteCommandDisablingInfo(userToServer2);
 		const decreasedStatsData1 = await changeCondition(quidToServer, quid, quidToServer.rank === RankType.Youngling ? 0 : getRandomNumber(5, quidToServer.levels + 8), undefined, true);
-		const decreasedStatsData2 = await changeCondition(quidToServer, quid, quidToServer2.rank === RankType.Youngling ? 0 : getRandomNumber(5, quidToServer2.levels + 8), undefined, true);
+		const decreasedStatsData2 = await changeCondition(quidToServer2, quid2, quidToServer2.rank === RankType.Youngling ? 0 : getRandomNumber(5, quidToServer2.levels + 8), undefined, true);
 
 		/* Define number of rounds, and the uncovered card amount for both users. */
 		let finishedRounds = 0;
@@ -561,8 +561,9 @@ export const command: SlashCommand = {
 							const specialPlants = Object.keys(specialPlantsInfo) as SpecialPlantNames[];
 							foundItem = specialPlants[getRandomNumber(specialPlants.length)]!;
 
-							winningQuidToServer.inventory.push(foundItem);
-							await winningQuidToServer.update({ inventory: [...winningQuidToServer.inventory] });
+							const newInv = deepCopy(winningQuidToServer.inventory);
+							newInv.push(foundItem);
+							await winningQuidToServer.update({ inventory: newInv });
 						}
 						else if (winningQuidToServer.health < winningQuidToServer.maxHealth) {
 
@@ -573,8 +574,9 @@ export const command: SlashCommand = {
 
 							foundItem = await pickPlant(pullFromWeightedTable({ 0: finishedRounds + 10, 1: (2 * finishedRounds) - 10, 2: (20 - finishedRounds) * 3 }) as 0 | 1 | 2, server);
 
-							winningQuidToServer.inventory.push(foundItem);
-							await winningQuidToServer.update({ inventory: [...winningQuidToServer.inventory] });
+							const newInv = deepCopy(winningQuidToServer.inventory);
+							newInv.push(foundItem);
+							await winningQuidToServer.update({ inventory: newInv });
 						}
 
 						return { foundItem, extraHealthPoints };
@@ -637,7 +639,7 @@ export const command: SlashCommand = {
 									iconURL: quid.avatarURL,
 								})
 								.setDescription(`*The two animals laugh as they return from a successful adventure. ${extraDescription}. What a success!*`)
-								.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}\n\n${extraHealthPoints1 > 0 ? `+${extraHealthPoints1} HP for ${quid.name} (${quidToServer.health}/${quidToServer.maxHealth})` : `+1 ${foundItem1} for ${quid.name}`}\n${extraHealthPoints2 > 0 ? `+${extraHealthPoints2} HP for ${quid.name} (${quidToServer2.health}/${quidToServer2.maxHealth})` : `+1 ${foundItem2} for ${quid.name}`}` }),
+								.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}\n\n${extraHealthPoints1 > 0 ? `+${extraHealthPoints1} HP for ${quid.name} (${quidToServer.health}/${quidToServer.maxHealth})` : `+1 ${foundItem1} for ${quid.name}`}\n${extraHealthPoints2 > 0 ? `+${extraHealthPoints2} HP for ${quid2.name} (${quidToServer2.health}/${quidToServer2.maxHealth})` : `+1 ${foundItem2} for ${quid2.name}`}` }),
 							...decreasedStatsData1.injuryUpdateEmbed,
 							...decreasedStatsData2.injuryUpdateEmbed,
 							...(levelUpEmbeds?.levelUpEmbed1 ?? []),

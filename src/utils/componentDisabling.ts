@@ -1,6 +1,7 @@
 import { ComponentType, ButtonStyle, APIActionRowComponent, ActionRowBuilder, ActionRow, MessageActionRowComponent, APIMessageActionRowComponent, MessageActionRowComponentBuilder, ButtonBuilder, ButtonComponent, APIButtonComponent, StringSelectMenuBuilder, SelectMenuComponent, APISelectMenuComponent, isJSONEncodable, SnowflakeUtil, RepliableInteraction, RoleSelectMenuBuilder, UserSelectMenuBuilder, ChannelSelectMenuBuilder, MentionableSelectMenuBuilder } from 'discord.js';
 import { client } from '..';
 import UserToServer from '../models/userToServer';
+import { now } from './helperFunctions';
 
 export const componentDisablingInteractions = new Map<string, RepliableInteraction>();
 
@@ -30,8 +31,8 @@ export async function disableCommandComponent(
 ): Promise<void> {
 
 	const interaction = componentDisablingInteractions.get(userToServer.userId + userToServer.serverId);
-	const fifteenMinutesInMs = 900_000;
-	if (interaction !== undefined && userToServer.componentDisabling_messageId !== null && client.isReady() && SnowflakeUtil.deconstruct(interaction.id).timestamp > Date.now() - fifteenMinutesInMs) {
+	const fifteenMinutesInS = 900;
+	if (interaction !== undefined && userToServer.componentDisabling_messageId !== null && client.isReady() && Math.round(SnowflakeUtil.timestampFrom(interaction.id) / 1000) > now() - fifteenMinutesInS) {
 
 		const botReply = await interaction.webhook.fetchMessage(userToServer.componentDisabling_messageId)
 			.catch(error => {

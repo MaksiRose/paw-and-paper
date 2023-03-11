@@ -16,7 +16,7 @@ import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValid
 import { disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { getDisplayname, pronoun, getDisplayspecies, pronounAndPlural } from '../../utils/getQuidInfo';
-import { capitalize, getArrayElement, getMessageId, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
+import { capitalize, deepCopy, getArrayElement, getMessageId, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { pickMaterial, pickMeat, simulateMaterialUse, simulateMeatUse } from '../../utils/simulateItemUse';
@@ -212,8 +212,9 @@ async function executeScavenging(
 							embed.setDescription(`*After a while, ${quid.name} can indeed find something useful: On the floor is a ${foundCarcass} that seems to have recently lost a fight fatally. Although the animal has a few injuries, it can still serve as great nourishment. What a success!*\n${playingField}`);
 							embed.setFooter({ text: `${await addExperience(quidToServer, experiencePoints)}\n${changedCondition.statsUpdateText}\n\n+1 ${foundCarcass}` });
 
-							quidToServer.inventory.push(foundCarcass);
-							await quidToServer.update({ inventory: [...quidToServer.inventory] });
+							const newInv = deepCopy(quidToServer.inventory);
+							newInv.push(foundCarcass);
+							await quidToServer.update({ inventory: newInv });
 						}
 						else if (materialCount < 0) {
 
@@ -227,8 +228,9 @@ async function executeScavenging(
 							embed.setDescription(`*${quid.name} searches in vain for edible remains of deceased animals. But the expedition is not without success: the ${getDisplayspecies(quid)} sees a ${foundMaterial}, which can serve as a great material for repairs and work in the pack. ${capitalize(pronoun(quid, 0))} happily takes it home with ${pronoun(quid, 1)}.*\n${playingField}`);
 							embed.setFooter({ text: `${await addExperience(quidToServer, experiencePoints)}\n${changedCondition.statsUpdateText}\n\n+1 ${foundMaterial}` });
 
-							quidToServer.inventory.push(foundMaterial);
-							await quidToServer.update({ inventory: [...quidToServer.inventory] });
+							const newInv = deepCopy(quidToServer.inventory);
+							newInv.push(foundMaterial);
+							await quidToServer.update({ inventory: newInv });
 						}
 						else {
 

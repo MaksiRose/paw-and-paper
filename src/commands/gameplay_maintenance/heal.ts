@@ -107,7 +107,7 @@ export const command: SlashCommand = {
 		let chosenItem = interaction.options.getString('item') ?? undefined;
 		if (!chosenItem || !stringIsAvailableItem(chosenItem, server.inventory)) { chosenItem = undefined; }
 
-		await getHealResponse(interaction, user, quid, userToServer, quidToServer, server, messageContent, restEmbed, 0, user2, quid2, discordUser2?.id, quidToServer, 1, chosenItem);
+		await getHealResponse(interaction, user, quid, userToServer, quidToServer, server, messageContent, restEmbed, 0, user2, quid2, discordUser2?.id, quidToServer2, 1, chosenItem);
 	},
 	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer, server }) {
 
@@ -148,7 +148,7 @@ export const command: SlashCommand = {
 				if (!user2) { throw new TypeError('user2 is undefined'); }
 				if (!discordUserToServer2) { throw new TypeError('discordUserToServer2 is undefined'); }
 
-				await getHealResponse(interaction, user, quid, userToServer, quidToServer, server, '', [], 0, user2, quid2, discordUserToServer2.discordUserId, quidToServer);
+				await getHealResponse(interaction, user, quid, userToServer, quidToServer, server, '', [], 0, user2, quid2, discordUserToServer2.discordUserId, quidToServer2);
 			}
 		}
 		else if (interaction.customId.startsWith('heal_page_')) {
@@ -176,7 +176,7 @@ export const command: SlashCommand = {
 			if (!user2) { throw new TypeError('user2 is undefined'); }
 			if (!discordUserToServer2) { throw new TypeError('discordUserToServer2 is undefined'); }
 
-			await getHealResponse(interaction, user, quid, userToServer, quidToServer, server, '', [], 0, user2, quid2, discordUserToServer2.discordUserId, quidToServer, inventoryPage);
+			await getHealResponse(interaction, user, quid, userToServer, quidToServer, server, '', [], 0, user2, quid2, discordUserToServer2.discordUserId, quidToServer2, inventoryPage);
 		}
 		else if (interaction.isStringSelectMenu() && interaction.customId.startsWith('heal_inventory_options_')) {
 
@@ -203,7 +203,7 @@ export const command: SlashCommand = {
 			let chosenItem = interaction.values[0];
 			if (!chosenItem || !stringIsAvailableItem(chosenItem, server.inventory)) { chosenItem = undefined; }
 
-			await getHealResponse(interaction, user, quid, userToServer, quidToServer, server, '', [], 0, user2, quid2, discordUserToServer2.discordUserId, quidToServer, 1, chosenItem);
+			await getHealResponse(interaction, user, quid, userToServer, quidToServer, server, '', [], 0, user2, quid2, discordUserToServer2.discordUserId, quidToServer2, 1, chosenItem);
 		}
 	},
 };
@@ -542,10 +542,10 @@ export async function getHealResponse(
 		const chosenUserPlus = getStatsPoints(item, quidToServer2);
 
 		await quidToServer2.update({
-			thirst: quidToServer2.thirst,
-			hunger: quidToServer2.hunger,
-			energy: quidToServer2.energy,
-			health: quidToServer2.health,
+			thirst: quidToServer2.thirst + chosenUserPlus.thirst,
+			hunger: quidToServer2.hunger + chosenUserPlus.hunger,
+			energy: quidToServer2.energy + chosenUserPlus.energy,
+			health: quidToServer2.health + chosenUserPlus.health,
 			injuries_wounds: quidToServer2.injuries_wounds,
 			injuries_infections: quidToServer2.injuries_infections,
 			injuries_cold: quidToServer2.injuries_cold,
@@ -629,7 +629,7 @@ export async function getHealResponse(
 
 		const disablingInteraction = componentDisablingInteractions.get(user.id + interaction.guildId);
 		const fifteenMinutesInMs = 900_000;
-		if (disablingInteraction !== undefined && userToServer.componentDisabling_messageId != null && SnowflakeUtil.deconstruct(disablingInteraction.id).timestamp > Date.now() - fifteenMinutesInMs) {
+		if (disablingInteraction !== undefined && userToServer.componentDisabling_messageId != null && SnowflakeUtil.timestampFrom(disablingInteraction.id) > Date.now() - fifteenMinutesInMs) {
 
 			await disablingInteraction.webhook.deleteMessage(userToServer.componentDisabling_messageId)
 				.catch(async error => {

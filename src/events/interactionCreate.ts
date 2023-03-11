@@ -2,7 +2,7 @@ import { EmbedBuilder, Interaction, RepliableInteraction } from 'discord.js';
 import { createNewTicket } from '../commands/miscellaneous/ticket';
 import { DiscordEvent } from '../typings/main';
 import { disableCommandComponent, disableAllComponents } from '../utils/componentDisabling';
-import { addCommasAndAnd, keyInObject, respond } from '../utils/helperFunctions';
+import { addCommasAndAnd, keyInObject, now, respond } from '../utils/helperFunctions';
 import { createGuild } from '../utils/updateGuild';
 import { sendErrorMessage } from '../utils/helperFunctions';
 import { missingPermissions } from '../utils/permissionHandler';
@@ -23,7 +23,6 @@ const { error_color } = require('../../config.json');
 
 export const lastInteractionMap: Map<string, RepliableInteraction<'cached'>> = new Map();
 export const serverActiveUsersMap: Map<string, string[]> = new Map();
-
 export const event: DiscordEvent = {
 	name: 'interactionCreate',
 	once: false,
@@ -63,7 +62,7 @@ export const event: DiscordEvent = {
 
 				lastInteractionMap.set(userToServer.userId + userToServer.serverId, interaction);
 				await userToServer.update({
-					lastInteraction_timestamp: interaction.createdTimestamp,
+					lastInteraction_timestamp: Math.round(interaction.createdTimestamp / 1000),
 					lastInteraction_channelId: interaction.channelId,
 				}, { logging: false });
 
@@ -75,8 +74,8 @@ export const event: DiscordEvent = {
 			/* It's updating the info for the discord user in the server */
 			const discordUserToServer = (discordUser && server)
 				? await DiscordUserToServer.findOne({ where: { discordUserId: discordUser.id, serverId: server.id } }).then((row) => {
-					if (row) { return row.update({ isMember: true, lastUpdatedTimestamp: Date.now() }, { logging: false }); }
-					else { return DiscordUserToServer.create({ id: generateId(), discordUserId: discordUser.id, serverId: server.id, isMember: true, lastUpdatedTimestamp: Date.now() }); }
+					if (row) { return row.update({ isMember: true, lastUpdatedTimestamp: now() }, { logging: false }); }
+					else { return DiscordUserToServer.create({ id: generateId(), discordUserId: discordUser.id, serverId: server.id, isMember: true, lastUpdatedTimestamp: now() }); }
 				}) : undefined;
 
 			/* It's updating the info for the quid in the server, if it exists */
@@ -84,8 +83,8 @@ export const event: DiscordEvent = {
 				? await QuidToServer.findOne({
 					where: { quidId: quid.id, serverId: interaction.guildId },
 				}).then((row) => {
-					if (row) { return row.update({ lastActiveTimestamp: Date.now() }, { logging: false }); }
-					else { return QuidToServer.create({ id: generateId(), quidId: userToServer!.activeQuidId!, serverId: userToServer!.serverId, lastActiveTimestamp: Date.now() }); }
+					if (row) { return row.update({ lastActiveTimestamp: now() }, { logging: false }); }
+					else { return QuidToServer.create({ id: generateId(), quidId: userToServer!.activeQuidId!, serverId: userToServer!.serverId, lastActiveTimestamp: now() }); }
 				}) : undefined;
 
 			if (interaction.isRepliable() && interaction.inRawGuild()) {
@@ -109,7 +108,7 @@ export const event: DiscordEvent = {
 				if (command === undefined || command.sendAutocomplete === undefined) { return; }
 
 				/* It's sending the autocomplete message. */
-				await command.sendAutocomplete(interaction, { user, userToServer, quid, quidToServer, discordUser, discordUserToServer });
+				await command.sendAutocomplete(interaction, { user, userToServer, quid, quidToServer, discordUser, discordUserToServer, server });
 				return;
 			}
 
@@ -131,10 +130,10 @@ export const event: DiscordEvent = {
 
 				/* This sends the command and error message if an error occurs. */
 				{ console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully executed \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`); }
-				await command.sendCommand(interaction, { user, userToServer, quid, quidToServer, discordUser, discordUserToServer });
+				await command.sendCommand(interaction, { user, userToServer, quid, quidToServer, discordUser, discordUserToServer, server });
 
 				/* If sapling exists, a gentle reminder has not been sent and the watering time is after the perfect time, send a gentle reminder */
-				if (interaction.inGuild() && quid && quidToServer && quidToServer.sapling_exists && !quidToServer.sapling_sentGentleReminder && Date.now() > (quidToServer.sapling_nextWaterTimestamp || 0) + 60_000) { // The 60 seconds is so this doesn't trigger when you just found your sapling while exploring
+				if (interaction.inGuild() && quid && quidToServer && quidToServer.sapling_exists && !quidToServer.sapling_sentGentleReminder && Date.now() > (quidToServer.sapling_nextWaterTimestamp || 0) + 60) { // The 60 seconds is so this doesn't trigger when you just found your sapling while exploring
 
 					await quidToServer.update({ sapling_sentGentleReminder: true });
 
@@ -188,7 +187,7 @@ export const event: DiscordEvent = {
 				if (command === undefined || command.sendModalResponse === undefined) { return; }
 
 				/* It's sending the autocomplete message. */
-				await command.sendModalResponse(interaction, { user, userToServer, quid, quidToServer, discordUser, discordUserToServer });
+				await command.sendModalResponse(interaction, { user, userToServer, quid, quidToServer, discordUser, discordUserToServer, server });
 				return;
 			}
 
@@ -278,7 +277,7 @@ export const event: DiscordEvent = {
 				}
 
 				/* It's sending the autocomplete message. */
-				await command.sendMessageComponentResponse(interaction, { user, userToServer, quid, quidToServer, discordUser, discordUserToServer });
+				await command.sendMessageComponentResponse(interaction, { user, userToServer, quid, quidToServer, discordUser, discordUserToServer, server });
 				return;
 			}
 		}

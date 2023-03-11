@@ -10,7 +10,7 @@ import TemporaryStatIncrease from '../models/temporaryStatIncrease';
 import User from '../models/user';
 import UserToServer from '../models/userToServer';
 import { hasNameAndSpecies } from '../utils/checkUserState';
-import { sendErrorMessage } from '../utils/helperFunctions';
+import { now, sendErrorMessage } from '../utils/helperFunctions';
 
 /** It's checking whether the deletionTime of a property on the toDeleteList is older than an hour from now, and if it is, delete the property and delete the file from the toDelete folder. It's also checking whether a profile has a temporaryStatIncrease with a timestamp that is older than a week ago, and if it does, bring the stat back and delete the property from temporaryStatIncrease. */
 export async function execute(): Promise<void> {
@@ -33,7 +33,7 @@ export async function execute(): Promise<void> {
 
 
 		/* It's checking whether a profile has a temporaryStatIncrease with a timestamp that is older than a week ago, and if it does, bring the stat back and delete the property from temporaryStatIncrease. */
-		const temporaryStatIncreases = await TemporaryStatIncrease.findAll({ where: { startedTimestamp: { [Op.lt]: Date.now() - 604_800_000 } } });
+		const temporaryStatIncreases = await TemporaryStatIncrease.findAll({ where: { startedTimestamp: { [Op.lt]: now() - 604_800 } } });
 		for (const temporaryStatIncrease of temporaryStatIncreases) {
 
 			const quidToServer = await QuidToServer.findByPk(temporaryStatIncrease.quidToServerId);
@@ -50,11 +50,11 @@ export async function execute(): Promise<void> {
 
 	async function tenSecondInterval() {
 
-		const tenMinutesInMs = 600_000;
+		const tenMinutesInS = 600;
 		const usersToServers = await UserToServer.findAll({
 			where: {
 				activeQuidId: { [Op.not]: null },
-				lastInteraction_timestamp: { [Op.not]: null, [Op.lt]: Date.now() - tenMinutesInMs },
+				lastInteraction_timestamp: { [Op.not]: null, [Op.lt]: now() - tenMinutesInS },
 				hasCooldown: false,
 			},
 		});
@@ -108,7 +108,7 @@ export async function execute(): Promise<void> {
 				const userToServer = await UserToServer.findOne({ where: { userId: userId, serverId: guildId } });
 
 				/* If there is no last interaction or if the last interaction was created more than 5 minutes ago, remove the user from the array */
-				if (!userToServer || !userToServer.lastInteraction_timestamp || userToServer.lastInteraction_timestamp <= Date.now() - 300_000) { array = array.filter(v => v !== userId); }
+				if (!userToServer || !userToServer.lastInteraction_timestamp || userToServer.lastInteraction_timestamp <= now() - 300) { array = array.filter(v => v !== userId); }
 			}
 			serverActiveUsersMap.set(guildId, array);
 		}

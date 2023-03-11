@@ -77,13 +77,12 @@ export async function decreaseLevel(
 	const members = await updateAndGetMembers(quid.userId, guild);
 
 	const roleConnections = await QuidToServerToShopRole.findAll({ where: { quidToServerId: quidToServer.id } });
-	const roles = await ShopRole.findAll({
+	const roles = (await ShopRole.findAll({
 		where: {
 			id: { [Op.in]: roleConnections.map(rc => rc.shopRoleId) },
 			wayOfEarning: WayOfEarningType.Levels,
-			requirement: { [Op.gt]: newUserLevel },
 		},
-	});
+	})).filter(r => Number(r.requirement) > newUserLevel);
 	const filteredRoleConnections = roleConnections.filter((rc) => roles.some((role) => role.id === rc.shopRoleId));
 
 	// quidToServer.roles.filter(role => role.wayOfEarning === WayOfEarningType.Levels && role.requirement > quidToServer.levels);

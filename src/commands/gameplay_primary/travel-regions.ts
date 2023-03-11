@@ -171,7 +171,7 @@ async function sendTravelMessage(
 
 		embed.setDescription(`*${quid.name} runs to the food den. Maybe ${pronoun(quid, 0)} will eat something, or put ${pronoun(quid, 2)} food onto the pile.*`);
 
-		const foodDenQuidsToServer = await QuidToServer.findAll({ where: { currentRegion: CurrentRegionType.FoodDen } });
+		const foodDenQuidsToServer = await QuidToServer.findAll({ where: { serverId: interaction.guildId, currentRegion: CurrentRegionType.FoodDen } });
 		const foodDenQuids = await Quid.findAll({ where: { id: { [Op.in]: foodDenQuidsToServer.map(qts => qts.quidId) } } });
 		const foodDenUsers = await User.findAll({ where: { id: { [Op.in]: foodDenQuids.map(q => q.userId) } } });
 
@@ -216,7 +216,7 @@ async function sendTravelMessage(
 
 		embed.setDescription(`*${quid.name} rushes over to the medicine den. Nearby are a mix of packmates, some with illnesses and injuries, others trying to heal them.*`);
 
-		const medicineDenQuidsToServer = await QuidToServer.findAll({ where: { currentRegion: CurrentRegionType.MedicineDen } });
+		const medicineDenQuidsToServer = await QuidToServer.findAll({ where: { serverId: interaction.guildId, currentRegion: CurrentRegionType.MedicineDen } });
 		const medicineDenQuids = await Quid.findAll({ where: { id: { [Op.in]: medicineDenQuidsToServer.map(qts => qts.quidId) } } });
 		const medicineDenUsers = await User.findAll({ where: { id: { [Op.in]: medicineDenQuids.map(q => q.userId) } } });
 
@@ -241,7 +241,7 @@ async function sendTravelMessage(
 
 		if (medicineDenDiscordUsersList.length > 0) { embed.addFields({ name: 'Packmates at the medicine den:', value: medicineDenDiscordUsersList }); }
 
-		const healerQuidsToServer = await QuidToServer.findAll({ where: { rank: { [Op.not]: RankType.Youngling } } });
+		const healerQuidsToServer = await QuidToServer.findAll({ where: { serverId: interaction.guildId, rank: { [Op.not]: RankType.Youngling } } });
 		const healerQuids = await Quid.findAll({ where: { id: { [Op.in]: healerQuidsToServer.map(qts => qts.quidId) } } });
 		const healerUsers = await User.findAll({ where: { id: { [Op.in]: healerQuids.map(q => q.userId) } } });
 
@@ -283,7 +283,7 @@ async function sendTravelMessage(
 
 		embed.setDescription(`*${quid.name} walks up to the ruins, carefully stepping over broken bricks. Hopefully, ${pronoun(quid, 0)} will find someone to talk with.*`);
 
-		const ruinsQuidsToServer = await QuidToServer.findAll({ where: { currentRegion: CurrentRegionType.Ruins } });
+		const ruinsQuidsToServer = await QuidToServer.findAll({ where: { serverId: interaction.guildId, currentRegion: CurrentRegionType.Ruins } });
 		const ruinsQuids = await Quid.findAll({ where: { id: { [Op.in]: ruinsQuidsToServer.map(qts => qts.quidId) } } });
 		const ruinsUsers = await User.findAll({ where: { id: { [Op.in]: ruinsQuids.map(q => q.userId) } } });
 
@@ -332,7 +332,7 @@ async function sendTravelMessage(
 
 		embed.setDescription(`*${quid.name} approaches the prairie, watching younger packmates testing their strength in playful fights. Maybe the ${getDisplayspecies(quid)} could play with them!*`);
 
-		const prairieQuidsToServer = await QuidToServer.findAll({ where: { currentRegion: CurrentRegionType.Prairie } });
+		const prairieQuidsToServer = await QuidToServer.findAll({ where: { serverId: interaction.guildId, currentRegion: CurrentRegionType.Prairie } });
 		const prairieQuids = await Quid.findAll({ where: { id: { [Op.in]: prairieQuidsToServer.map(qts => qts.quidId) } } });
 		const prairieUsers = await User.findAll({ where: { id: { [Op.in]: prairieQuids.map(q => q.userId) } } });
 

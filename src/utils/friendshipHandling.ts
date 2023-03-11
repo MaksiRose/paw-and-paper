@@ -4,6 +4,7 @@ import { Op } from 'sequelize';
 import Friendship from '../models/friendship';
 import Quid from '../models/quid';
 import { getDisplayname } from './getQuidInfo';
+import { deepCopy, now } from './helperFunctions';
 
 /* This is the required points to get a certain amount of friendship hearts */
 const requiredPoints = [1, 3, 6, 9, 15, 24, 39, 63, 99, 162] as const;
@@ -30,14 +31,18 @@ export async function addFriendshipPoints(
 	}
 
 	/* Based on current friendship, the friendship points are calculated. */
-	const previousFriendshipPoints = getFriendshipPoints(friendship.quid1_mentions, friendship.quid1_mentions);
+	const previousFriendshipPoints = getFriendshipPoints(friendship.quid1_mentions, friendship.quid2_mentions);
 
 	/* It's updating the database with the new mention, and then grabbing the updated data from the database. */
 	checkOldMentions(friendship);
-	friendship[quid1.id === friendship.quidId1 ? 'quid1_mentions' : 'quid2_mentions'].push(message.createdTimestamp);
-	await friendship.save();
 
-	const newFriendshipPoints = getFriendshipPoints(friendship.quid1_mentions, friendship.quid1_mentions);
+	// MAKE SURE TO NOT CHANGE THIS CODE! sequelize is janky, man. You need to deepCopy the array before pushing to it
+	const quidMentions = quid1.id === friendship.quidId1 ? 'quid1_mentions' : 'quid2_mentions';
+	const newMentionsArr = deepCopy(friendship[quidMentions]);
+	newMentionsArr.push(Math.round(message.createdTimestamp / 1000));
+	await friendship.update({ [quidMentions]: newMentionsArr }, { logging: false });
+
+	const newFriendshipPoints = getFriendshipPoints(friendship.quid1_mentions, friendship.quid2_mentions);
 
 	/* A message is sent to the users if the friendship has more hearts now than it had before. */
 	const newFriendshipHearts = getFriendshipHearts(newFriendshipPoints);
@@ -79,9 +84,9 @@ export async function checkOldMentions(
 	friendship: Friendship,
 ): Promise<void> {
 
-	const oneWeekInMs = 604_800_000;
-	friendship.quid1_mentions = friendship.quid1_mentions.filter(ts => ts > (Date.now() - oneWeekInMs));
-	friendship.quid2_mentions = friendship.quid2_mentions.filter(ts => ts > (Date.now() - oneWeekInMs));
+	const oneWeekInS = 604_800;
+	friendship.quid1_mentions = friendship.quid1_mentions.filter(ts => ts > (now() - oneWeekInS));
+	friendship.quid2_mentions = friendship.quid2_mentions.filter(ts => ts > (now() - oneWeekInS));
 }
 
 /**

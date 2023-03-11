@@ -11,7 +11,7 @@ import { CommonPlantNames, MaterialNames, RarePlantNames, SpecialPlantNames, Spe
 import { RankType } from '../typings/data/user';
 import { PlantEdibilityType, PlantInfo, SpeciesDietType } from '../typings/main';
 import { changeCondition } from './changeCondition';
-import { getArrayElement, keyInObject } from './helperFunctions';
+import { getArrayElement, keyInObject, now } from './helperFunctions';
 import { getRandomNumber } from './randomizers';
 import { wearDownAmount } from './wearDownDen';
 
@@ -26,7 +26,7 @@ async function getProfilesInServer(
 	activeUsersOnly: boolean,
 ): Promise<QuidToServer[]> {
 
-	const twoWeeksInMs = 1_209_600_000;
+	const twoWeeksInS = 1_209_600;
 	return await QuidToServer.findAll({
 		include: [{
 			model: Quid<true>,
@@ -37,7 +37,7 @@ async function getProfilesInServer(
 		}],
 		where: {
 			serverId: serverId,
-			lastActiveTimestamp: { [Op.gte]: activeUsersOnly ? (Date.now() - twoWeeksInMs) : 0 },
+			lastActiveTimestamp: { [Op.gte]: activeUsersOnly ? (now() - twoWeeksInS) : 0 },
 		},
 	});
 }
@@ -72,7 +72,7 @@ export async function simulateMeatUse(
 	}
 
 	const meat = Object.keys(speciesInfo);
-	const existingItems = server.inventory.filter(meat.includes).length;
+	const existingItems = server.inventory.filter(i => meat.includes(i)).length;
 
 	return existingItems - neededItems;
 }
@@ -108,14 +108,10 @@ export async function pickMeat(
 	}
 
 	const items = new Map<SpeciesNames, number>();
-	inventory.forEach((item) => {
+	(Object.keys(speciesInfo) as SpeciesNames[]).forEach((item) => {
 
-		if (!keyInObject(speciesInfo, item)) { return; }
 		if (!options.includes(item)) { return; }
-
-		const itemCount = items.get(item);
-		if (itemCount) { items.set(item, itemCount + 1); }
-		else { items.set(item, 1); }
+		items.set(item, inventory.filter(i => i === item).length);
 	});
 
 	return pickItem(items);
@@ -217,7 +213,7 @@ export async function simulatePlantUse(
 	const foodDen = await Den.findByPk(server.foodDenId, { rejectOnEmpty: true });
 	const medicineDen = await Den.findByPk(server.medicineDenId, { rejectOnEmpty: true });
 
-	const existingItems = server.inventory.filter(itemInfo.includes).length;
+	const existingItems = server.inventory.filter(i => itemInfo.includes(i)).length;
 	const neededItems = getNeededHungerItems(quidsToServer, foodDen) + getNeededMedicineItems(quidsToServer, medicineDen);
 
 	return existingItems - neededItems;
@@ -271,15 +267,13 @@ export async function pickPlant(
 	inventory = removeLeastUsefulItem(inventory, 'healsPoison', itemInfo, neededPoisonItems);
 
 	const items = new Map<CommonPlantNames | UncommonPlantNames | RarePlantNames, number>();
-	inventory.forEach((item) => {
+	Object.keys(itemInfo).forEach((item) => {
 
 		if ((include < 2 && keyInObject(rarePlantsInfo, item)) ||
 			(include < 1 && keyInObject(uncommonPlantsInfo, item)) ||
 			keyInObject(commonPlantsInfo, item)) {
 
-			const itemCount = items.get(item);
-			if (itemCount) { items.set(item, itemCount + 1); }
-			else { items.set(item, 1); }
+			items.set(item, inventory.filter(i => i === item).length);
 		}
 	});
 
@@ -346,13 +340,9 @@ export async function pickMaterial(
 	const inventory = [...server.inventory];
 
 	const items = new Map<MaterialNames, number>();
-	inventory.forEach((item) => {
+	(Object.keys(materialsInfo) as MaterialNames[]).forEach((item) => {
 
-		if (!keyInObject(materialsInfo, item)) { return; }
-
-		const itemCount = items.get(item);
-		if (itemCount) { items.set(item, itemCount + 1); }
-		else { items.set(item, 1); }
+		items.set(item, inventory.filter(i => i === item).length);
 	});
 
 	return pickItem(items);
@@ -509,7 +499,7 @@ export async function simulateMaterialUse(
 	const sleepingDen = await Den.findByPk(server.sleepingDenId, { rejectOnEmpty: true });
 
 	const materialNames = Object.keys(materialsInfo);
-	const existingItems = server.inventory.filter(materialNames.includes).length;
+	const existingItems = server.inventory.filter(i => materialNames.includes(i)).length;
 	const neededItems = Object.values(getNeededMaterialItems(quidsToServer, medicineDen, foodDen, sleepingDen)).reduce((a, b) => a + b, 0);
 
 	const itemDifference = existingItems - neededItems;

@@ -1,5 +1,5 @@
 import { ActionRowBuilder, EmbedBuilder, ModalBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { addCommasAndAnd, respond } from '../../utils/helperFunctions';
+import { addCommasAndAnd, deepCopy, respond } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
 import { missingPermissions } from '../../utils/permissionHandler';
@@ -64,7 +64,7 @@ export const command: SlashCommand = {
 			if (pronounSet === undefined) { throw new TypeError('pronounSet is undefined'); }
 
 			/* Getting the remaining length for the pronoun field in the profile command. */
-			const pronouns = JSON.parse(JSON.stringify(quid.pronouns_en)) as string[][];
+			const pronouns = deepCopy(quid.pronouns_en);
 			if (quid.noPronouns_en === true) { pronouns.push(['none']); }
 			const profilePronounFieldLengthLeft = 1024 - pronouns.map(pronounSet => pronounSet.length === 1 ? pronounSet[0]! : `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join('\n').length;
 

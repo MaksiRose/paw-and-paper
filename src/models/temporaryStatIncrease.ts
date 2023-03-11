@@ -21,7 +21,7 @@ export default class TemporaryStatIncrease extends Model<TemporaryStatIncreaseAt
 	@BelongsTo(() => QuidToServer, { foreignKey: 'quidToServerId' })
 	declare quidToServer: QuidToServer;
 
-	@Column({ type: DataType.BIGINT })
+	@Column({ type: DataType.INTEGER })
 	declare startedTimestamp: number;
 
 	@Column({ type: DataType.STRING })

@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, GuildMember, ModalBuilder, PermissionFlagsBits, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { capitalize, getArrayElement, respond } from '../../utils/helperFunctions';
+import { capitalize, deepCopy, getArrayElement, respond } from '../../utils/helperFunctions';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
 import { missingPermissions } from '../../utils/permissionHandler';
@@ -329,8 +329,9 @@ export const command: SlashCommand = {
 					qts.update({ skills_global: { ...qts.skills_global } });
 				}
 
-				server.skills.push(newName);
-				await server.update({ skills: [...server.skills] });
+				const newSkills = deepCopy(server.skills);
+				newSkills.push(newName);
+				await server.update({ skills: newSkills });
 			}
 
 			// This is always an update to the message the modal comes from
@@ -388,8 +389,9 @@ export const command: SlashCommand = {
 					qts.update({ skills_global: qts.skills_global });
 				}
 
-				server.skills.push(newName);
-				await server.update({ skills: server.skills.filter(n => n !== skillName) });
+				const newSkills = deepCopy(server.skills);
+				newSkills.push(newName);
+				await server.update({ skills: newSkills.filter(n => n !== skillName) });
 			}
 
 			// This is always an update to the message the modal comes from

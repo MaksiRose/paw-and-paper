@@ -5,7 +5,7 @@ import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
-import { respond } from '../../utils/helperFunctions';
+import { now, respond } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 const { default_color } = require('../../../config.json');
 
@@ -84,29 +84,29 @@ export const command: SlashCommand = {
 		if (!user) { throw new TypeError('user is undefined'); }
 		if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
-		const twelveHoursInMs = 43_200_000;
+		const twelveHoursInS = 43_200;
 
 		const successfulTopVote = interaction.values[0] === 'top.gg'
 		&& (
-			(user.lastRecordedTopVote ?? 0) > Date.now() - twelveHoursInMs
+			(user.lastRecordedTopVote ?? 0) > now() - twelveHoursInS
 			|| await handle.votes.top?.client?.hasVoted(interaction.user.id)
 		);
 		const redeemedTopVote = successfulTopVote
-		&& Date.now() <= (user.nextRedeemableTopVote ?? 0);
+		&& now() <= (user.nextRedeemableTopVote ?? 0);
 
 		const discordsVote: { voted: boolean, votes: Array<{ expires: number; }>; } | undefined = await handle.votes.bfd?.client?.checkVote(interaction.user.id);
 		const successfulDiscordsVote = interaction.values[0] === 'discords.com'
 		&& (
-			(user.lastRecordedDiscordsVote ?? 0) > Date.now() - twelveHoursInMs
+			(user.lastRecordedDiscordsVote ?? 0) > now() - twelveHoursInS
 			|| discordsVote?.voted
 		);
 		const redeemedDiscordsVote = successfulDiscordsVote
-		&& Date.now() <= (user.nextRedeemableDiscordsVote ?? 0);
+		&& now() <= (user.nextRedeemableDiscordsVote ?? 0);
 
 		const successfulDblVote = interaction.values[0] === 'discordbotlist.com'
-		&& (user.lastRecordedDblVote ?? 0) > Date.now() - twelveHoursInMs;
+		&& (user.lastRecordedDblVote ?? 0) > now() - twelveHoursInS;
 		const redeemedDblVote = successfulDblVote
-		&& Date.now() <= (user.nextRedeemableDblVote ?? 0);
+		&& now() <= (user.nextRedeemableDblVote ?? 0);
 
 		if (successfulTopVote || successfulDiscordsVote || successfulDblVote) {
 
@@ -120,9 +120,9 @@ export const command: SlashCommand = {
 				return;
 			}
 
-			if (successfulTopVote) { await user.update({ nextRedeemableTopVote: (user.lastRecordedTopVote || Date.now()) + twelveHoursInMs }); }
-			if (successfulDiscordsVote) { await user.update({ nextRedeemableDiscordsVote: (user.lastRecordedDiscordsVote || Date.now()) + twelveHoursInMs }); }
-			if (successfulDblVote) { await user.update({ nextRedeemableDblVote: (user.lastRecordedDblVote || Date.now()) + twelveHoursInMs }); }
+			if (successfulTopVote) { await user.update({ nextRedeemableTopVote: (user.lastRecordedTopVote || now()) + twelveHoursInS }); }
+			if (successfulDiscordsVote) { await user.update({ nextRedeemableDiscordsVote: (user.lastRecordedDiscordsVote || now()) + twelveHoursInS }); }
+			if (successfulDblVote) { await user.update({ nextRedeemableDblVote: (user.lastRecordedDblVote || now()) + twelveHoursInS }); }
 
 			const energyPoints = Math.min(quidToServer.maxEnergy - quidToServer.energy, 30);
 

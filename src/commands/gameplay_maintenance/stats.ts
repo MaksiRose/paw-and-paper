@@ -188,7 +188,7 @@ async function sendStatsMessage(
 			`❤️ HP: \`${quidToServer.health}/${quidToServer.maxHealth}\` - ⚡ Energy: \`${quidToServer.energy}/${quidToServer.maxEnergy}\`\n` +
 			`🍗 Hunger: \`${quidToServer.hunger}/${quidToServer.maxHunger}\` - 🥤 Thirst: \`${quidToServer.thirst}/${quidToServer.maxThirst}\`` +
 			(injuryText ? `\n🩹 Injuries/Illnesses: ${injuryText.slice(2)}` : injuryText) +
-			(quidToServer.sapling_exists === false ? '' : `\n🌱 Ginkgo Sapling: ${quidToServer.sapling_waterCycles} days alive - ${quidToServer.sapling_health} health - Next watering <t:${Math.floor((quidToServer.sapling_nextWaterTimestamp || 0) / 1000)}:R>`) +
+			(quidToServer.sapling_exists === false ? '' : `\n🌱 Ginkgo Sapling: ${quidToServer.sapling_waterCycles} days alive - ${quidToServer.sapling_health} health - Next watering <t:${quidToServer.sapling_nextWaterTimestamp || 0}:R>`) +
 			(quidToServer.hasQuest ? `\n${quid.name} has one open quest!` : '') + (canRankUp ? `\n${quid.name} can rank up!` : ''),
 		components: [components],
 	}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);

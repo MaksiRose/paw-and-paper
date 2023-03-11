@@ -6,6 +6,7 @@ import { Api, Webhook } from '@top-gg/sdk';
 import { client, handle } from '..';
 import DiscordUser from '../models/discordUser';
 import User from '../models/user';
+import { now } from '../utils/helperFunctions';
 
 /** Updates server count on vote websites, starts event listeners to store successful votes, and adds structure to client to request individual votes */
 export async function execute(
@@ -35,7 +36,7 @@ export async function execute(
 				}) ?? undefined;
 				const user = discordUser?.user;
 
-				if (user) { await user.update({ lastRecordedDiscordsVote: Date.now() }); }
+				if (user) { await user.update({ lastRecordedDiscordsVote: now() }); }
 				else { console.error(new Error(`Couldn't update lastRecordedDiscordsVote: No database entry was found for ${request.body.user}`)); }
 			}
 
@@ -68,7 +69,7 @@ export async function execute(
 			}) ?? undefined;
 			const user = discordUser?.user;
 
-			if (user) { await user.update({ lastRecordedTopVote: Date.now() }); }
+			if (user) { await user.update({ lastRecordedTopVote: now() }); }
 			else { console.error(new Error(`Couldn't update lastRecordedTopVote: No database entry was found for ${vote.user}`)); }
 		}));
 
@@ -95,7 +96,7 @@ export async function execute(
 				}) ?? undefined;
 				const user = discordUser?.user;
 
-				if (user) { await user.update({ lastRecordedDblVote: Date.now() }); }
+				if (user) { await user.update({ lastRecordedDblVote: now() }); }
 				else { console.error(new Error(`Couldn't update lastRecordedDblVote: No database entry was found for ${request.body.id}`)); }
 			}
 

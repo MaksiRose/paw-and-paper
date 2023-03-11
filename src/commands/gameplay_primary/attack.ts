@@ -16,7 +16,7 @@ import { disableCommandComponent } from '../../utils/componentDisabling';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { createFightGame } from '../../utils/gameBuilder';
 import { getDisplayname, pronounAndPlural, pronoun, getDisplayspecies } from '../../utils/getQuidInfo';
-import { getMessageId, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
+import { getMessageId, now, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -319,7 +319,7 @@ async function executeAttacking(
 		if (serverAttackInfo.endingTimeout) { clearTimeout(serverAttackInfo.endingTimeout); }
 		serverMap.delete(interaction.guild.id);
 
-		await server.update({ nextPossibleAttackTimestamp: Date.now() + 86_400_000 /* 24 hours */ });
+		await server.update({ nextPossibleAttackTimestamp: now() + 86_400 /* 24 hours */ });
 	}
 	else if (serverAttackInfo.endingTimeout == null && serverAttackInfo.ongoingFights <= 0) {
 
@@ -342,7 +342,7 @@ export async function startAttack(
 		'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in remainingHumans
 	]) === true) { return; }
 
-	serverMap.set(interaction.guildId, { startsTimestamp: Date.now() + 120_000, idleHumans: humanCount, endingTimeout: null, ongoingFights: 0, stealInterval: null });
+	serverMap.set(interaction.guildId, { startsTimestamp: now() + 120, idleHumans: humanCount, endingTimeout: null, ongoingFights: 0, stealInterval: null });
 	setTimeout(async function() {
 		try {
 
@@ -389,8 +389,8 @@ export async function startAttack(
 
 					try {
 
-						const fifteenMinutesInMs = 900_000;
-						if (SnowflakeUtil.deconstruct(interaction.id).timestamp < Date.now() - fifteenMinutesInMs) { throw new Error('Interaction is older than 15 minutes'); }
+						const fifteenMinutesInS = 900;
+						if (Math.round(SnowflakeUtil.timestampFrom(interaction.id) / 1000) < now() - fifteenMinutesInS) { throw new Error('Interaction is older than 15 minutes'); }
 						await respond(interaction, { embeds: [embed] });
 					}
 					catch {
@@ -444,7 +444,7 @@ export function remindOfAttack(
 	const serverAttackInfo = serverMap.get(guildId);
 	if (serverAttackInfo && serverAttackInfo.startsTimestamp !== null) {
 
-		return `Humans will attack in ${Math.floor((serverAttackInfo.startsTimestamp - Date.now()) / 1000)} seconds!`;
+		return `Humans will attack in ${serverAttackInfo.startsTimestamp - now()} seconds!`;
 	}
 	else if (serverAttackInfo && serverAttackInfo.startsTimestamp == null) {
 
@@ -479,14 +479,14 @@ async function remainingHumans(
 	}
 	if (footerText.length > 0) { embed.setFooter({ text: footerText }); }
 
-	await server.update({ inventory: [...server.inventory], nextPossibleAttackTimestamp: Date.now() + 86_400_000 /* 24 hours */ });
+	await server.update({ inventory: [...server.inventory], nextPossibleAttackTimestamp: now() + 86_400 /* 24 hours */ });
 
 	serverMap.delete(interaction.guild.id);
 
 	try {
 
-		const fifteenMinutesInMs = 900_000;
-		if (SnowflakeUtil.deconstruct(interaction.id).timestamp < Date.now() - fifteenMinutesInMs) { throw new Error('Interaction is older than 15 minutes'); }
+		const fifteenMinutesInS = 900;
+		if (Math.round(SnowflakeUtil.timestampFrom(interaction.id) / 1000) < now() - fifteenMinutesInS) { throw new Error('Interaction is older than 15 minutes'); }
 		await respond(interaction, { embeds: [embed] });
 	}
 	catch {

@@ -4,7 +4,7 @@ import Quid from '../models/quid';
 import QuidToServer from '../models/quidToServer';
 import User from '../models/user';
 import UserToServer from '../models/userToServer';
-import { getArrayElement } from './helperFunctions';
+import { deepCopy, getArrayElement } from './helperFunctions';
 import { getRandomNumber } from './randomizers';
 
 export async function getDisplayname(
@@ -52,7 +52,7 @@ function getRandomPronounSet(
 	quid: Quid,
 ): string[] {
 
-	const pronouns = JSON.parse(JSON.stringify(quid.pronouns_en)) as string[][];
+	const pronouns = deepCopy(quid.pronouns_en);
 	if (quid.noPronouns_en === true) { pronouns.push([quid.name, quid.name, `${quid.name}s`, `${quid.name}s`, `${quid.name}self`, 'singular']); }
 	const pronounSet = getArrayElement(pronouns, getRandomNumber(pronouns.length));
 

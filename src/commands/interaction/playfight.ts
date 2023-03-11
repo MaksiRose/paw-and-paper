@@ -133,7 +133,7 @@ export const command: SlashCommand = {
 		if (interaction.channel === null) { throw new Error('Interaction channel is null'); }
 
 		/* Gets the current active quid and the server profile from the account */
-		const userId1 = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
+		const userId1 = getArrayElement(interaction.customId.split('_'), 4).replace('@', '');
 		const discordUser = await DiscordUser.findByPk(userId1);
 		const user = discordUser ? await User.findByPk(discordUser.userId) ?? undefined : undefined;
 		const discordUsers = user ? (await DiscordUser.findAll({ where: { userId: user.id } })).map(du => du.id) : undefined;
@@ -145,7 +145,7 @@ export const command: SlashCommand = {
 		if (!userToServer || userToServer.hasCooldown === true) { return; }
 
 		/* Gets the current active quid and the server profile from the partners account */
-		const userId2 = getArrayElement(interaction.customId.split('_'), 2).replace('@', '');
+		const userId2 = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
 		const discordUser2 = await DiscordUser.findByPk(userId2);
 		const user2 = discordUser2 ? await User.findByPk(discordUser2.userId) ?? undefined : undefined;
 		const discordUsers2 = user2 ? (await DiscordUser.findAll({ where: { userId: user2.id } })).map(du => du.id) : undefined;
@@ -172,7 +172,7 @@ export const command: SlashCommand = {
 		deleteCommandDisablingInfo(userToServer);
 		deleteCommandDisablingInfo(userToServer2);
 		const decreasedStatsData1 = await changeCondition(quidToServer, quid, 0, CurrentRegionType.Prairie, true);
-		const decreasedStatsData2 = await changeCondition(quidToServer, quid, 0, CurrentRegionType.Prairie, true);
+		const decreasedStatsData2 = await changeCondition(quidToServer2, quid2, 0, CurrentRegionType.Prairie, true);
 
 		/* Gets the chosen game type errors if it doesn't exist */
 		const gameType = getArrayElement(interaction.customId.split('_'), 2); // connectfour or tictactoe

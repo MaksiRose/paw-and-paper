@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder } from 'discord.js';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { capitalize, getMessageId, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
+import { capitalize, deepCopy, getMessageId, now, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
 import { remindOfAttack, startAttack } from './attack';
 import Fuse from 'fuse.js';
 import { disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
@@ -345,7 +345,7 @@ async function executeExploring(
 	// If the server has 6 or more items in the inventory than needed, there is no attack, and the next possible attack is possible, start an attack
 	else if (itemUse >= 6
 		&& remindOfAttack(interaction.guildId) === ''
-		&& server.nextPossibleAttackTimestamp <= Date.now()) {
+		&& server.nextPossibleAttackTimestamp <= now()) {
 
 		// It should be at least two humans, or more if there are more people active
 		const humanCount = (serverActiveUsersMap.get(interaction.guildId)?.length ?? 1) + 1;
@@ -368,7 +368,7 @@ async function executeExploring(
 				sapling_exists: true,
 				sapling_health: 50,
 				sapling_waterCycles: 0,
-				sapling_nextWaterTimestamp: Date.now(),
+				sapling_nextWaterTimestamp: now(),
 				sapling_sentReminder: false,
 				sapling_sentGentleReminder: false,
 				sapling_lastChannelId: interaction.channelId,
@@ -381,8 +381,10 @@ async function executeExploring(
 		else if (serverMaterialsCount < 36) {
 
 			const foundMaterial = await pickMaterial(server);
-			quidToServer.inventory.push(foundMaterial);
-			await quidToServer.update({ inventory: [...quidToServer.inventory] });
+
+			const newInv = deepCopy(quidToServer.inventory);
+			newInv.push(foundMaterial);
+			await quidToServer.update({ inventory: newInv });
 
 			embed.setDescription(`*${quid.name} is looking around for things around ${pronoun(quid, 1)} but there doesn't appear to be anything useful. The ${getDisplayspecies(quid)} decides to grab a ${foundMaterial} as to not go back with nothing to show.*`);
 			embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${foundMaterial}` });
@@ -529,8 +531,9 @@ async function executeExploring(
 
 				if (outcome === 2) {
 
-					quidToServer.inventory.push(foundItem);
-					await quidToServer.update({ inventory: [...quidToServer.inventory] });
+					const newInv = deepCopy(quidToServer.inventory);
+					newInv.push(foundItem);
+					await quidToServer.update({ inventory: newInv });
 
 					embed.setDescription(`*${quid.name} gently lowers ${pronoun(quid, 2)} head, picking up the ${foundItem} and carrying it back in ${pronoun(quid, 2)} mouth. What a success!*`);
 
@@ -558,12 +561,12 @@ async function executeExploring(
 
 					const healthPoints = Math.min(quidToServer.health, getRandomNumber(5, 3));
 
-					const twoWeeksInMs = 1_209_600_000;
+					const twoWeeksInS = 1_209_600;
 					const activeElderlies = await QuidToServer.count({
 						where: {
 							serverId: interaction.guildId,
 							rank: RankType.Elderly,
-							lastActiveTimestamp: { [Op.gt]: (Date.now() - twoWeeksInMs) },
+							lastActiveTimestamp: { [Op.gt]: (now() - twoWeeksInS) },
 						},
 					});
 
@@ -807,8 +810,9 @@ async function executeExploring(
 
 				if (outcome === 2) {
 
-					quidToServer.inventory.push(opponentSpecies);
-					await quidToServer.update({ inventory: [...quidToServer.inventory] });
+					const newInv = deepCopy(quidToServer.inventory);
+					newInv.push(opponentSpecies);
+					await quidToServer.update({ inventory: newInv });
 
 					if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm) {
 

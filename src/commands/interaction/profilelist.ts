@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, Guild, StringSelectMenuBuilder, SlashCommandBuilder, Collection } from 'discord.js';
-import { respond } from '../../utils/helperFunctions';
+import { now, respond } from '../../utils/helperFunctions';
 import { isInGuild } from '../../utils/checkUserState';
 import { SlashCommand } from '../../typings/handle';
 import { RankType } from '../../typings/data/user';
@@ -12,8 +12,8 @@ import UserToServer from '../../models/userToServer';
 import { generateId } from 'crystalid';
 const { default_color } = require('../../../config.json');
 
-const oneWeekInMs = 604_800_000;
-const oneMonthInMs = 2_629_746_000;
+const oneWeekInS = 604_800;
+const oneMonthInS = 2_629_746;
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -127,8 +127,8 @@ async function getProfilesTexts(
 		userIdLoop: for (let [discordUserId, discordUserToServer] of sortedDiscordUsersToServer) {
 
 			/* It's checking if there is no cache or if the cache is more than one week old. If it is, get new cache. If there is still no cache or the member is not in the guild, continue. */
-			const timeframe = discordUserToServer?.isMember ? oneWeekInMs : oneMonthInMs; // If a person is supposedly in a guild, we want to be really sure they are actually in the guild since assuming wrongly can lead to unwanted behavior, and these checks are the only way of finding out when they left. On the contrary, when they are supposedly not in the guild, we might find out anyways through them using the bot in the server, so we don't need to check that often.
-			if (!discordUserToServer || discordUserToServer.lastUpdatedTimestamp < Date.now() - timeframe) {
+			const timeframe = discordUserToServer?.isMember ? oneWeekInS : oneMonthInS; // If a person is supposedly in a guild, we want to be really sure they are actually in the guild since assuming wrongly can lead to unwanted behavior, and these checks are the only way of finding out when they left. On the contrary, when they are supposedly not in the guild, we might find out anyways through them using the bot in the server, so we don't need to check that often.
+			if (!discordUserToServer || discordUserToServer.lastUpdatedTimestamp < now() - timeframe) {
 
 				const member = await guild.members.fetch(discordUserId).catch(() => { return null; });
 
@@ -139,10 +139,10 @@ async function getProfilesTexts(
 						discordUserId: discordUserId,
 						serverId: guild.id,
 						isMember: member !== null,
-						lastUpdatedTimestamp: Date.now(),
+						lastUpdatedTimestamp: now(),
 					});
 				}
-				else if (discordUserToServer) { await discordUserToServer.update({ isMember: member !== null, lastUpdatedTimestamp: Date.now() }); }
+				else if (discordUserToServer) { await discordUserToServer.update({ isMember: member !== null, lastUpdatedTimestamp: now() }); }
 			}
 			if (!discordUserToServer || !discordUserToServer.isMember) { continue; }
 

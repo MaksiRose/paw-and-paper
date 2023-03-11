@@ -29,6 +29,6 @@ export default class DiscordUserToServer extends Model<DiscordUserToServerAttrib
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })
 	declare isMember: boolean;
 
-	@Column({ type: DataType.BIGINT, defaultValue: 0 })
+	@Column({ type: DataType.INTEGER, defaultValue: 0 })
 	declare lastUpdatedTimestamp: number;
 }

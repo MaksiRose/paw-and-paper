@@ -88,7 +88,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 
 		await Server.create({
 			id: server.serverId,
-			nextPossibleAttackTimestamp: server.nextPossibleAttack,
+			nextPossibleAttackTimestamp: Math.round(server.nextPossibleAttack / 1000),
 			visitChannelId: server.visitChannelId,
 			currentlyVisitingChannelId: server.currentlyVisiting,
 			skills: server.skills,
@@ -144,12 +144,12 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 			lastPlayedVersion: user.lastPlayedVersion,
 			antiproxy_startsWith: user.antiproxy.startsWith,
 			antiproxy_endsWith: user.antiproxy.endsWith,
-			lastRecordedTopVote: voteCache[`id_${user.userId[0]}`]?.lastRecordedTopVote ?? 0,
-			nextRedeemableTopVote: voteCache[`id_${user.userId[0]}`]?.nextRedeemableTopVote ?? 0,
-			lastRecordedDiscordsVote: voteCache[`id_${user.userId[0]}`]?.lastRecordedDiscordsVote ?? 0,
-			nextRedeemableDiscordsVote: voteCache[`id_${user.userId[0]}`]?.nextRedeemableDiscordsVote ?? 0,
-			lastRecordedDblVote: voteCache[`id_${user.userId[0]}`]?.lastRecordedDblVote ?? 0,
-			nextRedeemableDblVote: voteCache[`id_${user.userId[0]}`]?.nextRedeemableDblVote ?? 0,
+			lastRecordedTopVote: Math.floor((voteCache[`id_${user.userId[0]}`]?.lastRecordedTopVote ?? 0) / 1000),
+			nextRedeemableTopVote: Math.floor((voteCache[`id_${user.userId[0]}`]?.nextRedeemableTopVote ?? 0) / 1000),
+			lastRecordedDiscordsVote: Math.floor((voteCache[`id_${user.userId[0]}`]?.lastRecordedDiscordsVote ?? 0) / 1000),
+			nextRedeemableDiscordsVote: Math.floor((voteCache[`id_${user.userId[0]}`]?.nextRedeemableDiscordsVote ?? 0) / 1000),
+			lastRecordedDblVote: Math.floor((voteCache[`id_${user.userId[0]}`]?.lastRecordedDblVote ?? 0) / 1000),
+			nextRedeemableDblVote: Math.floor((voteCache[`id_${user.userId[0]}`]?.nextRedeemableDblVote ?? 0) / 1000),
 		}, { include: { model: Quid, as: 'quids' } });
 
 		for (const [discordUserId, server] of Object.entries(user.userIds)) {
@@ -170,7 +170,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 					discordUserId: discordUserId,
 					serverId: serverId,
 					isMember: information.isMember,
-					lastUpdatedTimestamp: information.lastUpdatedTimestamp,
+					lastUpdatedTimestamp: Math.round(information.lastUpdatedTimestamp / 1000),
 				});
 			}
 		}
@@ -249,7 +249,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 					sapling_exists: profile.sapling.exists,
 					sapling_health: profile.sapling.health,
 					sapling_waterCycles: profile.sapling.waterCycles,
-					sapling_nextWaterTimestamp: profile.sapling.nextWaterTimestamp,
+					sapling_nextWaterTimestamp: Math.round(profile.sapling.nextWaterTimestamp / 1000),
 					sapling_lastChannelId: profile.sapling.lastMessageChannelId,
 					sapling_sentReminder: profile.sapling.sentReminder,
 					sapling_sentGentleReminder: profile.sapling.sentGentleReminder,
@@ -261,8 +261,8 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 					inventory: Object.entries(Object.assign({}, ...Object.values(profile.inventory))).flatMap(([key, value]) => Array(value).fill(key)) as string[],
 					skills_global: profile.skills.global,
 					skills_personal: profile.skills.global,
-					lastActiveTimestamp: profile.lastActiveTimestamp,
-					passedOutTimestamp: profile.passedOutTimestamp,
+					lastActiveTimestamp: Math.round(profile.lastActiveTimestamp / 1000),
+					passedOutTimestamp: Math.round(profile.passedOutTimestamp / 1000),
 				});
 
 				// temporaryStatIncrease
@@ -271,7 +271,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 					await TemporaryStatIncrease.create({
 						id: generateId(),
 						quidToServerId: quidToServer.id,
-						startedTimestamp: Number(timestamp),
+						startedTimestamp: Math.round(Number(timestamp) / 1000),
 						type: statKind as StatIncreaseType,
 					});
 				}
@@ -319,7 +319,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 				autoproxy_blacklist: user.settings.proxy.servers[serverId]?.autoproxy.channels.blacklist ?? [],
 				stickymode_setTo: user.settings.proxy.servers[serverId]?.stickymode === 2 ? true : user.settings.proxy.servers[serverId]?.stickymode === 3 ? false : null,
 				tag: user.tag.servers[serverId] ?? '',
-				lastInteraction_timestamp: server.lastInteractionTimestamp,
+				lastInteraction_timestamp: Math.round(server.lastInteractionTimestamp / 1000),
 				lastInteraction_channelId: server.lastInteractionChannelId,
 				resting_messageId: server.restingMessageId,
 				resting_channelId: server.restingChannelId,
@@ -361,8 +361,8 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 				id: generateId(),
 				quidId1: id_1,
 				quidId2: id_2,
-				quid1_mentions: mentions_array,
-				quid2_mentions: mentions_array_2,
+				quid1_mentions: mentions_array.map(mention => Math.round(mention / 1000)),
+				quid2_mentions: mentions_array_2.map(mention => Math.round(mention / 1000)),
 			});
 
 			delete allMentions[id_2]?.[id_1];

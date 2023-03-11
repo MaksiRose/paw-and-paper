@@ -1,5 +1,5 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { respond } from '../../utils/helperFunctions';
+import { now, respond } from '../../utils/helperFunctions';
 import { checkLevelRequirements, checkRankRequirements, updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { getRandomNumber } from '../../utils/randomizers';
 import { generateId } from 'crystalid';
@@ -57,7 +57,7 @@ export const command: SlashCommand = {
 
 			if (interaction.inGuild()) {
 
-				await DiscordUserToServer.create({ id: generateId(), discordUserId: interaction.user.id, serverId: interaction.guildId, isMember: true, lastUpdatedTimestamp: Date.now() });
+				await DiscordUserToServer.create({ id: generateId(), discordUserId: interaction.user.id, serverId: interaction.guildId, isMember: true, lastUpdatedTimestamp: now() });
 			}
 		}
 

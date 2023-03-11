@@ -137,7 +137,7 @@ export const command: SlashCommand = {
 								.setMinLength(0)
 								.setMaxLength(16)
 								.setRequired(false)
-								.setValue((await GroupToServer.findOne({ where: { groupId: group.id, serverId: userToServer?.serverId } }))?.tag || group.tag || ''),
+								.setValue((userToServer ? await GroupToServer.findOne({ where: { groupId: group.id, serverId: userToServer.serverId } }) : null)?.tag || group.tag || ''),
 							]),
 					),
 				);
@@ -356,7 +356,7 @@ export async function getGroupMessage(
 			})
 			.setTitle(currentGroup.name)
 			.setFields([
-				{ name: '**🏷️ Tag**', value: (await GroupToServer.findOne({ where: { groupId: currentGroup.id, serverId: userToServer?.serverId } }))?.tag || currentGroup.tag || '/' },
+				{ name: '**🏷️ Tag**', value: (userToServer ? await GroupToServer.findOne({ where: { groupId: currentGroup.id, serverId: userToServer.serverId } }) : null)?.tag || currentGroup.tag || '/' },
 				{
 					name: '**☂️ Members**',
 					value: (await GroupToQuid.findAll({ where: { groupId: currentGroup.id }, include: [{ model: Quid, as: 'quid' }] }))

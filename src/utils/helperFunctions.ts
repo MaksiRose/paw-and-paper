@@ -300,6 +300,11 @@ export function objectHasKey<T, K extends PropertyKey>(
 
 function isObject(val: any): val is Record<string | number | symbol, unknown> { return typeof val === 'object' && val !== null; }
 
+export function deepCopy<T>(arr: T[]): T[] { return JSON.parse(JSON.stringify(arr)) as T[]; }
+
+/** Returns the number of seconds elapsed since midnight, January 1, 1970 Universal Coordinated Time (UTC). */
+export function now() { return Math.round(Date.now() / 1000); }
+
 /**
  * Given a string, return a new string with the first letter capitalized.
  * @param {string} string - The string to capitalize.

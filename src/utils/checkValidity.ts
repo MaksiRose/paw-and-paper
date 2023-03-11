@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, AnySelectMenuInteraction, time, Message } from 'discord.js';
-import { capitalize, getMessageId, respond, sendErrorMessage } from './helperFunctions';
+import { capitalize, getMessageId, now, respond, sendErrorMessage } from './helperFunctions';
 import { decreaseLevel } from './levelHandling';
 import { stopResting, isResting } from '../commands/gameplay_maintenance/rest';
 import { hasName, hasNameAndSpecies } from './checkUserState';
@@ -22,13 +22,13 @@ export async function isPassedOut(
 	/* This is a function that checks if the user has passed out. If they have, it will send a message to the channel and return true. */
 	if (quidToServer.energy <= 0 || quidToServer.health <= 0 || quidToServer.hunger <= 0 || quidToServer.thirst <= 0) {
 
-		const sixHoursInMs = 21_600_000;
+		const sixHoursInS = 21_600;
 
 		if (isNew) {
 
-			await quidToServer.update({ passedOutTimestamp: Date.now() });
+			await quidToServer.update({ passedOutTimestamp: now() });
 		}
-		else if (quidToServer.passedOutTimestamp + sixHoursInMs < Date.now()) {
+		else if (quidToServer.passedOutTimestamp + sixHoursInS < now()) {
 
 			await quidToServer.update({ energy: quidToServer.energy || 1, health: quidToServer.health || 1, hunger: quidToServer.hunger || 1, thirst: quidToServer.thirst || 1 });
 			return false;
@@ -42,7 +42,7 @@ export async function isPassedOut(
 					name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
-				.setDescription(`*${quid.name} lies on the ground near the pack borders, barely awake.* "Healer!" *${pronounAndPlural(quid, 0, 'screeches', 'screech')} with ${pronoun(quid, 2)} last energy. Without help, ${pronoun(quid, 0)} will not be able to continue.*\n\nIf no one heals you, you will stop being unconscious ${time(Math.floor((quidToServer.passedOutTimestamp + sixHoursInMs) / 1000), 'R')}.`)
+				.setDescription(`*${quid.name} lies on the ground near the pack borders, barely awake.* "Healer!" *${pronounAndPlural(quid, 0, 'screeches', 'screech')} with ${pronoun(quid, 2)} last energy. Without help, ${pronoun(quid, 0)} will not be able to continue.*\n\nIf no one heals you, you will stop being unconscious ${time(quidToServer.passedOutTimestamp + sixHoursInS, 'R')}.`)
 				.setFooter(isNew ? { text: await decreaseLevel(quidToServer, interaction) } : null)],
 		});
 

@@ -73,7 +73,7 @@ export default class QuidToServer extends Model<QuidToServerAttributes, QuidToSe
 	@Column({ type: DataType.STRING, defaultValue: '' })
 	declare nickname: string;
 
-	@Column({ type: DataType.STRING, defaultValue: '' })
+	@Column({ type: DataType.STRING, defaultValue: RankType.Youngling })
 	declare rank: RankType;
 
 	@Column({ type: DataType.SMALLINT, defaultValue: 1 })
@@ -130,7 +130,7 @@ export default class QuidToServer extends Model<QuidToServerAttributes, QuidToSe
 	@Column({ type: DataType.SMALLINT, defaultValue: 0 })
 	declare sapling_waterCycles: number;
 
-	@Column({ type: DataType.BIGINT, allowNull: true, defaultValue: null })
+	@Column({ type: DataType.INTEGER, allowNull: true, defaultValue: null })
 	declare sapling_nextWaterTimestamp: number | null;
 
 	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
@@ -166,10 +166,10 @@ export default class QuidToServer extends Model<QuidToServerAttributes, QuidToSe
 	@Column({ type: DataType.JSON, defaultValue: '{}' })
 	declare skills_personal: { [key in string]: number };
 
-	@Column({ type: DataType.BIGINT, defaultValue: 0 })
+	@Column({ type: DataType.INTEGER, defaultValue: 0 })
 	declare lastActiveTimestamp: number;
 
-	@Column({ type: DataType.BIGINT, defaultValue: 0 })
+	@Column({ type: DataType.INTEGER, defaultValue: 0 })
 	declare passedOutTimestamp: number;
 
 	@HasMany(() => TemporaryStatIncrease, { foreignKey: 'quidToServerId' })

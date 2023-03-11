@@ -10,7 +10,7 @@ import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents } from '../../utils/componentDisabling';
 import { getDisplayname, pronoun, pronounAndPlural } from '../../utils/getQuidInfo';
-import { getArrayElement, capitalize, respond } from '../../utils/helperFunctions';
+import { getArrayElement, capitalize, respond, deepCopy } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
@@ -56,7 +56,7 @@ export const command: SlashCommand = {
 
 		if (interaction.isStringSelectMenu()) {
 
-			if (interaction.customId === 'store_options') {
+			if (interaction.customId.startsWith('store_options')) {
 
 				const chosenFood = getArrayElement(interaction.values, 0) as CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | SpeciesNames | MaterialNames;
 				const maximumAmount = quidToServer.inventory.filter(i => i === chosenFood).length;
@@ -83,24 +83,25 @@ export const command: SlashCommand = {
 				return;
 			}
 
-			if (interaction.customId === 'store_amount') {
+			if (interaction.customId.startsWith('store_amount')) {
 
 				const chosenFood = getArrayElement(getArrayElement(interaction.values, 0).split('_'), 0) as CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | SpeciesNames | MaterialNames;
 				const chosenAmount = Number(getArrayElement(getArrayElement(interaction.values, 0).split('_'), 1));
 				if (isNaN(chosenAmount)) { throw new TypeError('chosenAmount is NaN'); }
 
 				let foundCount = 0;
-				quidToServer.inventory = quidToServer.inventory.filter((item) => {
+				const serverInv = deepCopy(server.inventory);
+				const qtsInv = deepCopy(quidToServer.inventory).filter((item) => {
 					if (item === chosenFood && foundCount < chosenAmount) {
 						foundCount++;
-						server.inventory.push(item);
+						serverInv.push(item);
 						return false;
 					}
 					return true;
 				});
 
-				await quidToServer.update({ inventory: [...quidToServer.inventory] });
-				await server.update({ inventory: [...server.inventory] });
+				await quidToServer.update({ inventory: qtsInv });
+				await server.update({ inventory: serverInv });
 
 				const { itemSelectMenu, storeAllButton } = getOriginalComponents(user, quidToServer);
 
@@ -240,10 +241,11 @@ async function storeAll(
 
 	const itemCounts: { [key: string]: number } = {};
 
+	const serverInv = deepCopy(server.inventory);
 	quidToServer.inventory.forEach(item => {
 		if (!itemCounts[item]) { itemCounts[item] = 0; }
 		itemCounts[item]++;
-		server.inventory.push(item);
+		serverInv.push(item);
 	});
 
 	for (const item in itemCounts) { footerText += `-${itemCounts[item]} ${item}\n`; }
@@ -251,7 +253,7 @@ async function storeAll(
 	embed.setFooter(footerText ? { text: footerText } : null);
 
 	await quidToServer.update({ inventory: [] });
-	await server.update({ inventory: [...server.inventory] });
+	await server.update({ inventory: serverInv });
 
 	// This is a reply if the interaction is a ChatInputCommand, and an update to the message with the button if the interaction is a button
 	await respond(interaction, {

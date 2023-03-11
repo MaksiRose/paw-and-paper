@@ -12,6 +12,7 @@ import { DiscordEvent } from '../typings/main';
 import { hasName } from '../utils/checkUserState';
 import { getMissingPermissionContent, hasPermission, permissionDisplay } from '../utils/permissionHandler';
 import { createGuild } from '../utils/updateGuild';
+import { now } from '../utils/helperFunctions';
 
 export const event: DiscordEvent = {
 	name: 'messageCreate',
@@ -96,18 +97,18 @@ export async function checkForProxy(
 	);
 
 	/* Checking if the user has autoproxy enabled in the current channel, and if so, it is adding the prefix to the message. */
-	const autoproxyIsToggled = (
-		(
-			userToServer === null
-				|| userToServer.autoproxy_setToWhitelist === null
-		) && user.proxy_globalAutoproxy === true
-	) || (
-		userToServer?.autoproxy_setToWhitelist === true
-		&& userToServer.autoproxy_whitelist.includes(message.channelId)
-	) || (
-		userToServer?.autoproxy_setToWhitelist === false
+	const autoproxyIsToggled = userToServer === null
+		? user.proxy_globalAutoproxy === true
+		: (
+			userToServer.autoproxy_setToWhitelist === null
+			&& user.proxy_globalAutoproxy === true
+		) || (
+			userToServer?.autoproxy_setToWhitelist === true
+			&& userToServer.autoproxy_whitelist.includes(message.channelId)
+		) || (
+			userToServer?.autoproxy_setToWhitelist === false
 			&& !userToServer.autoproxy_blacklist.includes(message.channelId)
-	);
+		);
 
 	const stickymodeIsToggledLocally = userToServer?.stickymode_setTo === true;
 	const stickymodeIsToggledGlobally = (
@@ -119,8 +120,9 @@ export async function checkForProxy(
 
 		replaceMessage = true;
 
-		if (stickymodeIsToggledLocally) { chosenQuid = userToServer.lastProxiedQuid ?? user.proxy_lastGlobalProxiedQuid ?? chosenQuid; }
-		if (stickymodeIsToggledGlobally) { chosenQuid = user.proxy_lastGlobalProxiedQuid ?? chosenQuid; }
+		const quidId = stickymodeIsToggledLocally ? userToServer.lastProxiedQuidId : stickymodeIsToggledGlobally ? user.proxy_lastGlobalProxiedQuidId : false;
+		if (quidId !== false) { chosenQuid = quidId === null ? null : await Quid.findByPk(quidId); }
+		if (chosenQuid === null) { replaceMessage = false; }
 	}
 
 	/* Checking if the message starts with the quid's proxy start and ends with the quid's proxy end. If it does, it will set the current quid to the quid that the message is being sent from. */
@@ -135,6 +137,7 @@ export async function checkForProxy(
 
 		if (hasProxy && messageIncludesProxy && !proxyIsDisabled) {
 
+			console.log('test?');
 			chosenQuid = quid;
 
 			message.content = message.content.substring(quid.proxy_startsWith.length, message.content.length - quid.proxy_endsWith.length);
@@ -144,8 +147,6 @@ export async function checkForProxy(
 	}
 
 
-	let isAntiProxied = false;
-
 	const hasAntiProxy = user.antiproxy_startsWith !== ''
 		|| user.antiproxy_endsWith !== '';
 	const messageIncludesAntiProxy = message.content.startsWith(user.antiproxy_startsWith)
@@ -154,15 +155,11 @@ export async function checkForProxy(
 
 		chosenQuid = null;
 		replaceMessage = false;
-		isAntiProxied = true;
 	}
 
-	await DiscordUserToServer.update({ isMember: true, lastUpdatedTimestamp: Date.now() }, { where: { discordUserId: message.author.id, serverId: message.guildId } });
-	if (replaceMessage || isAntiProxied) {
-
-		await userToServer?.update({ lastProxiedQuidId: chosenQuid?.id ?? null }, { logging: false });
-		await user.update({ proxy_lastGlobalProxiedQuidId: chosenQuid?.id ?? null }, { logging: false });
-	}
+	await DiscordUserToServer.update({ isMember: true, lastUpdatedTimestamp: now() }, { where: { discordUserId: message.author.id, serverId: message.guildId } });
+	await userToServer?.update({ lastProxiedQuidId: chosenQuid?.id ?? null });
+	await user.update({ proxy_lastGlobalProxiedQuidId: chosenQuid?.id ?? null });
 
 	return { replaceMessage, quid: chosenQuid };
 }

@@ -37,7 +37,7 @@ export default class Server extends Model<ServerAttributes, ServerCreationAttrib
 	@Column({ type: DataType.STRING, primaryKey: true })
 	declare id: string;
 
-	@Column({ type: DataType.BIGINT, defaultValue: 0 })
+	@Column({ type: DataType.INTEGER, defaultValue: 0 })
 	declare nextPossibleAttackTimestamp: number;
 
 	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })

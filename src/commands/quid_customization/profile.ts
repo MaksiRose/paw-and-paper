@@ -1,5 +1,5 @@
 import { ActionRowBuilder, EmbedBuilder, InteractionReplyOptions, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
-import { capitalize, respond } from '../../utils/helperFunctions';
+import { capitalize, deepCopy, respond } from '../../utils/helperFunctions';
 import { hasName, hasNameAndSpecies } from '../../utils/checkUserState';
 import { hasCooldown, checkResting } from '../../utils/checkValidity';
 import { disableCommandComponent } from '../../utils/componentDisabling';
@@ -266,7 +266,7 @@ export async function getProfileMessageOptions(
 	embedArray: Array<EmbedBuilder> = [],
 ): Promise<InteractionReplyOptions> {
 
-	const pronouns = quid ? JSON.parse(JSON.stringify(quid.pronouns_en)) as string[][] : [];
+	const pronouns = quid ? deepCopy(quid.pronouns_en) : [];
 	if (quid && quid.noPronouns_en === true) { pronouns.push(['none']); }
 
 	const user = await client.users.fetch(userId);

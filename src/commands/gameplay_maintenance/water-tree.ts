@@ -12,13 +12,13 @@ import { updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { getDisplayname, getDisplayspecies, pronounAndPlural } from '../../utils/getQuidInfo';
-import { respond } from '../../utils/helperFunctions';
+import { now, respond } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { hasPermission } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
-const oneMinute = 60_000;
+const oneMinute = 60;
 const thirtyMinutes = oneMinute * 30;
 const oneHour = thirtyMinutes * 2;
 const threeHours = oneHour * 3;
@@ -96,7 +96,7 @@ export const command: SlashCommand = {
 			await server.update({ inventory: server.inventory.filter((_, idx) => idx !== itemIndex) });
 		}
 
-		const currentTimestamp = interaction.createdTimestamp;
+		const currentTimestamp = Math.floor(interaction.createdTimestamp / 1000);
 		const timeDifference = Math.abs(currentTimestamp - (quidToServer.sapling_nextWaterTimestamp ?? 0));
 		const timeDifferenceInMinutes = Math.round(timeDifference / oneMinute);
 
@@ -277,7 +277,7 @@ export async function sendReminder(
 			await removeChannel(quidToServer);
 			console.error(error);
 		}
-	}, (quidToServer.sapling_nextWaterTimestamp ?? Date.now()) - Date.now()));
+	}, ((quidToServer.sapling_nextWaterTimestamp ?? now()) - now()) * 1000));
 }
 
 export function stopReminder(

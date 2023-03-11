@@ -127,7 +127,7 @@ export const command: SlashCommand = {
 		let quidToServer2 = quid2 ? await QuidToServer.findOne({ where: { quidId: quid2.id, serverId: server.id }, rejectOnEmpty: true }) : undefined;
 		if (!mentionedUser) {
 
-			const quidsToServers = await findSharableQuidsToServers(interaction.guildId);
+			const quidsToServers = await findSharableQuidsToServers(user.id, interaction.guildId);
 
 			if (quidsToServers.length <= 0) {
 
@@ -223,6 +223,7 @@ export const command: SlashCommand = {
 };
 
 async function findSharableQuidsToServers(
+	userId: string,
 	guildId: string,
 ) {
 
@@ -230,6 +231,7 @@ async function findSharableQuidsToServers(
 		include: [{
 			model: Quid<true>,
 			where: {
+				userId: { [Op.not]: userId },
 				name: { [Op.not]: '' },
 				species: { [Op.not]: null },
 			},

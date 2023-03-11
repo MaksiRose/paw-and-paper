@@ -20,7 +20,7 @@ import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { accessiblePlantEmojis, createFightGame, createPlantGame, plantEmojis } from '../../utils/gameBuilder';
 import { getDisplayname, getDisplayspecies, pronoun, pronounAndPlural } from '../../utils/getQuidInfo';
-import { capitalize, getArrayElement, respond, setCooldown } from '../../utils/helperFunctions';
+import { capitalize, deepCopy, getArrayElement, respond, setCooldown } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -137,7 +137,7 @@ export async function executePlaying(
 	let quidToServer2 = quid2 ? await QuidToServer.findOne({ where: { quidId: quid2.id, serverId: server.id } }) ?? undefined : undefined;
 	if (!user2) {
 
-		const quidsToServers = await findPlayableQuidsToServers(interaction.guildId);
+		const quidsToServers = await findPlayableQuidsToServers(user.id, interaction.guildId);
 
 		if (quidsToServers.length > 0) {
 
@@ -194,8 +194,10 @@ export async function executePlaying(
 		if (hasNameAndSpecies(quid2) && quidToServer2 && (quidToServer.rank === RankType.Youngling || quidToServer.rank === RankType.Apprentice)) {
 
 			const partnerHealthPoints = Math.min(quidToServer2.maxHealth - quidToServer2.health, getRandomNumber(5, 1));
-			await quidToServer2.update({ health: quidToServer2.health + partnerHealthPoints });
-			changedCondition.statsUpdateText += `\n\n+${partnerHealthPoints} HP for ${quid2.name} (${quidToServer2.health}/${quidToServer2.maxHealth})`;
+			if (partnerHealthPoints > 0) {
+				await quidToServer2.update({ health: quidToServer2.health + partnerHealthPoints });
+				changedCondition.statsUpdateText += `\n\n+${partnerHealthPoints} HP for ${quid2.name} (${quidToServer2.health}/${quidToServer2.maxHealth})`;
+			}
 		}
 
 		let whoWinsChance = pullFromWeightedTable({ 0: 1, 1: 1 });
@@ -375,8 +377,9 @@ export async function executePlaying(
 
 				if (tutorialMapEntry === 1) { tutorialMap.set(quid.id + quidToServer.serverId, 2); }
 
-				quidToServer.inventory.push(foundItem);
-				await quidToServer.update({ inventory: [...quidToServer.inventory] });
+				const newInv = deepCopy(quidToServer.inventory);
+				newInv.push(foundItem);
+				await quidToServer.update({ inventory: newInv });
 				isWin = true;
 
 				if (quidToServer.rank === RankType.Youngling) { changedCondition.statsUpdateText = `${await addExperience(quidToServer, getRandomNumber(4, 5))}\n${changedCondition.statsUpdateText}`; }
@@ -452,6 +455,7 @@ export async function executePlaying(
 }
 
 async function findPlayableQuidsToServers(
+	userId: string,
 	guildId: string,
 ) {
 
@@ -459,6 +463,7 @@ async function findPlayableQuidsToServers(
 		include: [{
 			model: Quid,
 			where: {
+				userId: { [Op.not]: userId },
 				name: { [Op.not]: '' },
 				species: { [Op.not]: null },
 			},
