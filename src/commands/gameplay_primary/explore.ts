@@ -382,7 +382,7 @@ async function executeExploring(
 
 			const foundMaterial = await pickMaterial(server);
 			quidToServer.inventory.push(foundMaterial);
-			await quidToServer.update({ inventory: quidToServer.inventory });
+			await quidToServer.update({ inventory: [...quidToServer.inventory] });
 
 			embed.setDescription(`*${quid.name} is looking around for things around ${pronoun(quid, 1)} but there doesn't appear to be anything useful. The ${getDisplayspecies(quid)} decides to grab a ${foundMaterial} as to not go back with nothing to show.*`);
 			embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${foundMaterial}` });
@@ -530,7 +530,7 @@ async function executeExploring(
 				if (outcome === 2) {
 
 					quidToServer.inventory.push(foundItem);
-					await quidToServer.update({ inventory: quidToServer.inventory });
+					await quidToServer.update({ inventory: [...quidToServer.inventory] });
 
 					embed.setDescription(`*${quid.name} gently lowers ${pronoun(quid, 2)} head, picking up the ${foundItem} and carrying it back in ${pronoun(quid, 2)} mouth. What a success!*`);
 
@@ -808,7 +808,7 @@ async function executeExploring(
 				if (outcome === 2) {
 
 					quidToServer.inventory.push(opponentSpecies);
-					await quidToServer.update({ inventory: quidToServer.inventory });
+					await quidToServer.update({ inventory: [...quidToServer.inventory] });
 
 					if (speciesInfo[quid.species].habitat === SpeciesHabitatType.Warm) {
 

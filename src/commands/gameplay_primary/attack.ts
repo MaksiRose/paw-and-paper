@@ -239,7 +239,7 @@ async function executeAttacking(
 			if (winLoseRatio < 1) {
 
 				minusItemText += removeByHighestItem(server, interaction.guild.name);
-				await server.update({ inventory: server.inventory });
+				await server.update({ inventory: [...server.inventory] });
 			}
 
 			embed.setDescription(`*The battle between the human and ${quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${getDisplayspecies(quid)} tries to jump at them, but the human manages to dodge. ${winLoseRatio < 1 ? `Quickly they run in the direction of the food den. They escaped from ${pronoun(quid, 1)}!*` : 'Quickly they back off from the tricky situation.*'}`);
@@ -385,7 +385,7 @@ export async function startAttack(
 						footerText += removeByHighestItem(server, interaction.guild.name);
 					}
 					if (footerText.length > 0) { embed.setFooter({ text: footerText }); }
-					await server.update({ inventory: server.inventory });
+					await server.update({ inventory: [...server.inventory] });
 
 					try {
 
@@ -479,7 +479,7 @@ async function remainingHumans(
 	}
 	if (footerText.length > 0) { embed.setFooter({ text: footerText }); }
 
-	await server.update({ inventory: server.inventory, nextPossibleAttackTimestamp: Date.now() + 86_400_000 /* 24 hours */ });
+	await server.update({ inventory: [...server.inventory], nextPossibleAttackTimestamp: Date.now() + 86_400_000 /* 24 hours */ });
 
 	serverMap.delete(interaction.guild.id);
 

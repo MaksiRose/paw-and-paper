@@ -455,8 +455,7 @@ export const command: SlashCommand = {
 				if (!hasChannel) { channelLimits[listType].push(channelId); }
 				else { channelLimits[listType] = channelLimits[listType].filter(string => string !== channelId); }
 				await channelLimits.update({
-					whitelist: channelLimits.whitelist,
-					blacklist: channelLimits.blacklist,
+					[listType]: [...channelLimits[listType]],
 				});
 
 

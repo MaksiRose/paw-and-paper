@@ -258,7 +258,7 @@ export const command: SlashCommand = {
 
 					if (!hasChannel) { userToServer[listType].push(channelId); }
 					else { userToServer[listType] = userToServer[listType].filter(cid => cid !== channelId); }
-					await userToServer.update({ [listType]: userToServer[listType] });
+					await userToServer.update({ [listType]: [...userToServer[listType]] });
 				}
 
 				// This is always an update to the message with the select menu

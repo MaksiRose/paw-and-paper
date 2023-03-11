@@ -376,7 +376,7 @@ export async function executePlaying(
 				if (tutorialMapEntry === 1) { tutorialMap.set(quid.id + quidToServer.serverId, 2); }
 
 				quidToServer.inventory.push(foundItem);
-				await quidToServer.update({ inventory: quidToServer.inventory });
+				await quidToServer.update({ inventory: [...quidToServer.inventory] });
 				isWin = true;
 
 				if (quidToServer.rank === RankType.Youngling) { changedCondition.statsUpdateText = `${await addExperience(quidToServer, getRandomNumber(4, 5))}\n${changedCondition.statsUpdateText}`; }

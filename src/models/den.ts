@@ -17,16 +17,16 @@ export default class Den extends Model<DenAttributes, DenCreationAttributes> {
 	@Column({ type: DataType.STRING, primaryKey: true })
 	declare id: string;
 
-	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
+	@Column({ type: DataType.SMALLINT, defaultValue: 100 })
 	declare structure: number;
 
-	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
+	@Column({ type: DataType.SMALLINT, defaultValue: 100 })
 	declare bedding: number;
 
-	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
+	@Column({ type: DataType.SMALLINT, defaultValue: 100 })
 	declare thickness: number;
 
-	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
+	@Column({ type: DataType.SMALLINT, defaultValue: 100 })
 	declare evenness: number;
 
 	@HasOne(() => Server, { foreignKey: 'sleepingDenId', onDelete: 'SET NULL' })

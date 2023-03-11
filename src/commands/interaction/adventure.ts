@@ -562,7 +562,7 @@ export const command: SlashCommand = {
 							foundItem = specialPlants[getRandomNumber(specialPlants.length)]!;
 
 							winningQuidToServer.inventory.push(foundItem);
-							await winningQuidToServer.update({ inventory: winningQuidToServer.inventory });
+							await winningQuidToServer.update({ inventory: [...winningQuidToServer.inventory] });
 						}
 						else if (winningQuidToServer.health < winningQuidToServer.maxHealth) {
 
@@ -574,7 +574,7 @@ export const command: SlashCommand = {
 							foundItem = await pickPlant(pullFromWeightedTable({ 0: finishedRounds + 10, 1: (2 * finishedRounds) - 10, 2: (20 - finishedRounds) * 3 }) as 0 | 1 | 2, server);
 
 							winningQuidToServer.inventory.push(foundItem);
-							await winningQuidToServer.update({ inventory: winningQuidToServer.inventory });
+							await winningQuidToServer.update({ inventory: [...winningQuidToServer.inventory] });
 						}
 
 						return { foundItem, extraHealthPoints };

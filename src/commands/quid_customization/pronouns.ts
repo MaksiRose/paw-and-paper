@@ -92,7 +92,6 @@ export const command: SlashCommand = {
 			}, 'update', interaction.message.id);
 			return;
 		}
-
 	},
 	async sendModalResponse(interaction, { quid, user, userToServer, quidToServer }) {
 
@@ -107,7 +106,8 @@ export const command: SlashCommand = {
 		let isNone = false;
 
 		/* If the pronouns won't be deleted, the first chosen pronoun is none and there are no other pronouns chosen, set isNone to true. */
-		if (!willBeDeleted && chosenPronouns[0] === 'none' && chosenPronouns.length == 1) { isNone = true; }
+		if (chosenPronouns[0] === 'none' && chosenPronouns.length == 1) { isNone = true; }
+		if (customId.args[0] === 'none') { isNone = true; }
 
 		/* Checking if the user has provided the correct amount of arguments. If they haven't, it will send an error message. */
 		if (!willBeDeleted && !isNone && chosenPronouns.length !== 6) {
@@ -170,14 +170,16 @@ export const command: SlashCommand = {
 			}
 		}
 
-		const oldPronounSet = isNaN(pronounNumber) ? undefined : quid.pronouns_en[pronounNumber];
+		const oldPronounSet = isNaN(pronounNumber) ? ['none'] : quid.pronouns_en[pronounNumber];
 
 		/* Add the pronouns, send a success message and update the original one. */
-		const pronouns = (willBeDeleted && isNaN(pronounNumber)) ? quid.pronouns_en.splice(pronounNumber, 1) : quid.pronouns_en;
-		if (!isNone && !willBeDeleted) { pronouns[isNaN(pronounNumber) ? pronouns.length : pronounNumber] = chosenPronouns; }
+		const pronouns = [...quid.pronouns_en];
+		if ((willBeDeleted && !isNaN(pronounNumber))) { pronouns.splice(pronounNumber, 1); }
+		else if (!isNone && !willBeDeleted) { pronouns[isNaN(pronounNumber) ? pronouns.length : pronounNumber] = chosenPronouns; }
+
 		await quid.update({
 			pronouns_en: pronouns,
-			noPronouns_en: isNone ? true : quid.noPronouns_en,
+			noPronouns_en: isNone ? !quid.noPronouns_en : quid.noPronouns_en,
 		});
 
 		// This is always an update to the message that the modal is associated with
@@ -185,7 +187,7 @@ export const command: SlashCommand = {
 			components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([getPronounsMenu(quid)])],
 		}, 'update', interaction.message.id);
 
-		const addedOrEditedTo = isNaN(pronounNumber) ? 'added pronoun' : `edited pronoun from ${oldPronounSet?.join('/')} to`;
+		const addedOrEditedTo = oldPronounSet === undefined ? 'added pronoun' : `edited pronoun from ${oldPronounSet.join('/')} to`;
 		// This is always a followUp
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()

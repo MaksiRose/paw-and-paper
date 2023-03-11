@@ -76,40 +76,40 @@ export default class QuidToServer extends Model<QuidToServerAttributes, QuidToSe
 	@Column({ type: DataType.STRING, defaultValue: '' })
 	declare rank: RankType;
 
-	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 1 })
+	@Column({ type: DataType.SMALLINT, defaultValue: 1 })
 	declare levels: number;
 
-	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 0 })
+	@Column({ type: DataType.SMALLINT, defaultValue: 0 })
 	declare experience: number;
 
-	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
+	@Column({ type: DataType.SMALLINT, defaultValue: 100 })
 	declare health: number;
 
-	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
+	@Column({ type: DataType.SMALLINT, defaultValue: 100 })
 	declare energy: number;
 
-	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
+	@Column({ type: DataType.SMALLINT, defaultValue: 100 })
 	declare hunger: number;
 
-	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
+	@Column({ type: DataType.SMALLINT, defaultValue: 100 })
 	declare thirst: number;
 
-	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
+	@Column({ type: DataType.SMALLINT, defaultValue: 100 })
 	declare maxHealth: number;
 
-	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
+	@Column({ type: DataType.SMALLINT, defaultValue: 100 })
 	declare maxEnergy: number;
 
-	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
+	@Column({ type: DataType.SMALLINT, defaultValue: 100 })
 	declare maxHunger: number;
 
-	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
+	@Column({ type: DataType.SMALLINT, defaultValue: 100 })
 	declare maxThirst: number;
 
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })
 	declare hasQuest: boolean;
 
-	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 0 })
+	@Column({ type: DataType.SMALLINT, defaultValue: 0 })
 	declare unlockedRanks: number;
 
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })
@@ -124,10 +124,10 @@ export default class QuidToServer extends Model<QuidToServerAttributes, QuidToSe
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })
 	declare sapling_exists: boolean;
 
-	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 50 })
+	@Column({ type: DataType.SMALLINT, defaultValue: 50 })
 	declare sapling_health: number;
 
-	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 0 })
+	@Column({ type: DataType.SMALLINT, defaultValue: 0 })
 	declare sapling_waterCycles: number;
 
 	@Column({ type: DataType.BIGINT, allowNull: true, defaultValue: null })
@@ -142,16 +142,16 @@ export default class QuidToServer extends Model<QuidToServerAttributes, QuidToSe
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })
 	declare sapling_sentGentleReminder: boolean;
 
-	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 0 })
+	@Column({ type: DataType.SMALLINT, defaultValue: 0 })
 	declare injuries_wounds: number;
 
-	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 0 })
+	@Column({ type: DataType.SMALLINT, defaultValue: 0 })
 	declare injuries_infections: number;
 
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })
 	declare injuries_cold: boolean;
 
-	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 0 })
+	@Column({ type: DataType.SMALLINT, defaultValue: 0 })
 	declare injuries_sprains: number;
 
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })

@@ -20,7 +20,10 @@ function calculateEnergyDecrease(
 	const healthDependentEnergyDecrease = Math.round(10 - (quidToServer.health / (quidToServer.maxHealth / 10)));
 
 	/* If energyDependentHungerDecrease is 0, return 0. If it's not 0, compare healthDependentEnergyDecrease with the profiles energy and return the smaller number. */
-	return healthDependentEnergyDecrease > 0 ? Math.min(healthDependentEnergyDecrease, quidToServer.energy) : 0;
+	const energyDecrease = Math.min(healthDependentEnergyDecrease, quidToServer.energy);
+	const maxEnergyDecrease = Math.floor(energyDecrease / 2) + 1;
+	const minEnergyDecrease = Math.ceil(energyDecrease / 2);
+	return healthDependentEnergyDecrease > 0 ? getRandomNumber(maxEnergyDecrease, minEnergyDecrease) : 0;
 }
 
 /**
@@ -219,7 +222,7 @@ export async function changeCondition(
 ): Promise<DecreasedStatsData> {
 
 	const { injuryUpdateEmbed, totalHealthDecrease, modifiedInjuries } = decreaseHealth(quidToServer, quid);
-	const energyDecrease = Math.min(calculateEnergyDecrease(quidToServer) + getRandomNumber(3, 1), quidToServer.energy);
+	const energyDecrease = Math.min(calculateEnergyDecrease(quidToServer) + getRandomNumber(2, 1), quidToServer.energy);
 	const hungerDecrease = calculateHungerDecrease(quidToServer);
 	const thirstDecrease = calculateThirstDecrease(quidToServer);
 	const previousRegion = quidToServer.currentRegion;

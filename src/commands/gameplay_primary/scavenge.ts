@@ -213,7 +213,7 @@ async function executeScavenging(
 							embed.setFooter({ text: `${await addExperience(quidToServer, experiencePoints)}\n${changedCondition.statsUpdateText}\n\n+1 ${foundCarcass}` });
 
 							quidToServer.inventory.push(foundCarcass);
-							await quidToServer.update({ inventory: quidToServer.inventory });
+							await quidToServer.update({ inventory: [...quidToServer.inventory] });
 						}
 						else if (materialCount < 0) {
 
@@ -228,7 +228,7 @@ async function executeScavenging(
 							embed.setFooter({ text: `${await addExperience(quidToServer, experiencePoints)}\n${changedCondition.statsUpdateText}\n\n+1 ${foundMaterial}` });
 
 							quidToServer.inventory.push(foundMaterial);
-							await quidToServer.update({ inventory: quidToServer.inventory });
+							await quidToServer.update({ inventory: [...quidToServer.inventory] });
 						}
 						else {
 

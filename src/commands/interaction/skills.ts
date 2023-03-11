@@ -61,7 +61,7 @@ export const command: SlashCommand = {
 
 			const newGlobalSkills: { [x: string]: number; } = {};
 			for (const skill of server.skills) { newGlobalSkills[skill] = quidToServer.skills_global[skill] ?? 0; }
-			await quidToServer.update({ skills_global: newGlobalSkills });
+			await quidToServer.update({ skills_global: { ...newGlobalSkills } });
 		}
 
 		// This is always a reply
@@ -250,7 +250,7 @@ export const command: SlashCommand = {
 			if (category === 'personal' && quidToServer) {
 
 				delete quidToServer.skills_personal[skillName];
-				await quidToServer.update({ skills_personal: quidToServer.skills_personal });
+				await quidToServer.update({ skills_personal: { ...quidToServer.skills_personal } });
 			}
 			else {
 
@@ -259,7 +259,7 @@ export const command: SlashCommand = {
 				for (const qts of quidsToServer) {
 
 					delete qts.skills_global[skillName];
-					qts.update({ skills_global: qts.skills_global });
+					qts.update({ skills_global: { ...qts.skills_global } });
 				}
 
 				await server.update({ skills: server.skills.filter(n => n !== skillName) });
@@ -305,7 +305,7 @@ export const command: SlashCommand = {
 				}
 
 				quidToServer.skills_personal[newName] = 0;
-				await quidToServer.update({ skills_personal: quidToServer.skills_personal });
+				await quidToServer.update({ skills_personal: { ...quidToServer.skills_personal } });
 			}
 			else {
 
@@ -326,11 +326,11 @@ export const command: SlashCommand = {
 				for (const qts of quidsToServer) {
 
 					qts.skills_global[newName] = 0;
-					qts.update({ skills_global: qts.skills_global });
+					qts.update({ skills_global: { ...qts.skills_global } });
 				}
 
 				server.skills.push(newName);
-				await server.update({ skills: server.skills });
+				await server.update({ skills: [...server.skills] });
 			}
 
 			// This is always an update to the message the modal comes from
@@ -363,7 +363,7 @@ export const command: SlashCommand = {
 
 				quidToServer.skills_personal[newName] = quidToServer.skills_personal[skillName] ?? 0;
 				delete quidToServer.skills_personal[skillName];
-				await quidToServer.update({ skills_personal: quidToServer.skills_personal });
+				await quidToServer.update({ skills_personal: { ...quidToServer.skills_personal } });
 			}
 			else {
 
@@ -427,7 +427,7 @@ export const command: SlashCommand = {
 			else if (plusOrMinus === '-') { quidToServer[cat][skillName] -= newValue; }
 			else { quidToServer[cat][skillName] = newValue; }
 
-			await quidToServer.update({ [cat]: quidToServer[cat] });
+			await quidToServer.update({ [cat]: { ...quidToServer[cat] } });
 
 			// This is always an update to the message the modal comes from
 			await respond(interaction, {

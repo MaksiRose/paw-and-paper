@@ -252,7 +252,7 @@ export async function sendEatMessage(
 		},
 		...(increasedMaxStatType ? { [increasedMaxStatType]: quidToServer[increasedMaxStatType] + 10 } : {}),
 	});
-	await server.update({ inventory: server.inventory });
+	await server.update({ inventory: [...server.inventory] });
 
 	footerText += `${finalHungerPoints >= 0 ? '+' : ''}${finalHungerPoints} hunger (${quidToServer.hunger}/${quidToServer.maxHunger})`;
 

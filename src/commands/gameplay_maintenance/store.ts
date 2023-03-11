@@ -99,8 +99,8 @@ export const command: SlashCommand = {
 					return true;
 				});
 
-				await quidToServer.update({ inventory: quidToServer.inventory });
-				await server.update({ inventory: server.inventory });
+				await quidToServer.update({ inventory: [...quidToServer.inventory] });
+				await server.update({ inventory: [...server.inventory] });
 
 				const { itemSelectMenu, storeAllButton } = getOriginalComponents(user, quidToServer);
 
@@ -251,7 +251,7 @@ async function storeAll(
 	embed.setFooter(footerText ? { text: footerText } : null);
 
 	await quidToServer.update({ inventory: [] });
-	await server.update({ inventory: server.inventory });
+	await server.update({ inventory: [...server.inventory] });
 
 	// This is a reply if the interaction is a ChatInputCommand, and an update to the message with the button if the interaction is a button
 	await respond(interaction, {

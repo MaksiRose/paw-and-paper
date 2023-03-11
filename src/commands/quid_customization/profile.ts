@@ -82,7 +82,7 @@ export const command: SlashCommand = {
 		else if (hasNameAndSpecies(quid) && interaction.inCachedGuild() && await hasCooldown(interaction, user, userToServer, quid, quidToServer)) { return; } // This is always a reply
 
 		const response = await getProfileMessageOptions(discordUser.id, quid, isYourself, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user });
-		const selectMenu = await getQuidSelectMenu(discordUser.id, interaction.user.id, 0, quid === undefined, isYourself);
+		const selectMenu = await getQuidSelectMenu(user.id, interaction.user.id, 0, quid?.id, isYourself);
 
 		// This is always a reply
 		await respond(interaction, {
@@ -130,7 +130,9 @@ export const command: SlashCommand = {
 		/* Checking if the user clicked the "Learn more" button, and if they did, copy the message to their DMs, but with the select Menu as a component instead of the button. */
 		if (interaction.isButton() && customId.args[0] === 'learnabout') {
 
-			const selectMenu = await getQuidSelectMenu(mentionedUserId, interaction.user.id, 0, quid === undefined, isYourself);
+			if (!user) { throw new TypeError('user is undefined'); }
+
+			const selectMenu = await getQuidSelectMenu(user.id, interaction.user.id, 0, quid?.id, isYourself);
 
 			await Promise.all([
 				interaction.deferUpdate(),
@@ -151,9 +153,11 @@ export const command: SlashCommand = {
 		/* Checking if the user has clicked on the "Show more accounts" button, and if they have, it will increase the page number by 1, and if the page number is greater than the total number of pages, it will set the page number to 0. Then, it will edit the bot reply to show the next page of accounts. */
 		if (interaction.isStringSelectMenu() && selectOptionId[0] === 'nextpage') {
 
+			if (!user) { throw new TypeError('user is undefined'); }
+
 			// This is always an update to the message with the select menu
 			await respond(interaction, {
-				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([await getQuidSelectMenu(mentionedUserId, interaction.user.id, Number(selectOptionId[1]) + 1, quid === undefined, isYourself)])],
+				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([await getQuidSelectMenu(user.id, interaction.user.id, Number(selectOptionId[1]) + 1, quid?.id, isYourself)])],
 			}, 'update', interaction.message.id);
 			return;
 		}
@@ -212,7 +216,7 @@ export const command: SlashCommand = {
 			await respond(interaction, {
 				// we can interaction.user.id because the "switchto" option is only available to yourself
 				...await getProfileMessageOptions(interaction.user.id, quid, isYourself, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user }),
-				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([await getQuidSelectMenu(mentionedUserId, interaction.user.id, 0, quid === undefined, isYourself)])],
+				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([await getQuidSelectMenu(user.id, interaction.user.id, 0, quid?.id, isYourself)])],
 			}, 'update', interaction.message.id);
 
 			// This is always a followUp
@@ -312,7 +316,7 @@ async function getQuidSelectMenu(
 	userId: string,
 	executorId: string,
 	page: number,
-	hasNoSelectedQuid: boolean,
+	selectedQuidId: string | undefined,
 	isYourself: boolean,
 ): Promise<StringSelectMenuBuilder> {
 
@@ -321,7 +325,7 @@ async function getQuidSelectMenu(
 	let quidOptions: RestOrArray<SelectMenuComponentOptionData> = quids.map(quid => ({
 		label: quid.name,
 		value: constructSelectOptions<SelectOptionArgs>([isYourself ? 'switchto' : 'view', quid.id]),
-		default: quid?.id === quid.id ? true : false,
+		default: quid.id === selectedQuidId ? true : false,
 	}));
 
 	if (isYourself) {
@@ -329,7 +333,7 @@ async function getQuidSelectMenu(
 		quidOptions.push({
 			label: 'Empty Slot',
 			value: constructSelectOptions<SelectOptionArgs>(['switchto', '']),
-			default: hasNoSelectedQuid,
+			default: selectedQuidId === undefined,
 		});
 	}
 
