@@ -35,7 +35,7 @@ const itemInfo = { ...commonPlantsInfo, ...uncommonPlantsInfo, ...rarePlantsInfo
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
 		.setName('heal')
-		.setDescription('Heal injuries_ Not available to Younglings. Less effective on yourself, and as Apprentice or Hunter.')
+		.setDescription('Heal injuries. Not available to Younglings. Less effective on yourself, and as Apprentice or Hunter.')
 		.addUserOption(option =>
 			option.setName('user')
 				.setDescription('The user you want to heal.')
