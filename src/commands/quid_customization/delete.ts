@@ -205,7 +205,7 @@ export const command: SlashCommand = {
 
 				const quidIdIn = { [Op.in]: quids.map(q => q.id) };
 				await Webhook.destroy({ where: { quidId: quidIdIn } });
-				await Friendship.destroy({ where: { [Op.or]: [ { quidId_1: quidIdIn }, { quidId_2: quidIdIn }] } });
+				await Friendship.destroy({ where: { [Op.or]: [ { quidId1: quidIdIn }, { quidId2: quidIdIn }] } });
 				await GroupToQuid.destroy({ where: { quidId: quidIdIn } });
 
 				const quidToServerIdIn = { [Op.in]: quidsToServers.map(qts => qts.id) };
