@@ -146,7 +146,6 @@ export async function executePlaying(
 			user2 = await User.findByPk(quid2.userId) ?? undefined;
 			userToServer2 = user2 ? await UserToServer.findOne({ where: { userId: user2.id, serverId: server.id } }) ?? undefined : undefined;
 		}
-		else { return; }
 	}
 
 	/* Check if the user is interactable, and if they are, define quid data and profile data. */

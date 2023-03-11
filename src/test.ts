@@ -1,60 +1,29 @@
-import { Sequelize } from 'sequelize-typescript';
-import { readdirSync } from 'fs';
-import path from 'path';
-import Quid from './models/quid';
-import User from './models/user';
-import DiscordUser from './models/discordUser';
-import QuidToServer from './models/quidToServer';
-import { Op } from 'sequelize';
-import { CurrentRegionType } from './typings/data/user';
-const { database_password } = require('../config.json');
+function fact(x: number): number {
+	if (x <= 0) {
+		return 1;
+	}
+	return x * fact(x - 1);
+}
 
-const tablePath = path.join(__dirname, './models/');
-export const sequelize = new Sequelize('pnp', 'postgres', database_password, {
-	host: 'localhost',
-	dialect: 'postgres',
-	define: {
-		freezeTableName: true,
-	},
-	models: readdirSync(tablePath).map(el => tablePath + el),
-	logging: (_msg, sequelizeLogParams: any) => {
-		if (
-			sequelizeLogParams &&
-			sequelizeLogParams.instance &&
-			sequelizeLogParams.instance._changed
-		) {
-			if (sequelizeLogParams.type === 'UPDATE') {
-				const changes = (Array.from(sequelizeLogParams.instance._changed) as string[]).map((columnName) => ({
-					column: columnName,
-					before: sequelizeLogParams.instance._previousDataValues[columnName],
-					after: sequelizeLogParams.instance.dataValues[columnName],
-				}));
-				console.log(`${sequelizeLogParams.instance.constructor.name} ${sequelizeLogParams.instance.id} changed:`, changes);
-			}
-			else if (sequelizeLogParams.type === 'INSERT') {
-				const changes: Record<string, any> = { id: sequelizeLogParams.instance.dataValues.id };
-				(Array.from(sequelizeLogParams.instance._changed) as string[]).forEach((columnName) => {
-					changes[columnName] = sequelizeLogParams.instance.dataValues[columnName];
-				});
-				console.log(`Created ${sequelizeLogParams.instance.constructor.name}:`, changes);
-			}
-		}
-	},
-});
+function choose(n: number, k: number) {
+	return Math.round(fact(n) / (fact(k) * fact(n - k)));
+}
 
-(async () => {
+const x = 4; // all unique items
+const y = 0; // all pulled items
+const z = 0; // unique pulled items
 
-	await sequelize.sync();
+let k = 0;
+let rightSide = 0n;
 
-	const quidsToServer = await QuidToServer.findAll({
-		include: [{
-			model: Quid,
-			where: {
-				name: { [Op.not]: '' },
-				species: { [Op.not]: null },
-			},
-		}],
-	});
+while (k < z) {
 
-	console.log(quidsToServer.length);
-})();
+	rightSide += BigInt(Math.pow(-1, k)) * BigInt(choose(z, z - k)) * BigInt(Math.pow(z - k, y));
+	k += 1;
+}
+
+const numerator = BigInt(choose(x, z)) * rightSide;
+const combinations = BigInt(Math.pow(x, y));
+
+const result = (numerator * BigInt(100000)) / combinations;
+console.log(Number(result) / 1000, '%');
