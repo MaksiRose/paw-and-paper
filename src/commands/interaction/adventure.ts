@@ -12,7 +12,7 @@ import { remindOfAttack } from '../gameplay_primary/attack';
 import { pickPlant } from '../../utils/simulateItemUse';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
-import { CurrentRegionType, RankType } from '../../typings/data/user';
+import { RankType } from '../../typings/data/user';
 import { CommonPlantNames, RarePlantNames, SpecialPlantNames, UncommonPlantNames } from '../../typings/data/general';
 import { AsyncQueue } from '@sapphire/async-queue';
 import Quid from '../../models/quid';
@@ -229,8 +229,8 @@ export const command: SlashCommand = {
 		await setCooldown(userToServer2, true);
 		deleteCommandDisablingInfo(userToServer);
 		deleteCommandDisablingInfo(userToServer2);
-		const decreasedStatsData1 = await changeCondition(quidToServer, quid, quidToServer.rank === RankType.Youngling ? 0 : getRandomNumber(5, quidToServer.levels + 8), CurrentRegionType.Prairie, true);
-		const decreasedStatsData2 = await changeCondition(quidToServer, quid, quidToServer2.rank === RankType.Youngling ? 0 : getRandomNumber(5, quidToServer2.levels + 8), CurrentRegionType.Prairie, true);
+		const decreasedStatsData1 = await changeCondition(quidToServer, quid, quidToServer.rank === RankType.Youngling ? 0 : getRandomNumber(5, quidToServer.levels + 8), undefined, true);
+		const decreasedStatsData2 = await changeCondition(quidToServer, quid, quidToServer2.rank === RankType.Youngling ? 0 : getRandomNumber(5, quidToServer2.levels + 8), undefined, true);
 
 		/* Define number of rounds, and the uncovered card amount for both users. */
 		let finishedRounds = 0;
