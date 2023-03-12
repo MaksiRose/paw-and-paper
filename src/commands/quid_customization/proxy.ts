@@ -51,7 +51,7 @@ export const command: SlashCommand = {
 					{
 						name: 'set proxy',
 						value: 'This sets an indicator to the bot you want your message to be proxied. Only messages with those indicators will be proxied. Click the "Set?" button below to learn more.',
-					}, ...(hasName(quid) ? [{
+					}, ...((hasName(quid) || !interaction.inGuild()) ? [{
 						name: 'auto proxy',
 						value: 'This will treat every message in a specific channel as if it was proxied, even if the proxy isn\'t included. Click the "Auto?" button below to learn more.',
 					}] : []),
@@ -62,8 +62,8 @@ export const command: SlashCommand = {
 						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, quid?.id ?? user.id, ['set', 'learnmore']))
 						.setLabel('Set?')
 						.setStyle(ButtonStyle.Success),
-					...(hasName(quid) ? [new ButtonBuilder()
-						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, quid.id, ['auto', 'learnmore']))
+					...((hasName(quid) || !interaction.inGuild()) ? [new ButtonBuilder()
+						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, quid?.id ?? user.id, ['auto', 'learnmore']))
 						.setLabel('Auto?')
 						.setStyle(ButtonStyle.Success)] : []),
 				])],
@@ -129,7 +129,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		if (!hasName(quid)) { return; }
+		if (!hasName(quid) && interaction.inGuild()) { return; }
 		const allChannels = interaction.inGuild() ? (await interaction.guild?.channels?.fetch() ?? new Collection()).filter((c): c is NonThreadGuildBasedChannel => c !== null && c.permissionsFor(interaction.client.user.id)?.has('ViewChannel') != false && c.permissionsFor(interaction.client.user.id)?.has('SendMessages') != false && c.permissionsFor(interaction.user.id)?.has('ViewChannel') != false && c.permissionsFor(interaction.user.id)?.has('SendMessages') != false) : null;
 
 		/* If the user pressed the button to learn more about the auto subcommand, explain it with a select menu to select channels. */
@@ -176,11 +176,11 @@ export const command: SlashCommand = {
 			// This is always a followUp
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
-					.setColor(quid.color)
-					.setAuthor({
+					.setColor(quid?.color ?? default_color)
+					.setAuthor(hasName(quid) ? {
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
-					})
+					} : null)
 					.setTitle(`Auto-proxying ${interaction.inGuild() ? ((newSetting === null) ? 'now follows the global setting' : `is now only ${newSetting === false ? 'disabled' : 'enabled'} in the ${newSetting === false ? 'blacklisted' : 'whitelisted'} channels`) : `is now ${user.proxy_globalAutoproxy === true ? 'enabled' : 'disabled'} globally`}!`)],
 				ephemeral: true,
 			});
@@ -214,11 +214,11 @@ export const command: SlashCommand = {
 			// This is always a followUp
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
-					.setColor(quid.color)
-					.setAuthor({
+					.setColor(quid?.color ?? default_color)
+					.setAuthor(hasName(quid) ? {
 						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 						iconURL: quid.avatarURL,
-					})
+					} : null)
 					.setTitle(`Sticky mode ${interaction.inGuild() ? ((newSetting === null) ? 'now follows the global setting' : `is now ${newSetting === false ? 'disabled' : 'enabled'} in this server`) : `is now ${user.proxy_globalStickymode === true ? 'enabled' : 'disabled'} globally`}!`)],
 				ephemeral: true,
 			});
@@ -270,11 +270,11 @@ export const command: SlashCommand = {
 				// This is always a followUp
 				await respond(interaction, {
 					embeds: [new EmbedBuilder()
-						.setColor(quid.color)
-						.setAuthor({
+						.setColor(quid?.color ?? default_color)
+						.setAuthor(hasName(quid) ? {
 							name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 							iconURL: quid.avatarURL,
-						})
+						} : null)
 						.setTitle(`${hasChannel ? 'Removed' : 'Added'} ${interaction.guild.channels.cache.get(channelId)?.name} ${hasChannel ? 'from' : 'to'} the auto-proxy ${listType}!`)],
 					ephemeral: true,
 				});
@@ -357,7 +357,7 @@ export const command: SlashCommand = {
 function getAutoproxyComponents(
 	allChannels: Collection<string, NonThreadGuildBasedChannel> | null,
 	user: User,
-	quid: Quid,
+	quid: Quid | undefined,
 	userToServer: UserToServer | undefined,
 	page: number,
 ): (ActionRowBuilder<ButtonBuilder> | ActionRowBuilder<StringSelectMenuBuilder>)[] {
@@ -382,18 +382,18 @@ function getAutoproxyComponents(
 	return [
 		new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
-				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, quid.id, ['auto', 'setTo']))
+				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, quid?.id ?? user.id, ['auto', 'setTo']))
 				.setLabel(selectMenuOptions !== undefined ? `Currently ${userToServer?.autoproxy_setToWhitelist ? 'set to whitelist' : userToServer?.autoproxy_setToWhitelist === false ? 'set to blacklist' : 'follows global setting'}` : `Auto-proxying is ${user.proxy_globalAutoproxy ? 'enabled' : 'disabled'}`)
 				.setStyle(ButtonStyle.Secondary)]),
 		...selectMenuOptions !== undefined ? [new ActionRowBuilder<StringSelectMenuBuilder>()
 			.setComponents([new StringSelectMenuBuilder()
-				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, quid.id, ['auto', 'options']))
+				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, quid?.id ?? user.id, ['auto', 'options']))
 				.setPlaceholder(`Select channels to ${userToServer?.autoproxy_setToWhitelist ? 'enable' : 'disable'} auto-proxying in`)
 				.setOptions(selectMenuOptions)
 				.setDisabled(userToServer === undefined || userToServer.autoproxy_setToWhitelist === null)])] : [],
 		new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
-				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, quid.id, ['auto', 'stickymode']))
+				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, quid?.id ?? user.id, ['auto', 'stickymode']))
 				.setLabel(`Sticky mode ${(selectMenuOptions !== undefined ? userToServer?.stickymode_setTo === false : user.proxy_globalStickymode === false) ? 'is disabled' : (selectMenuOptions !== undefined ? userToServer?.stickymode_setTo === true : user.proxy_globalStickymode === true) ? 'is enabled' : 'follows global setting'}`)
 				.setStyle(ButtonStyle.Secondary)]),
 	];
