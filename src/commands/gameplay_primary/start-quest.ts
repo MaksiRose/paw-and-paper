@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder, Snowflake } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder } from 'discord.js';
 import { speciesInfo } from '../..';
 import Quid from '../../models/quid';
 import QuidToServer from '../../models/quidToServer';
@@ -78,7 +78,7 @@ export async function sendQuestMessage(
 	afterEmbedArray: EmbedBuilder[] = [],
 	footerText = '',
 	alternativeEditId?: string,
-): Promise<Snowflake> {
+): Promise<InteractionResponse | Message> {
 
 	const embed = new EmbedBuilder()
 		.setColor(quid.color)
@@ -175,7 +175,7 @@ export async function sendQuestMessage(
 		.catch(async () => {
 
 			// This is always an editReply
-			return (await respond(interaction, { components: disableAllComponents(components) }, respondType, getMessageId(botReply))).id;
+			return await respond(interaction, { components: disableAllComponents(components) }, respondType, getMessageId(botReply));
 		});
 }
 
@@ -188,7 +188,7 @@ async function startQuest(
 	messageContent: string,
 	embedArray: EmbedBuilder[],
 	afterEmbedArray: EmbedBuilder[],
-): Promise<Snowflake> {
+): Promise<Message | InteractionResponse> {
 	// this would be called from /quest, /explore and /play
 	// Quest would send in the main interaction so that it would edit it, while for explore and play it would send in the button interaction so it would respond to the button click, which also has the side effect that the stats you lost etc would already be displayed under the original "you found a quest" message.
 
@@ -243,7 +243,7 @@ async function startQuest(
 		cycleIndex: number,
 		previousQuestComponents?: ActionRowBuilder<ButtonBuilder>,
 		newInteraction?: ButtonInteraction<'cached'>,
-	): Promise<Snowflake> {
+	): Promise<InteractionResponse | Message> {
 
 		const buttonTextOrColor = getRandomNumber(2) === 0 ? 'color' : 'text';
 		const buttonColorKind = getRandomNumber(3) === 0 ? 'green' : getRandomNumber(2) === 0 ? 'blue' : 'red';
@@ -432,7 +432,7 @@ async function startQuest(
 			else { throw new Error('No rank type found'); }
 
 			// This is always an update or an editReply
-			const { id } = await respond(newInteraction ?? interaction, {
+			const response = await respond(newInteraction ?? interaction, {
 				content: messageContent,
 				embeds: [...embedArray, embed, ...afterEmbedArray],
 				components: [questComponents],
@@ -441,7 +441,7 @@ async function startQuest(
 			if (quidToServer.rank === RankType.Youngling) { await apprenticeAdvice(newInteraction ?? interaction); }
 			else if (quidToServer.rank === RankType.Apprentice) { await hunterhealerAdvice(newInteraction ?? interaction); }
 			else if (quidToServer.rank === RankType.Hunter || quidToServer.rank === RankType.Healer) { await elderlyAdvice(newInteraction ?? interaction); }
-			return id;
+			return response;
 		}
 		else if (missValue >= 10) {
 
@@ -494,11 +494,11 @@ async function startQuest(
 			else { throw new Error('No rank type found'); }
 
 			// This is always an update or an editReply
-			return (await respond(newInteraction ?? interaction, {
+			return await respond(newInteraction ?? interaction, {
 				content: messageContent,
 				embeds: [...embedArray, embed, ...afterEmbedArray],
 				components: [questComponents],
-			}, 'update', newInteraction?.message.id ?? interaction.message.id)).id;
+			}, 'update', newInteraction?.message.id ?? interaction.message.id);
 		}
 		else {
 

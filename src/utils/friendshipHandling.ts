@@ -1,5 +1,5 @@
 import { generateId } from 'crystalid';
-import { ChannelType, EmbedBuilder, TextBasedChannel } from 'discord.js';
+import { EmbedBuilder, TextBasedChannel } from 'discord.js';
 import { Op } from 'sequelize';
 import Friendship from '../models/friendship';
 import Quid from '../models/quid';
@@ -47,7 +47,6 @@ export async function addFriendshipPoints(
 	/* A message is sent to the users if the friendship has more hearts now than it had before. */
 	const newFriendshipHearts = getFriendshipHearts(newFriendshipPoints);
 	if (getFriendshipHearts(previousFriendshipPoints) < newFriendshipHearts) {
-		if (message.channel.type === ChannelType.GuildStageVoice) { throw new Error('discord.js is janky'); }
 
 		await message.channel
 			.send({ // Because of this, everything that calls addFriendshipPoints needs to be permission guarded

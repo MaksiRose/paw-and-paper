@@ -1,4 +1,4 @@
-import { EmbedBuilder, SlashCommandBuilder, SnowflakeUtil } from 'discord.js';
+import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { Op } from 'sequelize';
 import { client } from '../..';
 import DiscordUser from '../../models/discordUser';
@@ -211,7 +211,7 @@ export const command: SlashCommand = {
 
 		const channel = interaction.channel ?? await client.channels.fetch(interaction.channelId);
 		if (channel === null || !channel.isTextBased()) { throw new TypeError('interaction.channel is null or not text based'); }
-		await addFriendshipPoints({ createdTimestamp: SnowflakeUtil.timestampFrom(botReply.id), channel: channel }, quid, quid2, { serverId: interaction.guildId, userToServer, quidToServer, user }); // I have to call SnowflakeUtil since InteractionResponse wrongly misses the createdTimestamp which is hopefully added in the future
+		await addFriendshipPoints({ createdTimestamp: botReply.createdTimestamp, channel: channel }, quid, quid2, { serverId: interaction.guildId, userToServer, quidToServer, user });
 
 		await isPassedOut(interaction, user, userToServer, quid, quidToServer, true);
 

@@ -1,4 +1,4 @@
-import { GuildChannelResolvable, GuildMember, PermissionResolvable, RepliableInteraction, Snowflake, PermissionFlagsBits, GuildTextBasedChannel, ChannelType } from 'discord.js';
+import { GuildChannelResolvable, GuildMember, PermissionResolvable, RepliableInteraction, Snowflake, PermissionFlagsBits, GuildTextBasedChannel } from 'discord.js';
 import { client } from '../index';
 import { addCommasAndAnd, respond } from './helperFunctions';
 
@@ -101,10 +101,7 @@ export async function canManageWebhooks(
 
 	if (await hasPermission(member || channel.client.user.id, channel.id, 'ManageWebhooks') === false) {
 
-		if (await hasPermission(channel.guild.members.me || channel.client.user.id, channel, channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) {
-			if (channel.type === ChannelType.GuildStageVoice) { throw new Error('discord.js is janky'); }
-			await channel.send(getMissingPermissionContent(permissionDisplay.ManageWebhooks));
-		}
+		if (await hasPermission(channel.guild.members.me || channel.client.user.id, channel, channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) { await channel.send(getMissingPermissionContent(permissionDisplay.ManageWebhooks)); }
 		return false;
 	}
 	return true;

@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder, Snowflake, SnowflakeUtil } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder } from 'discord.js';
 import { Op } from 'sequelize';
 import { speciesInfo } from '../..';
 import DiscordUser from '../../models/discordUser';
@@ -164,7 +164,7 @@ export async function executePlaying(
 		});
 	let infectedEmbed: EmbedBuilder[] = [];
 	let playComponent: ActionRowBuilder<ButtonBuilder> | null = null;
-	let responseId: Snowflake;
+	let response: InteractionResponse | Message;
 	/** This is used in case the user is fighting or finding a plant, in order to respond to the interaction */
 	let buttonInteraction: ButtonInteraction<'cached'> | null = null;
 
@@ -408,13 +408,13 @@ export async function executePlaying(
 		await quidToServer.update({ hasQuest: true });
 
 		// This is an update when forceEdit is true, which it is only for the travel-regions command, else this is a reply
-		responseId = await sendQuestMessage(interaction, forceEdit ? 'update' : 'reply', user, quid, userToServer, quidToServer, messageContent, restEmbed, [...changedCondition.injuryUpdateEmbed, ...levelUpEmbed], changedCondition.statsUpdateText);
+		response = await sendQuestMessage(interaction, forceEdit ? 'update' : 'reply', user, quid, userToServer, quidToServer, messageContent, restEmbed, [...changedCondition.injuryUpdateEmbed, ...levelUpEmbed], changedCondition.statsUpdateText);
 	}
 	else {
 
 		const tutorialMapEntry_ = tutorialMap.get(quid.id + quidToServer.serverId);
 		// This is an update when forceEdit is true, which it is only for the travel-regions command, else this is a reply
-		({ id: responseId } = await respond(buttonInteraction ?? interaction, {
+		(response = await respond(buttonInteraction ?? interaction, {
 			content: messageContent,
 			embeds: [
 				...restEmbed,
@@ -451,7 +451,7 @@ export async function executePlaying(
 
 	const channel = interaction.channel ?? await interaction.client.channels.fetch(interaction.channelId);
 	if (channel === null || !channel.isTextBased()) { throw new TypeError('interaction.channel is null or not text based'); }
-	if (playedTogether && hasNameAndSpecies(quid2)) { await addFriendshipPoints({ createdTimestamp: SnowflakeUtil.timestampFrom(responseId), channel: channel }, quid, quid2, { serverId: interaction.guildId, userToServer, quidToServer, user }); } // I have to call SnowflakeUtil since InteractionResponse wrongly misses the createdTimestamp which is hopefully added in the future
+	if (playedTogether && hasNameAndSpecies(quid2)) { await addFriendshipPoints({ createdTimestamp: response.createdTimestamp, channel: channel }, quid, quid2, { serverId: interaction.guildId, userToServer, quidToServer, user }); }
 }
 
 async function findPlayableQuidsToServers(

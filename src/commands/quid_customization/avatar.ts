@@ -1,4 +1,4 @@
-import { ChannelType, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { getMessageId, respond } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
 import { SlashCommand } from '../../typings/handle';
@@ -24,7 +24,6 @@ export const command: SlashCommand = {
 		const channel = interaction.channel ?? await interaction.client.channels.fetch(interaction.channelId);
 		if (channel === null) { throw new TypeError('channel is null'); }
 		if (!channel.isTextBased()) { throw new TypeError('channel is not text based'); }
-		if (channel.type === ChannelType.GuildStageVoice) { throw new Error('discord.js is janky'); }
 
 		// This is always a reply
 		const botReply = await respond(interaction, {
