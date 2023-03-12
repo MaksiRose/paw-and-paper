@@ -1,10 +1,17 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, Guild, SlashCommandBuilder } from 'discord.js';
 import { respond } from '../../utils/helperFunctions';
 import { hasNameAndSpecies } from '../../utils/checkUserState';
 import { checkOldMentions, getFriendshipHearts, getFriendshipPoints } from '../../utils/friendshipHandling';
 import { SlashCommand } from '../../typings/handle';
-import { UserData } from '../../typings/data/user';
-import { userModel, getUserData } from '../../models/userModel';
+import Quid from '../../models/quid';
+import Friendship from '../../models/friendship';
+import { Op } from 'sequelize';
+import { updateAndGetMembers } from '../../utils/checkRoleRequirements';
+import DiscordUser from '../../models/discordUser';
+import { getDisplayname } from '../../utils/getQuidInfo';
+import User from '../../models/user';
+import UserToServer from '../../models/userToServer';
+import QuidToServer from '../../models/quidToServer';
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -15,23 +22,25 @@ export const command: SlashCommand = {
 	position: 6,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (interaction, userData) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
 
-		if (!hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
+		if (!hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
+		if (!user) { throw new TypeError('user is undefined'); }
 
 		/* Creating a message with up to 25 friendships and buttons to go back and fourth a page if the quid has more than 25 friends. */
-		await respond(interaction, await getFriendshipMessage(userData, interaction.guildId ?? '', 0)); // This is always a reply
+		await respond(interaction, await getFriendshipMessage(user, quid, userToServer, quidToServer, interaction.guild, 0)); // This is always a reply
 	},
-	async sendMessageComponentResponse(interaction, userData) {
+	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer }) {
 
 		if (!interaction.isButton()) { return; }
-		if (!hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
+		if (!hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
+		if (!user) { throw new TypeError('user is undefined'); }
 
 		/* Get the page number of the friendship list.  */
 		let page = Number(interaction.customId.split('_')[2] ?? 0);
 
 		/* Get a list of friendship texts for all the friendships this quid has */
-		const friendshipTexts = await getFriendshipTexts(userData);
+		const friendshipTexts = await getFriendshipTexts(quid, interaction.guild);
 
 		/* Checking if the user clicked on the left or right button and then it is changing the page number accordingly. */
 		if (interaction.customId.includes('left')) {
@@ -46,54 +55,48 @@ export const command: SlashCommand = {
 		}
 
 		// This is always an update to the message with the button
-		await respond(interaction, await getFriendshipMessage(userData, interaction.guildId ?? '', page, friendshipTexts), 'update', interaction.message.id);
+		await respond(interaction, await getFriendshipMessage(user, quid, userToServer, quidToServer, interaction.guild, page, friendshipTexts), 'update', interaction.message.id);
 	},
 };
 
 /**
  * It gets an array of texts for all the friendships of the quid of the user who executed the command
  * @param userData - The userData of the user who executed the command.
- * @param userData.quid - The quid data of the user who executed the command.
+ * @param quid - The quid data of the user who executed the command.
  * @returns An array of strings.
  */
 async function getFriendshipTexts(
-	userData: UserData<never, never>,
+	quid: Quid,
+	guild: Guild | null,
 ): Promise<string[]> {
 
 	/** An array of users with quids who are friends with the user who executed the command. */
-	const allFriendedUsersList = await userModel.find(
-		u => {
-			return Object.values(u.quids).filter(q => {
-				return Object.keys(userData.quid.mentions).includes(q._id) || Object.keys(q.mentions).includes(userData.quid._id);
-			}).length > 0;
+	const friendships = await Friendship.findAll({
+		where: {
+			[Op.or]: [ { quidId1: quid.id }, { quidId2: quid.id } ],
 		},
-	);
-
-	/** An array of quids who are friends with the user who executed the command by their quid ID. */
-	const friendshipList = [...new Set([
-		...Object.keys(userData.quid.mentions),
-		...allFriendedUsersList.map(u => Object.values(u.quids).filter(q => Object.keys(q.mentions).includes(userData.quid._id)).map(q => q._id)).flat(),
-	])];
+	});
 
 	const friendshipTexts: string[] = [];
-	for (const _id of friendshipList) {
+	for (const friendship of friendships) {
 
 		/* Getting the userData of the other user. Skips to next iteration if there is no data */
-		const _otherUserData = allFriendedUsersList.find(u => u.quids[_id] !== undefined);
-		const otherUserData = _otherUserData === undefined ? undefined : getUserData(_otherUserData, userData.quid.profile.serverId, _otherUserData.quids[_id]);
-		if (!hasNameAndSpecies(otherUserData)) { continue; }
+		const otherQuid = await Quid.findByPk(friendship.quidId1 === quid.id ? friendship.quidId2 : friendship.quidId1);
+		if (!hasNameAndSpecies(otherQuid)) { continue; }
+		const otherUserId = await async function() {
+			const otherUserMembers = guild ? await updateAndGetMembers(otherQuid.userId, guild) : [];
+			return otherUserMembers[0]?.id ?? (await DiscordUser.findOne({ where: { userId: otherQuid.userId } }))?.id;
+		}();
 
 		/* Updating the mentions and extracting them from the new userData. */
-		await checkOldMentions(userData, otherUserData);
-		const userDataMentions = userData.quids.get(userData.quid._id)?.mentions[_id] ?? [];
-		const otherUserDataMentions = otherUserData.quids.get(_id)?.mentions[userData.quid._id] ?? [];
+		await checkOldMentions(friendship);
 
 		/* Getting the current friendship points and hearts. Skips to the next iteration if there is no friendship hearts. */
-		const friendshipPoints = getFriendshipPoints(userDataMentions, otherUserDataMentions);
+		const friendshipPoints = getFriendshipPoints(friendship.quid1_mentions, friendship.quid2_mentions);
 		const friendshipHearts = getFriendshipHearts(friendshipPoints);
 		if (friendshipHearts <= 0) { continue; }
 
-		friendshipTexts.push(`${otherUserData.quids.get(_id)?.name} (<@${Object.keys(otherUserData.userIds)[0]}>) - ${'❤️'.repeat(friendshipHearts) + '🖤'.repeat(10 - friendshipHearts)}`);
+		friendshipTexts.push(`${otherQuid.name} (<@${otherUserId}>) - ${'❤️'.repeat(friendshipHearts) + '🖤'.repeat(10 - friendshipHearts)}`);
 	}
 
 	return friendshipTexts;
@@ -102,14 +105,17 @@ async function getFriendshipTexts(
 /**
  * It returns an embed and a component for the friendship command
  * @param userData - The user data of the user who executed the command.
- * @param userData.quid - The quid data of the user who executed the command.
+ * @param quid - The quid data of the user who executed the command.
  * @param page - The page number of the friendship list.
  * @param [friendshipTexts] - An array of strings that contain the friendship texts.
  * @returns An object with two properties: embeds and components.
  */
 async function getFriendshipMessage(
-	userData: UserData<never, never>,
-	guildId: string,
+	user: User,
+	quid: Quid,
+	userToServer: UserToServer | undefined,
+	quidToServer: QuidToServer | undefined,
+	guild: Guild | null,
 	page: number,
 	friendshipTexts?: string[],
 ): Promise<{
@@ -118,13 +124,16 @@ async function getFriendshipMessage(
 }> {
 
 	/* Getting an array of texts for all the friendships of the quid of the user who executed the command. */
-	if (!friendshipTexts) { friendshipTexts = await getFriendshipTexts(userData); }
+	if (!friendshipTexts) { friendshipTexts = await getFriendshipTexts(quid, guild); }
 
 	return {
 		embeds: [new EmbedBuilder()
-			.setColor(userData.quid.color)
-			.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
-			.setTitle(`${userData.quid.name}'s friendships - Page ${page + 1}`)
+			.setColor(quid.color)
+			.setAuthor({
+				name: await getDisplayname(quid, { serverId: guild?.id, userToServer, quidToServer, user }),
+				iconURL: quid.avatarURL,
+			})
+			.setTitle(`${quid.name}'s friendships - Page ${page + 1}`)
 			.setDescription(friendshipTexts.length > 0 ?
 				friendshipTexts.slice(page * 25, (page + 1) * 25).join('\n') :
 				'You have not formed any friendships yet :(')],
@@ -132,11 +141,11 @@ async function getFriendshipMessage(
 			[new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([
 					new ButtonBuilder()
-						.setCustomId(`friendships_left_${page}_@${userData._id}`)
+						.setCustomId(`friendships_left_${page}_@${user.id}`)
 						.setEmoji('⬅️')
 						.setStyle(ButtonStyle.Secondary),
 					new ButtonBuilder()
-						.setCustomId(`friendships_right_${page}_@${userData._id}`)
+						.setCustomId(`friendships_right_${page}_@${user.id}`)
 						.setEmoji('➡️')
 						.setStyle(ButtonStyle.Secondary),
 				])] :

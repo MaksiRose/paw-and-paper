@@ -1,12 +1,19 @@
 import { AutocompleteInteraction, MessageContextMenuCommandInteraction, ChatInputCommandInteraction, ButtonInteraction, AnySelectMenuInteraction, ModalSubmitInteraction } from 'discord.js';
 import { RESTPostAPIApplicationCommandsJSONBody } from 'discord-api-types/v10';
-import { UserData } from './data/user';
-import { ServerSchema } from './data/server';
+import User from '../models/user';
+import Server from '../models/server';
+import UserToServer from '../models/userToServer';
+import Quid from '../models/quid';
+import QuidToServer from '../models/quidToServer';
+import DiscordUser from '../models/discordUser';
+import DiscordUserToServer from '../models/discordUserToServer';
+
+type dataOptions = { user?: User, server?: Server, userToServer?: UserToServer, quid?: Quid, quidToServer?: QuidToServer; discordUser?: DiscordUser, discordUserToServer?: DiscordUserToServer }
 
 interface Command {
 	data: RESTPostAPIApplicationCommandsJSONBody;
-	sendMessageComponentResponse?: (interaction: AnySelectMenuInteraction | ButtonInteraction, userData: UserData<undefined, ''> | null, serverData: ServerSchema | null) => Promise<void>;
-	sendModalResponse?: (interaction: ModalSubmitInteraction, userData: UserData<undefined, ''> | null, serverData: ServerSchema | null) => Promise<void>;
+	sendMessageComponentResponse?: (interaction: AnySelectMenuInteraction | ButtonInteraction, data: dataOptions) => Promise<void>;
+	sendModalResponse?: (interaction: ModalSubmitInteraction, data: dataOptions) => Promise<void>;
 }
 
 export interface SlashCommand extends Command {
@@ -15,8 +22,8 @@ export interface SlashCommand extends Command {
 	/** Best practice is that only commands that immediately return without any form of interaction (Button, Select Menu, Modal) that changes something in the database are set to false. */
 	disablePreviousCommand: boolean;
 	modifiesServerProfile: boolean;
-	sendCommand: (interaction: ChatInputCommandInteraction, userData: UserData<undefined, ''> | null, serverData: ServerSchema | null) => Promise<void>;
-	sendAutocomplete?: (interaction: AutocompleteInteraction, userData: UserData<undefined, ''> | null, serverData: ServerSchema | null) => Promise<void>;
+	sendCommand: (interaction: ChatInputCommandInteraction, data: dataOptions) => Promise<void>;
+	sendAutocomplete?: (interaction: AutocompleteInteraction, data: dataOptions) => Promise<void>;
 	}
 
 export interface ContextMenuCommand extends Command {

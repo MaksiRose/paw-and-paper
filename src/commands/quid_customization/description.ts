@@ -1,8 +1,9 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { respond } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
-import { getMapData } from '../../utils/helperFunctions';
 import { SlashCommand } from '../../typings/handle';
+import Quid from '../../models/quid';
+import { getDisplayname } from '../../utils/getQuidInfo';
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -18,26 +19,24 @@ export const command: SlashCommand = {
 	position: 5,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (interaction, userData) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
 
-		if (!hasName(userData, interaction)) { return; } // This is always a reply
+		if (!hasName(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
+		if (!user) { throw new TypeError('user is undefined'); }
 
 		const desc = interaction.options.getString('description') || '';
-
-		await userData.update(
-			(u) => {
-				const q = getMapData(u.quids, getMapData(u.servers, interaction.guildId || 'DMs').currentQuid ?? '');
-				q.description = desc;
-			},
-		);
+		await quid.update({ description: desc });
 
 		// This is always a reply
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
-				.setColor(userData.quid.color)
-				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
-				.setTitle(userData.quid.description === '' ? 'Your description has been reset!' : `Description for ${userData.quid.name} set:`)
-				.setDescription(userData.quid.description || null)],
+				.setColor(quid.color)
+				.setAuthor({
+					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+					iconURL: quid.avatarURL,
+				})
+				.setTitle(quid.description === '' ? 'Your description has been reset!' : `Description for ${quid.name} set:`)
+				.setDescription(quid.description || null)],
 		});
 		return;
 	},

@@ -16,7 +16,7 @@ export const command: SlashCommand = {
 	position: 0,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (interaction, userData) => {
+	sendCommand: async (interaction, { user }) => {
 
 		const tag = `v${version.split('.').slice(0, -1).join('.')}.0`;
 		const release = await octokit.rest.repos
@@ -29,8 +29,6 @@ export const command: SlashCommand = {
 				return { data: { body: undefined } };
 			});
 
-		console.log();
-
 		// This is always a reply
 		await respond(interaction, {
 			embeds: [
@@ -39,7 +37,7 @@ export const command: SlashCommand = {
 					.setTitle('Welcome to Paw and Paper!')
 					.setDescription(`This bot has powerful tools to help make your roleplay more immersive, or to express your mental shifts.\nAdditionally, it features a community-driven RPG about animals surviving in the wild. Your goal is to go up the ranks, level up, find items, help your friends and keep your stats high.\n\nClick on the menu options below to get an overview of the available commands!\n**If you are new, start with \`/name (name)\`!**\n\n*Latest changes:*\n> ${release.data.body?.split('\n').slice(1, 4).join('\n> ') ?? '(Missing data)'}\n> [Full changelog](https://github.com/MaksiRose/paw-and-paper/releases/tag/${tag})`),
 			],
-			components: [buildPageSelect(userData?._id ?? interaction.user.id)],
+			components: [buildPageSelect(user?.id ?? interaction.user.id)],
 		});
 		return;
 	},

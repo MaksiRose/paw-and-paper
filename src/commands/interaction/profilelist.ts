@@ -1,14 +1,19 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Collection, EmbedBuilder, Guild, StringSelectMenuBuilder, SlashCommandBuilder } from 'discord.js';
-import { respond } from '../../utils/helperFunctions';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, Guild, StringSelectMenuBuilder, SlashCommandBuilder, Collection } from 'discord.js';
+import { now, respond } from '../../utils/helperFunctions';
 import { isInGuild } from '../../utils/checkUserState';
-import { getMapData } from '../../utils/helperFunctions';
 import { SlashCommand } from '../../typings/handle';
 import { RankType } from '../../typings/data/user';
-import { userModel } from '../../models/userModel';
+import QuidToServer from '../../models/quidToServer';
+import { Op } from 'sequelize';
+import Quid from '../../models/quid';
+import DiscordUser from '../../models/discordUser';
+import DiscordUserToServer from '../../models/discordUserToServer';
+import UserToServer from '../../models/userToServer';
+import { generateId } from 'crystalid';
 const { default_color } = require('../../../config.json');
 
-const oneWeekInMs = 604_800_000;
-const oneMonthInMs = 2_629_746_000;
+const oneWeekInS = 604_800;
+const oneMonthInS = 2_629_746;
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -26,7 +31,7 @@ export const command: SlashCommand = {
 
 		/* Creating a message with up to 25 profiles of a certain rank, a select menu to select another rank and buttons to go back and fourth a page if the rank as more than 25 profiles. */
 		// This is always a reply
-		await respond(interaction, await getProfilesMessage(interaction.user.id, 0, interaction.guild, RankType.Youngling));
+		await respond(interaction, await getProfilesMessage(interaction.user.id, 0, interaction.guild, [RankType.Youngling]));
 	},
 	async sendMessageComponentResponse(interaction) {
 
@@ -35,14 +40,14 @@ export const command: SlashCommand = {
 		if (interaction.isStringSelectMenu() && interaction.customId.startsWith('profilelist_rank_options')) {
 
 			const rankName = (interaction.values[0] === 'profilelist_elderlies') ?
-				RankType.Elderly :
+				[RankType.Elderly] :
 				(interaction.values[0] === 'profilelist_younglings') ?
-					RankType.Youngling :
+					[RankType.Youngling] :
 					(interaction.values[0] === 'profilelist_apprentices') ?
-						RankType.Apprentice :
-						RankType.Hunter;
+						[RankType.Apprentice] :
+						[RankType.Hunter, RankType.Healer];
 
-			const profilesText = await getProfilesTexts(interaction.guild, rankName, rankName === RankType.Hunter ? RankType.Healer : undefined);
+			const profilesText = await getProfilesTexts(interaction.guild, rankName);
 
 			// This is always an update to the message with the select menu
 			await respond(interaction, await getProfilesMessage(interaction.user.id, 0, interaction.guild, rankName, profilesText), 'update', interaction.message.id);
@@ -50,14 +55,14 @@ export const command: SlashCommand = {
 		}
 
 		const rankName = interaction.customId.includes(RankType.Elderly) ?
-			RankType.Elderly :
+			[RankType.Elderly] :
 			interaction.customId.includes(RankType.Youngling) ?
-				RankType.Youngling :
+				[RankType.Youngling] :
 				interaction.customId.includes(RankType.Apprentice) ?
-					RankType.Apprentice :
-					RankType.Hunter;
+					[RankType.Apprentice] :
+					[RankType.Hunter, RankType.Healer];
 
-		const profilesText = await getProfilesTexts(interaction.guild, rankName, rankName === RankType.Hunter ? RankType.Healer : undefined);
+		const profilesText = await getProfilesTexts(interaction.guild, rankName);
 
 		/* Get the page number of the friendship list.  */
 		let page = Number(interaction.customId.split('_')[3] ?? 0);
@@ -90,49 +95,62 @@ export const command: SlashCommand = {
  */
 async function getProfilesTexts(
 	guild: Guild,
-	rankName1: RankType,
-	rankName2?: RankType,
+	rankTypes: RankType[],
 ): Promise<string[]> {
 
-	const allRankUsersList = await userModel.find(
-		u => {
-			return Object.values(u.quids)
-				.filter(q => q.profiles[guild.id] !== undefined)
-				.map(q => getMapData(q.profiles, guild.id))
-				.filter(p => p.rank === rankName1 || p.rank === rankName2)
-				.length > 0;
-		});
+	const usersToServer = await UserToServer.findAll({ where: { serverId: guild.id } });
 	const rankTexts: string[] = [];
 
-	for (const user of Object.values(allRankUsersList)) {
+	for (const uts of usersToServer) {
 
-		const userIds = new Collection(Object.entries(user.userIds)).sort((userId1, userId2) => ((userId2[guild.id]?.lastUpdatedTimestamp ?? 0) - (userId1[guild.id]?.lastUpdatedTimestamp ?? 0))); // This sorts the userIds in such a way that the one with the newest update is first and the one with the oldest update (or undefined) is last. In the for loop, it will therefore do as little tests and fetches as possible.
-		userIdLoop: for (const [userId, data] of userIds) {
+		const quids = await Quid.findAll({ where: { userId: uts.userId } });
+		const quidsToServer = await QuidToServer.findAll({
+			where: {
+				serverId: guild.id,
+				quidId: { [Op.in]: quids.map(q => q.id) },
+				rank: { [Op.in]: rankTypes },
+			},
+		});
 
-			/* It's getting the cache of the user in the guild. */
-			let guildMember = data[guild.id];
+		const discordUsers = await DiscordUser.findAll({ where: { userId: uts.userId } });
+		const discordUsersToServer = (await DiscordUserToServer.findAll({
+			where: {
+				serverId: guild.id,
+				discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
+			},
+		}));
+
+		const sortedDiscordUsersToServer = new Collection(discordUsers
+			.map(du => [du.id, discordUsersToServer.find(duts => duts.discordUserId === du.id)]))
+			.sort((duts1, duts2) => ((duts2?.lastUpdatedTimestamp ?? 0) - (duts1?.lastUpdatedTimestamp ?? 0))); // This sorts the userIds in such a way that the one with the newest update is first and the one with the oldest update (or undefined) is last. In the for loop, it will therefore do as little tests and fetches as possible.
+
+		userIdLoop: for (let [discordUserId, discordUserToServer] of sortedDiscordUsersToServer) {
 
 			/* It's checking if there is no cache or if the cache is more than one week old. If it is, get new cache. If there is still no cache or the member is not in the guild, continue. */
-			const timeframe = guildMember?.isMember ? oneWeekInMs : oneMonthInMs; // If a person is supposedly in a guild, we want to be really sure they are actually in the guild since assuming wrongly can lead to unwanted behavior, and these checks are the only way of finding out when they left. On the contrary, when they are supposedly not in the guild, we might find out anyways through them using the bot in the server, so we don't need to check that often.
-			if (!guildMember || guildMember.lastUpdatedTimestamp < Date.now() - timeframe) {
+			const timeframe = discordUserToServer?.isMember ? oneWeekInS : oneMonthInS; // If a person is supposedly in a guild, we want to be really sure they are actually in the guild since assuming wrongly can lead to unwanted behavior, and these checks are the only way of finding out when they left. On the contrary, when they are supposedly not in the guild, we might find out anyways through them using the bot in the server, so we don't need to check that often.
+			if (!discordUserToServer || discordUserToServer.lastUpdatedTimestamp < now() - timeframe) {
 
-				const member = await guild.members.fetch(userId).catch(() => { return null; });
-				guildMember = { isMember: member !== null, lastUpdatedTimestamp: Date.now() };
-				await userModel.findOneAndUpdate(
-					u => u._id === user._id,
-					(u => u.userIds[userId] = {
-						...(u.userIds[userId] ?? {}),
-						[guild.id]: guildMember!,
-					}),
-				);
+				const member = await guild.members.fetch(discordUserId).catch(() => { return null; });
+
+				if (!discordUserToServer) {
+
+					discordUserToServer = await DiscordUserToServer.create({
+						id: generateId(),
+						discordUserId: discordUserId,
+						serverId: guild.id,
+						isMember: member !== null,
+						lastUpdatedTimestamp: now(),
+					});
+				}
+				else if (discordUserToServer) { await discordUserToServer.update({ isMember: member !== null, lastUpdatedTimestamp: now() }); }
 			}
-			if (!guildMember || !guildMember.isMember) { continue; }
+			if (!discordUserToServer || !discordUserToServer.isMember) { continue; }
 
 			/* For each quid, check if there is a profile, and if there is, add that profile to the rankTexts. */
-			for (const q of Object.values(user.quids)) {
+			for (const qts of quidsToServer) {
 
-				const p = q.profiles[guild.id];
-				if (p !== undefined && (p.rank === rankName1 || p.rank === rankName2)) { rankTexts.push(`${q.name} (\`${p.health}/${p.maxHealth} HP\`) - <@${userId}>`); }
+				const q = quids.find(q => q.id === qts.quidId);
+				if (q !== undefined) { rankTexts.push(`${q.name} (\`${qts.health}/${qts.maxHealth} HP\`) - <@${discordUserId}>`); }
 			}
 			break userIdLoop;
 		}
@@ -144,7 +162,7 @@ async function getProfilesTexts(
  * It returns an object with two properties, `embeds` and `components`. The `embeds` property is an array of embeds that will be sent to the user. The `components` property is an array of action rows, which are rows of buttons and select menus that will be displayed to the user.
  * @param page - The page number of the profiles list.
  * @param guild - The guild where the command was executed.
- * @param rank - The rank that is currently being displayed.
+ * @param rankType - The rank that is currently being displayed.
  * @param [profilesText] - An array of strings for all the profiles with that rank.
  * @returns An object with two properties: embeds and components.
  */
@@ -152,7 +170,7 @@ async function getProfilesMessage(
 	_id: string,
 	page: number,
 	guild: Guild,
-	rank: RankType,
+	rankType: RankType[],
 	profilesText?: string[],
 ): Promise<{
 	embeds: EmbedBuilder[];
@@ -160,7 +178,7 @@ async function getProfilesMessage(
 }> {
 
 	/* Getting an array of strings for all the profiles with that rank. */
-	if (!profilesText) { profilesText = await getProfilesTexts(guild, rank); }
+	if (!profilesText) { profilesText = await getProfilesTexts(guild, rankType); }
 
 	enum DisplayedRankType {
 		Younglings = 'Younglings',
@@ -169,11 +187,11 @@ async function getProfilesMessage(
 		Elderlies = 'Elderlies'
 	}
 
-	const displayedRank: DisplayedRankType = rank === RankType.Elderly ?
+	const displayedRank: DisplayedRankType = rankType.includes(RankType.Elderly) ?
 		DisplayedRankType.Elderlies :
-		rank === RankType.Healer || rank === RankType.Hunter ?
+		rankType.includes(RankType.Healer) || rankType.includes(RankType.Hunter) ?
 			DisplayedRankType.HuntersHealers :
-			rank === RankType.Apprentice ?
+			rankType.includes(RankType.Apprentice) ?
 				DisplayedRankType.Apprentices :
 				DisplayedRankType.Younglings;
 
@@ -199,11 +217,11 @@ async function getProfilesMessage(
 			...(profilesText.length > 25 ? [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([
 					new ButtonBuilder()
-						.setCustomId(`profilelist_left_${rank}_${page}_@${_id}`)
+						.setCustomId(`profilelist_left_${rankType}_${page}_@${_id}`)
 						.setEmoji('⬅️')
 						.setStyle(ButtonStyle.Secondary),
 					new ButtonBuilder()
-						.setCustomId(`profilelist_right_${rank}_${page}_@${_id}`)
+						.setCustomId(`profilelist_right_${rankType}_${page}_@${_id}`)
 						.setEmoji('➡️')
 						.setStyle(ButtonStyle.Secondary),
 				])] : []),

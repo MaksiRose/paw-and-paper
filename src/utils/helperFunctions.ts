@@ -1,25 +1,12 @@
 import { generateId } from 'crystalid';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, RepliableInteraction, WebhookEditMessageOptions, Snowflake, InteractionResponse } from 'discord.js';
-import { readFileSync, writeFileSync } from 'fs';
-import { userModel, getUserData } from '../models/userModel';
-import { ErrorStacks } from '../typings/data/general';
-import { UserData, UserSchema } from '../typings/data/user';
+import DiscordUser from '../models/discordUser';
+import ErrorInfo from '../models/errorInfo';
+import Server from '../models/server';
+import User from '../models/user';
+import UserToServer from '../models/userToServer';
 const { error_color } = require('../../config.json');
-
-/**
- * It takes a map and a key, and returns the value associated with the key. If the value is undefined, it throws a type error instead.
- * @param map - An object with unknown keys and a property T
- * @param key - The key of the object to get T from
- * @returns T as the property from the key from the object
- */
-export function getMapData<T>(
-	map: Record<PropertyKey, T>,
-	key: PropertyKey,
-): T {
-	const element = map[key];
-	if (element === undefined) throw new TypeError('element is undefined');
-	return element;
-}
+const { version } = require('../../package.json');
 
 /**
  * It takes an array and an index, and returns the element at that index. If the element is undefined, it throws a type error instead.
@@ -34,16 +21,6 @@ export function getArrayElement<T>(
 	const element = array[index];
 	if (element === undefined) throw new TypeError('element is undefined');
 	return element;
-}
-
-export function getUserIds(
-	message: Message,
-): Array<string> {
-
-	const array1 = message.mentions.users.map(u => u.id);
-	const array2 = (message.content.match(/<@!?(\d{17,19})>/g) || [])?.map(mention => mention.replace('<@', '').replace('>', '').replace('!', ''));
-
-	return [...new Set([...array1, ...array2])];
 }
 
 /**
@@ -157,13 +134,30 @@ export function getMessageId(
 export async function sendErrorMessage(
 	interaction: RepliableInteraction,
 	error: unknown,
+	userToServer?: UserToServer,
 ): Promise<any> {
 
 	try {
 
-		const _userData = await userModel.findOne(u => Object.keys(u.userIds).includes(interaction.user.id));
-		const userData = getUserData(_userData, interaction.guildId || 'DMs', undefined);
-		await setCooldown(userData, interaction.guildId || 'DMs', false);
+		if (!userToServer) {
+			const discordUser = await DiscordUser.findByPk(interaction.user.id, {
+				include: [{ model: User, as: 'user' }],
+			});
+			const user = discordUser?.user;
+
+			const server = interaction.inCachedGuild()
+				? ((await Server.findByPk(interaction.guildId)))
+				: undefined;
+
+			userToServer = (user && server)
+				? ((await UserToServer.findOne({
+					where: { userId: user.id, serverId: server.id },
+				})) ?? (await UserToServer.create({
+					id: generateId(), userId: user.id, serverId: server.id,
+				})))
+				: undefined;
+		}
+		if (userToServer) { await setCooldown(userToServer, false); }
 	}
 	catch (newError) { console.error(newError); }
 
@@ -171,7 +165,7 @@ export async function sendErrorMessage(
 		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to execute \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 	}
 	else if (interaction.isAnySelectMenu()) {
-		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to select \x1b[31m${interaction.values.join(', ')} \x1b[0mfrom the menu \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to select \x1b[31m${addCommasAndAnd(interaction.values)} \x1b[0mfrom the menu \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 	}
 	else if (interaction.isButton()) {
 		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to click the button \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
@@ -180,7 +174,7 @@ export async function sendErrorMessage(
 		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to submit the modal \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 	}
 
-	const jsonInteraction = {
+	const interactionInfo = {
 		id: interaction.id,
 		application_id: interaction.applicationId,
 		type: interaction.type,
@@ -228,23 +222,33 @@ export async function sendErrorMessage(
 		console.error('Error 400 - An error is not being sent to the user:', error);
 		return;
 	}
-	console.error(error, jsonInteraction);
+	console.error(error, interactionInfo);
 
 	let errorId: string | undefined = undefined;
+	let errorIsReported = false;
 
 	if (!isECONNRESET) {
 
 		try {
 
-			const errorStacks = JSON.parse(readFileSync('./database/errorStacks.json', 'utf-8')) as ErrorStacks;
-			errorId = generateId();
-			errorStacks[errorId] = `${(isObject(error) && error.stack) || JSON.stringify(error, null, '\t')}\n${JSON.stringify(jsonInteraction, null, '\t')}`;
-			writeFileSync('./database/errorStacks.json', JSON.stringify(errorStacks, null, '\t'));
+			const stack = `${(isObject(error) && error.stack) || JSON.stringify(error, null, '\t')}`;
+			const errorInfo = await ErrorInfo.findOne({ where: { stack } });
+
+			if (errorInfo) {
+
+				errorId = errorInfo.id;
+				if (errorInfo.isReported) { errorIsReported = true; }
+			}
+			else {
+
+				errorId = generateId();
+				await ErrorInfo.create({ id: errorId, stack, interactionInfo, version });
+			}
 		}
 		catch (e) {
 
 			errorId = undefined;
-			console.error('Cannot edit file ', e);
+			console.error(e);
 		}
 	}
 
@@ -253,8 +257,8 @@ export async function sendErrorMessage(
 			.setColor(error_color)
 			.setTitle(isECONNRESET ? 'The connection was abruptly closed. Apologies for the inconvenience.' : 'There was an unexpected error executing this command:')
 			.setDescription(isECONNRESET ? null : `\`\`\`\n${String(error).substring(0, 4090)}\n\`\`\``)
-			.setFooter(isECONNRESET ? null : { text: 'If this is the first time you encountered the issue, please report it using the button below. After that, only report it again if the issue was supposed to be fixed after an update came out. To receive updates, ask a server administrator to do the "getupdates" command.' })],
-		components: isECONNRESET ? [] : [new ActionRowBuilder<ButtonBuilder>()
+			.setFooter(isECONNRESET ? null : { text: errorIsReported ? 'This error already got reported and the devs are working hard to resolve it.\nIf you want to know when the bot gets updated, you can join our support server (Link is in the help command page 5), or ask an admin of this server to enable getting updates via the server-settings command.' : 'Please report this error using the button below to help us improving the bot and keeping it bug-free. We might get in touch with you for some context if we have trouble reproducing the bug.' })],
+		components: (isECONNRESET || errorIsReported) ? [] : [new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
 				.setCustomId(`report_@${interaction.user.id}${errorId ? `_${errorId}` : ''}`)
 				.setLabel('Report')
@@ -277,69 +281,8 @@ export async function sendErrorMessage(
 		});
 }
 
-/**
- * It recursively copies an object, array, date, or regular expression, and returns a copy of the original
- * @param {T} object - The object to be copied.
- * @returns A deep copy of the object.
- */
-export function deepCopyObject<T>(
-	object: T,
-): T {
 
-	let returnValue: T;
-
-	switch (typeof object) {
-		case 'object':
-
-			if (object === null) {
-
-				returnValue = null as unknown as T;
-			}
-			else {
-
-				switch (Object.prototype.toString.call(object)) {
-					case '[object Array]':
-
-						returnValue = (object as unknown as any[]).map(deepCopyObject) as unknown as T;
-						break;
-					case '[object Date]':
-
-						returnValue = new Date(object as unknown as Date) as unknown as T;
-						break;
-					case '[object RegExp]':
-
-						returnValue = new RegExp(object as unknown as RegExp) as unknown as T;
-						break;
-					default:
-
-						returnValue = Object.keys(object).reduce(function(prev: Record<string, any>, key) {
-							prev[key] = deepCopyObject((object as unknown as Record<string, any>)[key]);
-							return prev;
-						}, {}) as unknown as T;
-						break;
-				}
-			}
-			break;
-		default:
-
-			returnValue = object;
-			break;
-	}
-
-	return returnValue;
-}
-
-export type KeyOfUnion<T> = T extends object ? T extends T ? keyof T : never : never; // `T extends object` to filter out primitives like `string`
-/* What this does is for every key in the inventory (like commonPlants, uncommonPlants etc.), it takes every single sub-key of all the keys and adds it to it. KeyOfUnion is used to combine all those sub-keys from all the keys. In the case that they are not part of the property, they will be of type never, meaning that they can't accidentally be assigned anything (which makes the type-checking still work) */
-export type WidenValues<T> = {
-	[K in keyof T]: {
-		[K2 in KeyOfUnion<T[keyof T]>]: K2 extends keyof T[K] ? T[K][K2] : never;
-	};
-};
-export function widenValues<T>(obj: T): WidenValues<T> { return obj as any; }
-export function unsafeKeys<T extends Record<PropertyKey, any>>(obj: T): KeyOfUnion<T>[] { return Object.keys(obj) as KeyOfUnion<T>[]; }
-
-export type ValueOf<T> = T[keyof T];
+type ValueOf<T> = T[keyof T];
 export function valueInObject<T extends Record<PropertyKey, any>, V extends ValueOf<T>>(
 	obj: T,
 	value: any,
@@ -350,35 +293,24 @@ export function keyInObject<T extends Record<PropertyKey, any>, K extends keyof 
 	obj: T,
 	key: PropertyKey,
 ): key is K { return Object.hasOwn(obj, key); }
+export function objectHasKey<T, K extends PropertyKey>(
+	obj: T,
+	key: K,
+): obj is T & Record<K, any> { return typeof obj === 'object' && obj !== null && Object.hasOwn(obj, key); }
 
 function isObject(val: any): val is Record<string | number | symbol, unknown> { return typeof val === 'object' && val !== null; }
 
-/**
- * Return the bigger of two numbers
- * @param number1 - number
- * @param number2 - number - This is the second parameter, and it's a number.
- */
-export function getBiggerNumber(
-	number1: number,
-	number2: number,
-): number { return number1 > number2 ? number1 : number2; }
+export function deepCopy<T>(arr: T[]): T[] { return JSON.parse(JSON.stringify(arr)) as T[]; }
 
-/**
- * Return the smaller of two numbers
- * @param number1 - number
- * @param number2 - number - This is the second parameter, and it's a number.
- */
-export function getSmallerNumber(
-	number1: number,
-	number2: number,
-): number { return number1 > number2 ? number2 : number1; }
+/** Returns the number of seconds elapsed since midnight, January 1, 1970 Universal Coordinated Time (UTC). */
+export function now() { return Math.round(Date.now() / 1000); }
 
 /**
  * Given a string, return a new string with the first letter capitalized.
  * @param {string} string - The string to capitalize.
  * @returns The first character of the string is being capitalized and then the rest of the string is being added to it.
  */
-export function capitalizeString(
+export function capitalize(
 	string: string,
 ): string { return string.charAt(0).toUpperCase() + string.slice(1); }
 
@@ -390,40 +322,14 @@ export function addCommasAndAnd<T>(
 	return `${list.slice(0, -1).join(', ')}, and ${getArrayElement(list, list.length - 1)}`;
 }
 
-export function userDataServersObject(
-	u: UserSchema,
-	guildId: string,
-): UserSchema['servers'][string] {
-
-	return {
-		currentQuid: u.servers[guildId]?.currentQuid ?? null,
-		lastInteractionTimestamp: u.servers[guildId]?.lastInteractionTimestamp ?? null,
-		lastInteractionToken: null,
-		lastInteractionChannelId: u.servers[guildId]?.lastInteractionChannelId ?? null,
-		restingMessageId: u.servers[guildId]?.restingMessageId ?? null,
-		restingChannelId: u.servers[guildId]?.restingChannelId ?? null,
-		componentDisablingChannelId: u.servers[guildId]?.componentDisablingChannelId ?? null,
-		componentDisablingMessageId: u.servers[guildId]?.componentDisablingMessageId ?? null,
-		componentDisablingToken: null,
-		hasCooldown: u.servers[guildId]?.hasCooldown ?? false,
-		lastProxied: u.servers[guildId]?.lastProxied ?? null,
-	};
-}
-
 export async function setCooldown(
-	userData: UserData<undefined, ''>,
-	guildId: string,
+	userToServer: UserToServer,
 	setTo: boolean,
 ) {
 
-	await userData.update(
-		u => {
-			u.servers[guildId] = {
-				...userDataServersObject(u, guildId),
-				hasCooldown: setTo,
-			};
-		},
-	);
+	await userToServer.update({
+		hasCooldown: setTo,
+	});
 }
 
 /**

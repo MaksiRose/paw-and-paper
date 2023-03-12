@@ -1,6 +1,6 @@
 {
 	"name": "paw-and-paper",
-	"version": "3.3.1",
+	"version": "3.4.0",
 	"description": "A Discord Bot for roleplay communities, featuring a community-based interactive RPG and powerful tools to roleplay",
 	"main": "index.ts",
 	"scripts": {
@@ -24,14 +24,22 @@
 		"express-rate-limit": "^6.7.0",
 		"fs": "^0.0.1-security",
 		"fuse.js": "^6.6.2",
-		"hoatzin": "^2.0.0",
+		"pg": "^8.9.0",
+		"pg-hstore": "^2.3.4",
+		"reflect-metadata": "^0.1.13",
+		"sequelize": "^6.28.0",
+		"sequelize-typescript": "^2.1.5",
 		"topgg-autoposter": "^2.0.1"
 	},
 	"devDependencies": {
 		"@types/express": "^4.17.15",
+		"@types/node": "^18.14.0",
+		"@types/validator": "^13.7.12",
 		"@typescript-eslint/eslint-plugin": "^5.48.1",
 		"@typescript-eslint/parser": "^5.48.1",
 		"eslint": "^8.31.0",
-		"ts-node": "^10.9.1"
+		"sequelize-cli": "^6.6.0",
+		"ts-node": "^10.9.1",
+		"typescript": "^4.9.5"
 	}
 }

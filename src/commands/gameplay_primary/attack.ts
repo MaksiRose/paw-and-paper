@@ -1,18 +1,22 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, AnySelectMenuInteraction, SlashCommandBuilder, InteractionResponse, SnowflakeUtil } from 'discord.js';
 import { serverActiveUsersMap } from '../../events/interactionCreate';
-import serverModel from '../../models/serverModel';
-import { Inventory } from '../../typings/data/general';
-import { ServerSchema } from '../../typings/data/server';
-import { RankType, UserData } from '../../typings/data/user';
+import Quid from '../../models/quid';
+import QuidToServer from '../../models/quidToServer';
+import Server from '../../models/server';
+import User from '../../models/user';
+import UserToServer from '../../models/userToServer';
+import { RankType } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
+import { updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { disableCommandComponent } from '../../utils/componentDisabling';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { createFightGame } from '../../utils/gameBuilder';
-import { getMapData, getMessageId, getSmallerNumber, KeyOfUnion, respond, sendErrorMessage, setCooldown, unsafeKeys, ValueOf, widenValues } from '../../utils/helperFunctions';
+import { getDisplayname, pronounAndPlural, pronoun, getDisplayspecies } from '../../utils/getQuidInfo';
+import { getMessageId, now, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -33,16 +37,16 @@ export const command: SlashCommand = {
 	position: 5,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
-	sendCommand: async (interaction, userData, serverData) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
 
-		await executeAttacking(interaction, userData, serverData);
+		await executeAttacking(interaction, user, quid, userToServer, quidToServer, server);
 	},
-	async sendMessageComponentResponse(interaction, userData, serverData) {
+	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer, server }) {
 
 		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
 		if (interaction.isButton() && customId?.args[0] === 'new') {
 
-			await executeAttacking(interaction, userData, serverData);
+			await executeAttacking(interaction, user, quid, userToServer, quidToServer, server);
 		}
 	},
 };
@@ -50,8 +54,11 @@ export const command: SlashCommand = {
 
 async function executeAttacking(
 	interaction: ChatInputCommandInteraction | ButtonInteraction,
-	userData: UserData<undefined, ''> | null,
-	serverData: ServerSchema | null,
+	user: User | undefined,
+	quid: Quid | undefined,
+	userToServer: UserToServer | undefined,
+	quidToServer: QuidToServer | undefined,
+	server: Server | undefined,
 ): Promise<void> {
 
 	if (await missingPermissions(interaction, [
@@ -59,14 +66,17 @@ async function executeAttacking(
 	]) === true) { return; }
 
 	/* This ensures that the user is in a guild and has a completed account. */
-	if (serverData === null) { throw new Error('serverData is null'); }
-	if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
+	if (server === undefined) { throw new Error('serverData is null'); }
+	if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
+	if (!user) { throw new TypeError('user is undefined'); }
+	if (!userToServer) { throw new TypeError('userToServer is undefined'); }
+	if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
 	/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-	if (command.disablePreviousCommand) { await disableCommandComponent(userData); }
+	if (command.disablePreviousCommand) { await disableCommandComponent(userToServer); }
 
 	/* Checks if the profile is resting, on a cooldown or passed out. */
-	const restEmbed = await isInvalid(interaction, userData);
+	const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
 	if (restEmbed === false) { return; }
 
 	const serverAttackInfo = serverMap.get(interaction.guild.id);
@@ -77,9 +87,12 @@ async function executeAttacking(
 			embeds: [
 				...restEmbed,
 				new EmbedBuilder()
-					.setColor(userData.quid.color)
-					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
-					.setDescription(`*${userData.quid.name} is ready to attack any intruder. But no matter how far ${userData.quid.pronounAndPlural(0, 'look')}, ${userData.quid.pronoun(0)} can't see anyone. It seems that the pack is not under attack at the moment.*`),
+					.setColor(quid.color)
+					.setAuthor({
+						name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
+						iconURL: quid.avatarURL,
+					})
+					.setDescription(`*${quid.name} is ready to attack any intruder. But no matter how far ${pronounAndPlural(quid, 0, 'look')}, ${pronoun(quid, 0)} can't see anyone. It seems that the pack is not under attack at the moment.*`),
 			],
 		});
 		return;
@@ -92,35 +105,44 @@ async function executeAttacking(
 			embeds: [
 				...restEmbed,
 				new EmbedBuilder()
-					.setColor(userData.quid.color)
-					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
-					.setDescription(`*${userData.quid.name} looks around, searching for a human to attack. It looks like everyone is already being attacked by other pack members. The ${userData.quid.getDisplayspecies()} better not interfere before ${userData.quid.pronounAndPlural(0, 'hurt')} ${userData.quid.pronoun(2)} friends.*`),
+					.setColor(quid.color)
+					.setAuthor({
+						name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
+						iconURL: quid.avatarURL,
+					})
+					.setDescription(`*${quid.name} looks around, searching for a human to attack. It looks like everyone is already being attacked by other pack members. The ${getDisplayspecies(quid)} better not interfere before ${pronounAndPlural(quid, 0, 'hurt')} ${pronoun(quid, 2)} friends.*`),
 			],
 		});
 		return;
 	}
 
-	await setCooldown(userData, interaction.guildId, true);
+	await setCooldown(userToServer, true);
 	serverAttackInfo.idleHumans -= 1;
 	serverAttackInfo.ongoingFights += 1;
 
-	const experiencePoints = userData.quid.profile.rank === RankType.Youngling ? 0 : getRandomNumber(5, userData.quid.profile.levels + 8);
-	const changedCondition = await changeCondition(userData, experiencePoints);
+	const experiencePoints = quidToServer.rank === RankType.Youngling ? 0 : getRandomNumber(5, quidToServer.levels + 8);
+	const changedCondition = await changeCondition(quidToServer, quid, experiencePoints);
 
 	const embed = new EmbedBuilder()
-		.setColor(userData.quid.color)
-		.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL });
+		.setColor(quid.color)
+		.setAuthor({
+			name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
+			iconURL: quid.avatarURL,
+		});
 
 	let totalCycles: 0 | 1 | 2 = 0;
 	let winLoseRatio = 0;
 	let botReply: Message | InteractionResponse;
 
-	botReply = await interactionCollector(interaction, userData, serverData, serverAttackInfo, restEmbed);
+	botReply = await interactionCollector(interaction, user, quid, userToServer, quidToServer, server, serverAttackInfo, restEmbed);
 
 	async function interactionCollector(
 		interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
-		userData: UserData<never, never>,
-		serverData: ServerSchema,
+		user: User,
+		quid: Quid,
+		userToServer: UserToServer,
+		quidToServer: QuidToServer,
+		server: Server,
 		serverAttackInfo: serverMapInfo,
 		restEmbed: EmbedBuilder[],
 		newInteraction?: ButtonInteraction | AnySelectMenuInteraction,
@@ -132,17 +154,17 @@ async function executeAttacking(
 
 		if (fightGame.cycleKind === '_attack') {
 
-			embed.setDescription(`⏫ *The human gets ready to attack. ${userData.quid.name} must think quickly about how ${userData.quid.pronounAndPlural(0, 'want')} to react.*`);
+			embed.setDescription(`⏫ *The human gets ready to attack. ${quid.name} must think quickly about how ${pronounAndPlural(quid, 0, 'want')} to react.*`);
 			embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (⏫ Attack).' });
 		}
 		else if (fightGame.cycleKind === 'dodge') {
 
-			embed.setDescription(`↪️ *Looks like the human is preparing a maneuver for ${userData.quid.name}'s next move. The ${userData.quid.getDisplayspecies()} must think quickly about how ${userData.quid.pronounAndPlural(0, 'want')} to react.*`);
+			embed.setDescription(`↪️ *Looks like the human is preparing a maneuver for ${quid.name}'s next move. The ${getDisplayspecies(quid)} must think quickly about how ${pronounAndPlural(quid, 0, 'want')} to react.*`);
 			embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (↪️ Dodge).' });
 		}
 		else if (fightGame.cycleKind === 'defend') {
 
-			embed.setDescription(`⏺️ *The human gets into position to oppose an attack. ${userData.quid.name} must think quickly about how ${userData.quid.pronounAndPlural(0, 'want')} to react.*`);
+			embed.setDescription(`⏺️ *The human gets into position to oppose an attack. ${quid.name} must think quickly about how ${pronounAndPlural(quid, 0, 'want')} to react.*`);
 			embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (⏺️ Defend).' });
 		}
 		else { throw new Error('cycleKind is not attack, dodge or defend'); }
@@ -161,7 +183,7 @@ async function executeAttacking(
 			.awaitMessageComponent({
 				componentType: ComponentType.Button,
 				filter: i => i.user.id === interaction.user.id,
-				time: userData.quid.profile.rank === RankType.Elderly ? 3_000 : userData.quid.profile.rank === RankType.Hunter || userData.quid.profile.rank === RankType.Healer ? 4_000 : userData.quid.profile.rank === RankType.Apprentice ? 5_000 : 10_000,
+				time: quidToServer.rank === RankType.Elderly ? 3_000 : quidToServer.rank === RankType.Hunter || quidToServer.rank === RankType.Healer ? 4_000 : quidToServer.rank === RankType.Apprentice ? 5_000 : 10_000,
 			})
 			.then(async i => {
 
@@ -197,11 +219,11 @@ async function executeAttacking(
 
 		if (totalCycles < 5) {
 
-			botReply = await interactionCollector(interaction, userData, serverData, serverAttackInfo, restEmbed, newInteraction, fightGame.fightComponent, fightGame.thisRoundCycleIndex);
+			botReply = await interactionCollector(interaction, user, quid, userToServer, quidToServer, server, serverAttackInfo, restEmbed, newInteraction, fightGame.fightComponent, fightGame.thisRoundCycleIndex);
 			return botReply;
 		}
 
-		await setCooldown(userData, interaction.guildId, false);
+		await setCooldown(userToServer, false);
 
 		let minusItemText = '';
 		let injuryText = '';
@@ -210,62 +232,50 @@ async function executeAttacking(
 
 		if (winLoseRatio === 2) {
 
-			embed.setDescription(`*For a moment it looks like the human might get the upper hand before ${userData.quid.name} jumps on them with a big hop. The human falls to the ground and crawls away with a terrified look on their face. It looks like they're not coming back.*`);
+			embed.setDescription(`*For a moment it looks like the human might get the upper hand before ${quid.name} jumps on them with a big hop. The human falls to the ground and crawls away with a terrified look on their face. It looks like they're not coming back.*`);
 		}
 		else {
 
 			if (winLoseRatio < 1) {
 
-				const inventory_ = widenValues(serverData.inventory);
-				const { itemType, itemName } = getHighestItem(inventory_);
-				if (itemType && itemName) {
-
-					const minusAmount = Math.ceil(inventory_[itemType][itemName] / 10);
-					minusItemText += `\n-${minusAmount} ${itemName} for ${interaction.guild.name}`;
-					inventory_[itemType][itemName] -= minusAmount;
-				}
-
-				serverData = await serverModel.findOneAndUpdate(
-					s => s._id === serverData._id,
-					(s) => s.inventory = inventory_,
-				);
+				minusItemText += removeByHighestItem(server, interaction.guild.name);
+				await server.update({ inventory: [...server.inventory] });
 			}
 
-			embed.setDescription(`*The battle between the human and ${userData.quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${userData.quid.getDisplayspecies()} tries to jump at them, but the human manages to dodge. ${winLoseRatio < 1 ? `Quickly they run in the direction of the food den. They escaped from ${userData.quid.pronoun(1)}!*` : 'Quickly they back off from the tricky situation.*'}`);
+			embed.setDescription(`*The battle between the human and ${quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${getDisplayspecies(quid)} tries to jump at them, but the human manages to dodge. ${winLoseRatio < 1 ? `Quickly they run in the direction of the food den. They escaped from ${pronoun(quid, 1)}!*` : 'Quickly they back off from the tricky situation.*'}`);
 
 			if (winLoseRatio === -1) {
 
-				const healthPoints = getSmallerNumber(userData.quid.profile.health, getRandomNumber(5, 3));
+				const healthPoints = Math.min(quidToServer.health, getRandomNumber(5, 3));
 
 				if (pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
 
-					userData.quid.profile.injuries.wounds += 1;
+					quidToServer.injuries_wounds += 1;
 
-					embed.setDescription(`*The battle between the human and ${userData.quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${userData.quid.getDisplayspecies()} tries to jump at them, but the human manages to dodge. Unfortunately, a rock is directly in ${userData.quid.name}'s jump line. A sharp pain runs through ${userData.quid.pronoun(2)} hip. A red spot slowly spreads where ${userData.quid.pronoun(0)} hit the rock. Meanwhile, the human runs into the food den.*`);
+					embed.setDescription(`*The battle between the human and ${quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${getDisplayspecies(quid)} tries to jump at them, but the human manages to dodge. Unfortunately, a rock is directly in ${quid.name}'s jump line. A sharp pain runs through ${pronoun(quid, 2)} hip. A red spot slowly spreads where ${pronoun(quid, 0)} hit the rock. Meanwhile, the human runs into the food den.*`);
 					injuryText = `-${healthPoints} HP (from wound)\n`;
 				}
 				else {
 
-					userData.quid.profile.injuries.sprains += 1;
+					quidToServer.injuries_sprains += 1;
 
-					embed.setDescription(`*The battle between the human and ${userData.quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${userData.quid.getDisplayspecies()} tries to jump at them, but the human manages to dodge. ${userData.quid.name} is not prepared for the fall. A sharp pain runs through ${userData.quid.pronoun(2)} arm as it bends in the fall. Meanwhile, the human runs into the food den.*`);
+					embed.setDescription(`*The battle between the human and ${quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${getDisplayspecies(quid)} tries to jump at them, but the human manages to dodge. ${quid.name} is not prepared for the fall. A sharp pain runs through ${pronoun(quid, 2)} arm as it bends in the fall. Meanwhile, the human runs into the food den.*`);
 					injuryText = `-${healthPoints} HP (from sprain)\n`;
 				}
 
-				await userData.update(
-					(u) => {
-						const p = getMapData(getMapData(u.quids, userData.quid._id).profiles, interaction.guildId);
-						p.health -= healthPoints;
-						p.injuries = userData.quid.profile.injuries;
-					},
-				);
+				await quidToServer.update({
+					health: quidToServer.health - healthPoints,
+					injuries_wounds: quidToServer.injuries_wounds,
+					injuries_sprains: quidToServer.injuries_sprains,
+				});
 			}
 
 			serverAttackInfo.idleHumans += 1;
 		}
 		embed.setFooter({ text: injuryText + changedCondition.statsUpdateText + '\n' + minusItemText + `\n${serverAttackInfo.idleHumans} humans remaining` });
 
-		const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
+		const members = await updateAndGetMembers(user.id, interaction.guild);
+		const levelUpEmbed = await checkLevelUp(interaction, quid, quidToServer, members);
 
 		// This is an editReply if the last awaitMessageComponent event timed out (For this reason, an editMessageId is always provided), else it is an update to the message with the button. newInteraction is undefined when every event timed out.
 		botReply = await respond(newInteraction ?? interaction, {
@@ -278,17 +288,17 @@ async function executeAttacking(
 			components: [fightGame.fightComponent,
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['new']))
+						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, user.id, ['new']))
 						.setLabel('Attack again')
 						.setStyle(ButtonStyle.Primary))],
 		}, 'update', newInteraction?.message.id ?? getMessageId(botReply));
 
-		await isPassedOut(interaction, userData, true);
+		await isPassedOut(interaction, user, userToServer, quid, quidToServer, true);
 
-		await coloredButtonsAdvice(interaction, userData);
-		await restAdvice(interaction, userData);
-		await drinkAdvice(interaction, userData);
-		await eatAdvice(interaction, userData);
+		await coloredButtonsAdvice(interaction, user);
+		await restAdvice(interaction, user, quidToServer);
+		await drinkAdvice(interaction, user, quidToServer);
+		await eatAdvice(interaction, user, quidToServer);
 
 		return botReply;
 	}
@@ -309,10 +319,7 @@ async function executeAttacking(
 		if (serverAttackInfo.endingTimeout) { clearTimeout(serverAttackInfo.endingTimeout); }
 		serverMap.delete(interaction.guild.id);
 
-		serverData = await serverModel.findOneAndUpdate(
-			s => s._id === serverData?._id,
-			(s) => s.nextPossibleAttack = Date.now() + 86_400_000, // 24 hours
-		);
+		await server.update({ nextPossibleAttackTimestamp: now() + 86_400 /* 24 hours */ });
 	}
 	else if (serverAttackInfo.endingTimeout == null && serverAttackInfo.ongoingFights <= 0) {
 
@@ -335,7 +342,7 @@ export async function startAttack(
 		'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in remainingHumans
 	]) === true) { return; }
 
-	serverMap.set(interaction.guildId, { startsTimestamp: Date.now() + 120_000, idleHumans: humanCount, endingTimeout: null, ongoingFights: 0, stealInterval: null });
+	serverMap.set(interaction.guildId, { startsTimestamp: now() + 120, idleHumans: humanCount, endingTimeout: null, ongoingFights: 0, stealInterval: null });
 	setTimeout(async function() {
 		try {
 
@@ -370,32 +377,20 @@ export async function startAttack(
 						.setTitle('The humans are stealing items!')
 						.setDescription(`*Before anyone could stop them, ${serverAttackInfo.idleHumans} humans run into the food den, and take whatever they can grab.*`);
 
-					let serverData = await serverModel.findOne(s => s.serverId === interaction.guildId);
+					const server = await Server.findByPk(interaction.guildId, { rejectOnEmpty: true });
 
 					let footerText = '';
-					const inventory_ = widenValues(serverData.inventory);
 					for (let i = 0; i < serverAttackInfo.idleHumans; i++) {
 
-						const { itemType, itemName } = getHighestItem(inventory_);
-
-						if (itemType && itemName) {
-
-							const minusAmount = Math.ceil(inventory_[itemType][itemName] / 10);
-							footerText += `\n-${minusAmount} ${itemName} for ${interaction.guild.name}`;
-							inventory_[itemType][itemName] -= minusAmount;
-						}
+						footerText += removeByHighestItem(server, interaction.guild.name);
 					}
 					if (footerText.length > 0) { embed.setFooter({ text: footerText }); }
-
-					serverData = await serverModel.findOneAndUpdate(
-						s => s._id === serverData._id,
-						(s) => { s.inventory = inventory_; },
-					);
+					await server.update({ inventory: [...server.inventory] });
 
 					try {
 
-						const fifteenMinutesInMs = 900_000;
-						if (SnowflakeUtil.deconstruct(interaction.id).timestamp < Date.now() - fifteenMinutesInMs) { throw new Error('Interaction is older than 15 minutes'); }
+						const fifteenMinutesInS = 900;
+						if (Math.round(SnowflakeUtil.timestampFrom(interaction.id) / 1000) < now() - fifteenMinutesInS) { throw new Error('Interaction is older than 15 minutes'); }
 						await respond(interaction, { embeds: [embed] });
 					}
 					catch {
@@ -449,7 +444,7 @@ export function remindOfAttack(
 	const serverAttackInfo = serverMap.get(guildId);
 	if (serverAttackInfo && serverAttackInfo.startsTimestamp !== null) {
 
-		return `Humans will attack in ${Math.floor((serverAttackInfo.startsTimestamp - Date.now()) / 1000)} seconds!`;
+		return `Humans will attack in ${serverAttackInfo.startsTimestamp - now()} seconds!`;
 	}
 	else if (serverAttackInfo && serverAttackInfo.startsTimestamp == null) {
 
@@ -474,39 +469,24 @@ async function remainingHumans(
 		.setTitle('The attack is over!')
 		.setDescription(`*Before anyone could stop them, the last ${serverAttackInfo.idleHumans	} humans run into the food den, take whatever they can grab and run away. The battle wasn't easy, but it is over at last.*`);
 
-	let serverData = await serverModel.findOne(s => s.serverId === interaction.guildId);
+	const server = await Server.findByPk(interaction.guildId, { rejectOnEmpty: true });
 
 	let footerText = '';
-	const inventory_ = widenValues(serverData.inventory);
 	while (serverAttackInfo.idleHumans > 0) {
 
-		const { itemType, itemName } = getHighestItem(inventory_);
-
-		if (itemType && itemName) {
-
-			const minusAmount = Math.ceil(inventory_[itemType][itemName] / 10);
-			footerText += `\n-${minusAmount} ${itemName} for ${interaction.guild.name}`;
-			inventory_[itemType][itemName] -= minusAmount;
-		}
-
+		footerText += removeByHighestItem(server, interaction.guild.name);
 		serverAttackInfo.idleHumans -= 1;
 	}
 	if (footerText.length > 0) { embed.setFooter({ text: footerText }); }
 
-	serverMap.delete(interaction.guild.id);
+	await server.update({ inventory: [...server.inventory], nextPossibleAttackTimestamp: now() + 86_400 /* 24 hours */ });
 
-	serverData = await serverModel.findOneAndUpdate(
-		s => s._id === serverData._id,
-		(s) => {
-			s.inventory = inventory_,
-			s.nextPossibleAttack = Date.now() + 86_400_000; // 24 hours
-		},
-	);
+	serverMap.delete(interaction.guild.id);
 
 	try {
 
-		const fifteenMinutesInMs = 900_000;
-		if (SnowflakeUtil.deconstruct(interaction.id).timestamp < Date.now() - fifteenMinutesInMs) { throw new Error('Interaction is older than 15 minutes'); }
+		const fifteenMinutesInS = 900;
+		if (Math.round(SnowflakeUtil.timestampFrom(interaction.id) / 1000) < now() - fifteenMinutesInS) { throw new Error('Interaction is older than 15 minutes'); }
 		await respond(interaction, { embeds: [embed] });
 	}
 	catch {
@@ -521,26 +501,37 @@ async function remainingHumans(
 /**
  * Finds whichever item there is most of, and returns its type and name.
  */
-export function getHighestItem(
-	inventoryObject: Inventory,
-) {
+function removeByHighestItem(
+	server: {inventory: string[]},
+	name: string,
+): string {
 
-	let itemType: keyof Inventory| null = null;
-	let itemName: KeyOfUnion<ValueOf<Inventory>> | null = null;
-	let itemAmount = 0;
+	const arr = [...server.inventory];
+	if (arr.length <= 0) { return ''; }
 
-	const inventory_ = widenValues(inventoryObject);
-	for (const itype of unsafeKeys(inventory_)) {
+	const obj: Record<string, number> = {};
+	let maxStr: string = arr[0]!;
+	let maxVal = 1;
+	for (const v of arr) {
 
-		for (const item of unsafeKeys(inventory_[itype])) {
+		obj[v] = ++obj[v] || 1;
 
-			if (inventory_[itype][item] > itemAmount) {
-				itemAmount = inventory_[itype][item];
-				itemType = itype;
-				itemName = item;
-			}
+		if (obj[v]! > maxVal) {
+
+			maxStr = v;
+			maxVal = obj[v]!;
 		}
 	}
 
-	return { itemType, itemName };
+	const minusAmount = Math.ceil(maxVal / 10);
+	let foundCount = 0;
+	server.inventory = server.inventory.filter((item) => {
+		if (item === maxStr && foundCount < maxVal) {
+			foundCount++;
+			return false;
+		}
+		return true;
+	});
+
+	return `\n-${minusAmount} ${maxStr} for ${name}`;
 }

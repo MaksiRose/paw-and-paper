@@ -1,12 +1,13 @@
 import { Attachment, EmbedBuilder, GuildTextBasedChannel, MessageReference, SlashCommandBuilder } from 'discord.js';
 import { respond } from '../../utils/helperFunctions';
 import { hasName, isInGuild } from '../../utils/checkUserState';
-import { getMapData } from '../../utils/helperFunctions';
-import { readFileSync, writeFileSync } from 'fs';
 import { canManageWebhooks, getMissingPermissionContent, hasPermission, missingPermissions, permissionDisplay } from '../../utils/permissionHandler';
-import { CurrentRegionType, UserData } from '../../typings/data/user';
+import { CurrentRegionType } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
-import { WebhookMessages } from '../../typings/data/general';
+import QuidToServer from '../../models/quidToServer';
+import Quid from '../../models/quid';
+import { getDisplayname } from '../../utils/getQuidInfo';
+import Webhook from '../../models/webhook';
 const { error_color } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -25,14 +26,15 @@ export const command: SlashCommand = {
 	position: 3,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (interaction, userData) => {
+	sendCommand: async (interaction, { user, quid }) => {
 
 		if (await missingPermissions(interaction, [
 			'ManageWebhooks', // Needed for webhook interaction
 		]) === true) { return; }
 
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (!isInGuild(interaction) || !hasName(userData, interaction)) { return; }
+		if (!user) { throw new TypeError('user is undefined'); }
+		if (!isInGuild(interaction) || !hasName(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; }
 
 		const text = interaction.options.getString('text') || '';
 		const attachment = interaction.options.getAttachment('attachment');
@@ -61,7 +63,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		const isSuccessful = await sendMessage(interaction.channel, text, userData, interaction.user.id, attachment ? [attachment] : undefined);
+		const isSuccessful = await sendMessage(interaction.channel, text, quid, interaction.user.id, attachment ? [attachment] : undefined);
 
 		await interaction.deferReply({ ephemeral: true });
 		if (!isSuccessful) { return; }
@@ -83,8 +85,8 @@ export const command: SlashCommand = {
 export async function sendMessage(
 	channel: GuildTextBasedChannel,
 	text: string,
-	userData: UserData<never, ''>,
-	authorId: string,
+	quid: Quid,
+	discordUserId: string,
 	attachments?: Array<Attachment>,
 	reference?: MessageReference,
 ): Promise<boolean> {
@@ -96,15 +98,8 @@ export async function sendMessage(
 	const webhook = (await webhookChannel.fetchWebhooks()).find(webhook => webhook.name === 'PnP Profile Webhook')
 		|| await webhookChannel.createWebhook({ name: 'PnP Profile Webhook' });
 
-	await userData.update(
-		(u) => {
-			const p = getMapData(getMapData(u.quids, userData.quid._id).profiles, webhookChannel.guildId);
-			p.currentRegion = CurrentRegionType.Ruins;
-		},
-	);
+	await QuidToServer.update({ currentRegion: CurrentRegionType.Ruins }, { where: { quidId: quid.id, serverId: webhookChannel.guildId } });
 
-	const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8')) as WebhookMessages;
-	/** @type {Array<import('discord.js').MessageEmbedOptions>} */
 	const embeds: Array<EmbedBuilder> = [];
 
 	if (reference && reference.messageId) {
@@ -137,16 +132,15 @@ export async function sendMessage(
 
 	const botMessage = await webhook
 		.send({
-			username: userData.quid.getDisplayname(),
-			avatarURL: userData.quid.avatarURL,
+			username: await getDisplayname(quid, { serverId: webhookChannel.guildId }),
+			avatarURL: quid.avatarURL,
 			content: text || undefined,
 			files: attachments,
 			embeds: embeds,
 			threadId: channel.isThread() ? channel.id : undefined,
 		});
 
-	webhookCache[botMessage.id] = `${authorId}_${userData.quid._id}`;
-	writeFileSync('./database/webhookCache.json', JSON.stringify(webhookCache, null, '\t'));
+	await Webhook.create({ discordUserId: discordUserId, id: botMessage.id, quidId: quid.id });
 
 	return true;
 }

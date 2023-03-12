@@ -1,10 +1,15 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { CurrentRegionType, UserData } from '../../typings/data/user';
+import Quid from '../../models/quid';
+import QuidToServer from '../../models/quidToServer';
+import User from '../../models/user';
+import UserToServer from '../../models/userToServer';
+import { CurrentRegionType } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { disableAllComponents } from '../../utils/componentDisabling';
-import { getMapData, getMessageId, getSmallerNumber, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
+import { getDisplayname, pronoun, pronounAndPlural } from '../../utils/getQuidInfo';
+import { getMessageId, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
 import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
 const { default_color } = require('../../../config.json');
@@ -19,43 +24,51 @@ export const command: SlashCommand = {
 	position: 4,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
-	sendCommand: async (interaction, userData, serverData) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
 
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
+		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
+		if (!user) { throw new TypeError('user is undefined'); }
+		if (!userToServer) { throw new TypeError('userToServer is undefined'); }
+		if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
-		const restEmbed = await isInvalid(interaction, userData);
+		const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
 		if (restEmbed === false) { return; }
 
 		const messageContent = remindOfAttack(interaction.guildId);
 
-		await sendDrinkMessage(interaction, userData, messageContent, restEmbed);
+		await sendDrinkMessage(interaction, user, userToServer, quid, quidToServer, messageContent, restEmbed);
 	},
 };
 
 export async function sendDrinkMessage(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
-	userData: UserData<never, never>,
+	user: User,
+	userToServer: UserToServer,
+	quid: Quid,
+	quidToServer: QuidToServer,
 	messageContent: string,
 	restEmbed: EmbedBuilder[],
 ): Promise<void> {
 
-	if (userData.quid.profile.thirst >= userData.quid.profile.maxThirst) {
+	if (quidToServer.thirst >= quidToServer.maxThirst) {
 
 		// This is a reply if interaction is a ChatInputCommand, and an update if it's a button
 		await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
-				.setColor(userData.quid.color)
-				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
-				.setDescription(`*Water sounds churned in ${userData.quid.name}'s ear, ${userData.quid.pronoun(2)} mouth longing for just one more drink. It seems like ${userData.quid.pronoun(0)} can never be as hydrated as ${userData.quid.pronounAndPlural(0, 'want')}, but  ${userData.quid.pronoun(0)} had plenty of water today.*`)],
+				.setColor(quid.color)
+				.setAuthor({
+					name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
+					iconURL: quid.avatarURL,
+				})
+				.setDescription(`*Water sounds churned in ${quid.name}'s ear, ${pronoun(quid, 2)} mouth longing for just one more drink. It seems like ${pronoun(quid, 0)} can never be as hydrated as ${pronounAndPlural(quid, 0, 'want')}, but  ${pronoun(quid, 0)} had plenty of water today.*`)],
 		}, 'update', interaction.isButton() ? interaction.message.id : undefined);
 		return;
 	}
 
-	await setCooldown(userData, interaction.guildId, true);
+	await setCooldown(userToServer, true);
 
 	const components = [new ActionRowBuilder<ButtonBuilder>()
 		.setComponents(new ButtonBuilder()
@@ -93,27 +106,24 @@ export async function sendDrinkMessage(
 	collector.on('end', async (collected) => {
 		try {
 
-			await setCooldown(userData, interaction.guildId, false);
+			await setCooldown(userToServer, false);
 
-			const thirstPoints = getSmallerNumber(userData.quid.profile.maxThirst - userData.quid.profile.thirst, getRandomNumber(3, collected.size));
-			const currentRegion = userData.quid.profile.currentRegion;
+			const thirstPoints = Math.min(quidToServer.maxThirst - quidToServer.thirst, getRandomNumber(3, collected.size));
+			const currentRegion = quidToServer.currentRegion;
 
-			await userData.update(
-				(u) => {
-					const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
-					p.currentRegion = CurrentRegionType.Lake;
-					p.thirst += thirstPoints;
-					u.advice.drinking = true;
-				},
-			);
+			await quidToServer.update({ currentRegion: CurrentRegionType.Lake, thirst: quidToServer.thirst + thirstPoints });
+			await user.update({ advice_drinking: true });
 
 			// This is an editReply
 			await respond(interaction, {
 				embeds: [...restEmbed, new EmbedBuilder()
-					.setColor(userData.quid.color)
-					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
-					.setDescription(`*${userData.quid.name} scurries over to the river and takes hasty gulps. The fresh water runs down ${userData.quid.pronoun(2)} throat and fills ${userData.quid.pronoun(2)} body with new energy.*`)
-					.setFooter({ text: `+${thirstPoints} thirst (${userData.quid.profile.thirst}/${userData.quid.profile.maxThirst})${(currentRegion !== CurrentRegionType.Lake) ? '\nYou are now at the lake' : ''}\n\nDon't forget to stay hydrated in real life too! :)` })],
+					.setColor(quid.color)
+					.setAuthor({
+						name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
+						iconURL: quid.avatarURL,
+					})
+					.setDescription(`*${quid.name} scurries over to the river and takes hasty gulps. The fresh water runs down ${pronoun(quid, 2)} throat and fills ${pronoun(quid, 2)} body with new energy.*`)
+					.setFooter({ text: `+${thirstPoints} thirst (${quidToServer.thirst}/${quidToServer.maxThirst})${(currentRegion !== CurrentRegionType.Lake) ? '\nYou are now at the lake' : ''}\n\nDon't forget to stay hydrated in real life too! :)` })],
 				components: disableAllComponents(components),
 			}, 'update', getMessageId(botReply));
 		}

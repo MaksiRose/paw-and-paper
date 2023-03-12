@@ -57,7 +57,8 @@
 			"warn",
 			"tab",
 			{
-				"SwitchCase": 1
+				"SwitchCase": 1,
+				"flatTernaryExpressions": true
 			}
 		],
 		"keyword-spacing": "error",
@@ -126,7 +127,8 @@
 		"key-spacing": "error",
 		"block-spacing": "error",
 		"no-whitespace-before-property": "error",
-		"deprecation/deprecation": "warn"
+		"deprecation/deprecation": "warn",
+		"no-mixed-spaces-and-tabs": "warn"
 		// "padded-blocks": [
 		// 	"error",
 		// 	"always",

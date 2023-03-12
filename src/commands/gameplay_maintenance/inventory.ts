@@ -1,6 +1,8 @@
 import { ActionRowBuilder, ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, StringSelectMenuBuilder, AnySelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
-import { ServerSchema } from '../../typings/data/server';
-import { UserData } from '../../typings/data/user';
+import Quid from '../../models/quid';
+import QuidToServer from '../../models/quidToServer';
+import Server from '../../models/server';
+import UserToServer from '../../models/userToServer';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
@@ -22,24 +24,30 @@ export const command: SlashCommand = {
 	position: 1,
 	disablePreviousCommand: true,
 	modifiesServerProfile: false,
-	sendCommand: async (interaction, userData, serverData) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
 
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
+		if (server === undefined) { throw new Error('serverData is null'); }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
+		if (!user) { throw new TypeError('user is undefined'); }
+		if (!userToServer) { throw new TypeError('userToServer is undefined'); }
+		if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
-		const restEmbed = await isInvalid(interaction, userData);
+		const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
 		if (restEmbed === false) { return; }
 
-		await showInventoryMessage(interaction, userData, serverData, 1);
+		await showInventoryMessage(interaction, userToServer, quidToServer, server, 1);
 	},
-	async sendMessageComponentResponse(interaction, userData, serverData) {
+	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer, server }) {
 
 		if (!interaction.isStringSelectMenu()) { return; }
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
+		if (server === undefined) { throw new Error('serverData is null'); }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
+		if (!user) { throw new TypeError('user is undefined'); }
+		if (!userToServer) { throw new TypeError('userToServer is undefined'); }
+		if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
 		const selectOptionId = getArrayElement(interaction.values, 0);
 
@@ -50,7 +58,7 @@ export const command: SlashCommand = {
 			if (isNaN(page)) { throw new Error('page is Not a Number'); }
 			if (page !== 1 && page !== 2 && page !== 3 && page !== 4) { throw new Error('page is an invalid number'); }
 
-			await showInventoryMessage(interaction, userData, serverData, page, showMaterialsPage);
+			await showInventoryMessage(interaction, userToServer, quidToServer, server, page, showMaterialsPage);
 			return;
 		}
 		else if (interaction.customId.includes('eat')) {
@@ -61,12 +69,12 @@ export const command: SlashCommand = {
 				if (isNaN(subPage)) { throw new Error('subPage is Not a Number'); }
 				const showMaterialsPage = selectOptionId.split('_')[2] === 'true';
 
-				await showInventoryMessage(interaction, userData, serverData, 3, showMaterialsPage, subPage);
+				await showInventoryMessage(interaction, userToServer, quidToServer, server, 3, showMaterialsPage, subPage);
 				return;
 			}
 			else {
 
-				await sendEatMessage(interaction, selectOptionId, userData, serverData, '', []);
+				await sendEatMessage(interaction, selectOptionId, user, quid, userToServer, quidToServer, server, '', []);
 				return;
 			}
 		}
@@ -75,8 +83,9 @@ export const command: SlashCommand = {
 
 export async function showInventoryMessage(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
-	userData: UserData<never, never>,
-	serverData: ServerSchema,
+	userToServer: UserToServer,
+	quidToServer: QuidToServer,
+	server: Server,
 	page: 1 | 2 | 3 | 4,
 	showMaterialsPage = true,
 	subPage?: number,
@@ -90,7 +99,7 @@ export async function showInventoryMessage(
 
 	const inventorySelectMenu = new ActionRowBuilder<StringSelectMenuBuilder>()
 		.setComponents(new StringSelectMenuBuilder()
-			.setCustomId(`inventory_pages_${showMaterialsPage}_@${userData._id}`)
+			.setCustomId(`inventory_pages_${showMaterialsPage}_@${userToServer.userId}`)
 			.setPlaceholder('Select a page')
 			.setOptions([
 				{ label: 'Page 1', value: '1', description: 'common herbs', emoji: '🌱' },
@@ -99,7 +108,7 @@ export async function showInventoryMessage(
 				...showMaterialsPage ? [{ label: 'Page 4', value: '4', description: 'materials', emoji: '🪵' }] : [],
 			]));
 
-	let { selectMenuOptions: foodSelectMenuOptions, embedDescription: description } = getInventoryElements(serverData.inventory, page);
+	let { selectMenuOptions: foodSelectMenuOptions, embedDescription: description } = getInventoryElements(server.inventory, page);
 	if (page === 4) { foodSelectMenuOptions.length = 0; }
 
 	if (foodSelectMenuOptions.length > 25) {
@@ -121,10 +130,10 @@ export async function showInventoryMessage(
 			.setDescription(description || null)],
 		components: [
 			inventorySelectMenu,
-			...userData.quid.profile.hunger < userData.quid.profile.maxHunger && foodSelectMenuOptions.length > 0
+			...quidToServer.hunger < quidToServer.maxHunger && foodSelectMenuOptions.length > 0
 				? [new ActionRowBuilder<StringSelectMenuBuilder>()
 					.setComponents(new StringSelectMenuBuilder()
-						.setCustomId(`inventory_eat_@${userData._id}`)
+						.setCustomId(`inventory_eat_@${userToServer.userId}`)
 						.setPlaceholder('Select an item to eat')
 						.setOptions(foodSelectMenuOptions))]
 				: [],
@@ -132,5 +141,5 @@ export async function showInventoryMessage(
 		fetchReply: true,
 	}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
 
-	saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
+	saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, botReply.id);
 }

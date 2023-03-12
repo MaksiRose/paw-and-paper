@@ -1,11 +1,12 @@
 import { ActionRowBuilder, ChannelType, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { readFileSync } from 'fs';
 import { respond } from '../utils/helperFunctions';
-import { userModel } from '../models/userModel';
 import { canManageWebhooks, missingPermissions } from '../utils/permissionHandler';
-import { WebhookMessages } from '../typings/data/general';
 import { ContextMenuCommand } from '../typings/handle';
 import { isInGuild } from '../utils/checkUserState';
+import Webhook from '../models/webhook';
+import Quid from '../models/quid';
+import User from '../models/user';
+import DiscordUser from '../models/discordUser';
 
 export const command: ContextMenuCommand = {
 	data: {
@@ -22,15 +23,20 @@ export const command: ContextMenuCommand = {
 			'ManageWebhooks', // Needed for webhook interaction
 		]) === true) { return; }
 
-		/* This gets the webhookCache and userData */
-		const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8')) as WebhookMessages;
-		const userData = (() => {
-			try { return userModel.findOne(u => Object.keys(u.userIds).includes(webhookCache[interaction.targetId]?.split('_')[0] || '')); }
-			catch { return null; }
-		})();
+		/* This gets the webhookData and discordUsers */
+		const webhookData = await Webhook.findByPk(interaction.targetId, {
+			attributes: [], include: [{
+				model: Quid, as: 'quid', attributes: ['userId'], include: [{
+					model: User, as: 'user', attributes: ['id'], include: [{
+						model: DiscordUser, as: 'discordUsers', attributes: ['id'],
+					}],
+				}],
+			}],
+		});
+		const discordUsers = webhookData?.quid?.user?.discordUsers ?? [];
 
-		/* This is checking if the user who is trying to edit the message is the same user who sent the message. */
-		if (userData === null || !Object.keys(userData.userIds).includes(interaction.user.id)) {
+		/* This is checking if the user who is trying to delete the message is the same user who sent the message. */
+		if (!discordUsers.some(du => du.id === interaction.user.id)) {
 
 			await interaction
 				.reply({
@@ -59,7 +65,6 @@ export const command: ContextMenuCommand = {
 	},
 	async sendModalResponse(interaction) {
 
-		console.log('test');
 		/* Returns if interaction.channel is null. This should not happen as this is checked in interactionCreate. */
 		if (!interaction.channel) { return; }
 

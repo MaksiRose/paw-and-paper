@@ -1,8 +1,10 @@
 import { PermissionFlagsBits, SlashCommandBuilder, User } from 'discord.js';
-import { respond, userDataServersObject } from '../../utils/helperFunctions';
-import { userModel } from '../../models/userModel';
+import { respond } from '../../utils/helperFunctions';
 import { client } from '../..';
 import { SlashCommand } from '../../typings/handle';
+import DiscordUser from '../../models/discordUser';
+import UserModel from '../../models/user';
+import UserToServer from '../../models/userToServer';
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -34,10 +36,10 @@ export const command: SlashCommand = {
 		const guildId = interaction.options.getString('guild');
 		if (user === null || guildId === null) { throw new TypeError('user or guildId is null'); }
 
-		const userData = (() => {
-			try { return userModel.findOne(u => Object.keys(u.userIds).includes(user.id)); }
-			catch { return null; }
-		})();
+		const discordUser = await DiscordUser.findByPk(interaction.user.id, {
+			include: [{ model: UserModel, as: 'user' }],
+		});
+		const userData = discordUser?.user;
 
 		if (!userData) {
 
@@ -63,12 +65,12 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		const serverInfo = userData.servers[guildId];
-		if (serverInfo === undefined) {
+		const serverInfo = await UserToServer.findOne({ where: { userId: userData.id, serverId: guildId } });
+		if (serverInfo === null) {
 
 			// This is always a reply
 			await respond(interaction, {
-				content: `There is no cooldown entry for ${user.tag} in ${guild.name}`,
+				content: `There is no user-to-server relationship between user ${user.tag} and server ${guild.name}`,
 				ephemeral: true,
 			});
 			return;
@@ -78,21 +80,13 @@ export const command: SlashCommand = {
 
 			// This is always a reply
 			await respond(interaction, {
-				content: `The cooldown for ${user.tag} in ${guild.name} is already set to false`,
+				content: `The cooldown for user ${user.tag} in server ${guild.name} is already set to false`,
 				ephemeral: true,
 			});
 			return;
 		}
 
-		await userModel.findOneAndUpdate(
-			u => u._id === userData._id,
-			u => {
-				u.servers[guildId] = {
-					...userDataServersObject(u, guildId),
-					hasCooldown: false,
-				};
-			},
-		);
+		await serverInfo.update({ hasCooldown: false });
 
 		// This is always a reply
 		await respond(interaction, {

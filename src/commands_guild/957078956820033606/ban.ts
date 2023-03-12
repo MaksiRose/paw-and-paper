@@ -1,11 +1,27 @@
 import { PermissionFlagsBits, SlashCommandBuilder, User } from 'discord.js';
-import { readFileSync, writeFileSync } from 'fs';
-import { respond } from '../../utils/helperFunctions';
-import serverModel from '../../models/serverModel';
-import { userModel } from '../../models/userModel';
+import { addCommasAndAnd, respond } from '../../utils/helperFunctions';
 import { client } from '../..';
 import { SlashCommand } from '../../typings/handle';
-import { BanList } from '../../typings/data/general';
+import BannedUser from '../../models/bannedUser';
+import DiscordUser from '../../models/discordUser';
+import UserModel from '../../models/user';
+import DiscordUserToServer from '../../models/discordUserToServer';
+import Quid from '../../models/quid';
+import Webhook from '../../models/webhook';
+import Friendship from '../../models/friendship';
+import { Op } from 'sequelize';
+import QuidToServer from '../../models/quidToServer';
+import QuidToServerToShopRole from '../../models/quidToServerToShopRole';
+import TemporaryStatIncrease from '../../models/temporaryStatIncrease';
+import GroupToQuid from '../../models/groupToQuid';
+import Group from '../../models/group';
+import GroupToServer from '../../models/groupToServer';
+import UserToServer from '../../models/userToServer';
+import Server from '../../models/server';
+import Den from '../../models/den';
+import ProxyLimits from '../../models/proxyLimits';
+import ShopRole from '../../models/shopRole';
+import BannedServer from '../../models/bannedServer';
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -37,64 +53,88 @@ export const command: SlashCommand = {
 		await client.application.fetch();
 		if ((client.application.owner instanceof User) ? interaction.user.id !== client.application.owner.id : client.application.owner ? !client.application.owner.members.has(interaction.user.id) : false) { throw new Error('403: user is not bot owner'); }
 
+		const notified: string[] = [];
 		const type = interaction.options.getString('type');
 		const id = interaction.options.getString('id');
 		if (type === null || id === null) { throw new TypeError('type or id is null'); }
 
-		const bannedList = JSON.parse(readFileSync('./database/bannedList.json', 'utf-8')) as BanList;
-
 		if (type === 'user') {
 
-			bannedList.users.push(id);
-			writeFileSync('./database/bannedList.json', JSON.stringify(bannedList, null, '\t'));
+			const userData = (await DiscordUser.findByPk(id, { include: [{ model: UserModel, as: 'user' }] }))?.user;
+			const discordUserIds = userData === undefined ? [id] : (await DiscordUser.findAll({ where: { userId: userData.id } })).map(du => du.id);
 
-			const profile = (() => {
-				try { return userModel.findOne(u => Object.keys(u.userIds).includes(id)); }
-				catch { return null; }
-			})();
-			if (profile) {
+			for (const discordUserId of discordUserIds) {
 
-				userModel.findOneAndDelete(u => u._id === profile._id);
-				const user = await client.users.fetch(id).catch(() => { return null; });
+				await BannedUser.create({ id: discordUserId }, { ignoreDuplicates: true });
+				await DiscordUserToServer.destroy({ where: { discordUserId: discordUserId } });
+				await DiscordUser.destroy({ where: { id: discordUserId } });
 
-				if (user) {
+				if (userData !== undefined) {
 
-					await user.createDM();
-					await user.send({ content: 'I am sorry to inform you that you have been banned from using this bot.' });
+					const user = await client.users.fetch(discordUserId).catch(() => { return null; });
+					if (user) {
 
-					// This is always a reply
-					await respond(interaction, {
-						content: `Banned user ${user.tag}, deleted their account and was able to notify them about it.`,
-					});
-					return;
+						await user.send({ content: 'I am sorry to inform you that you have been banned from using this bot.' });
+						notified.push(user.tag);
+					}
+				}
+			}
+
+			if (userData !== undefined) {
+
+				const quids = await Quid.findAll({ where: { userId: userData.id } });
+				for (const quid of quids) {
+
+					await Webhook.destroy({ where: { quidId: quid.id } });
+					await Friendship.destroy({ where: { [Op.or]: [{ quidId1: quid.id }, { quidId2: quid.id }] } });
+					await GroupToQuid.destroy({ where: { quidId: quid.id } });
+					const quidToServers = await QuidToServer.findAll({ where: { quidId: quid.id } });
+					for (const quidToServer of quidToServers) {
+						await QuidToServerToShopRole.destroy({ where: { quidToServerId: quidToServer.id } });
+						await TemporaryStatIncrease.destroy({ where: { quidToServerId: quidToServer.id } });
+						await quidToServer.destroy();
+					}
+					await quid.destroy();
 				}
 
-				// This is always a reply
-				await respond(interaction, {
-					content: `Banned user ${id} deleted their account but was not able to notify them about it.`,
-				});
-				return;
+				const groups = await Group.findAll({ where: { userId: userData.id } });
+				for (const group of groups) {
+
+					await GroupToServer.destroy({ where: { groupId: group.id } });
+					await group.destroy();
+				}
+
+				await UserToServer.destroy({ where: { userId: userData.id } });
+				await userData.destroy();
 			}
 
 			// This is always a reply
 			await respond(interaction, {
-				content: `Banned user ${id} but couldn't find an account associated with them.`,
+				content: notified.length > 0 ? `Banned user(s) ${addCommasAndAnd(notified)}, deleted their account and was able to notify them about it.` : userData !== undefined ? `Banned user(s) ${addCommasAndAnd(discordUserIds)} and deleted their account but was not able to notify them about it.` : `Banned user ${notified[0] ?? id} but couldn't find an account associated with them.`,
 			});
-			return;
 		}
 
 		if (type === 'server') {
 
-			bannedList.servers.push(id);
-			writeFileSync('./database/bannedList.json', JSON.stringify(bannedList, null, '\t'));
+			await BannedServer.create({ id: id }, { ignoreDuplicates: true });
+			const serverData = await Server.findByPk(id);
 
-			const server = (() => {
-				try { return serverModel.findOne(s => s.serverId === id); }
-				catch { return null; }
-			})();
-			if (server) {
+			if (serverData) {
 
-				await serverModel.findOneAndDelete(s => s._id === server._id);
+				await Den.destroy({ where: { [Op.or]: [{ id: serverData.foodDenId }, { id: serverData.medicineDenId }, { id: serverData.sleepingDenId }] } });
+				await ProxyLimits.destroy({ where: { [Op.or]: [{ id: serverData.proxy_roleLimitsId }, { id: serverData.proxy_channelLimitsId }] } });
+				await UserToServer.destroy({ where: { serverId: id } });
+				await GroupToServer.destroy({ where: { serverId: id } });
+				await DiscordUserToServer.destroy({ where: { serverId: id } });
+				const quidToServers = await QuidToServer.findAll({ where: { serverId: id } });
+				for (const quidToServer of quidToServers) {
+					await QuidToServerToShopRole.destroy({ where: { quidToServerId: quidToServer.id } });
+					await quidToServer.destroy();
+				}
+				await ShopRole.destroy({ where: { serverId: id } });
+				await serverData.destroy();
+
+
 				const guild = await interaction.client.guilds.fetch(id).catch(() => { return null; });
 				const user = await client.users.fetch(guild?.ownerId || '').catch(() => { return null; });
 

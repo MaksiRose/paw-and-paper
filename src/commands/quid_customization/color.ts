@@ -1,8 +1,9 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { respond } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
-import { getMapData } from '../../utils/helperFunctions';
 import { SlashCommand } from '../../typings/handle';
+import Quid from '../../models/quid';
+import { getDisplayname } from '../../utils/getQuidInfo';
 const { error_color } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -20,9 +21,10 @@ export const command: SlashCommand = {
 	position: 4,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (interaction, userData) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
 
-		if (!hasName(userData, interaction)) { return; } // This is always a reply
+		if (!hasName(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
+		if (!user) { throw new TypeError('user is undefined'); }
 
 		/* Checking if the user has sent a valid hex code. If they have not, it will send an error message. */
 		const hexColor = interaction.options.getString('hex');
@@ -39,19 +41,17 @@ export const command: SlashCommand = {
 		}
 
 		/* Changing the hex code and sending a success message. */
-		await userData.update(
-			(u) => {
-				const q = getMapData(u.quids, getMapData(u.servers, interaction.guildId || 'DMs').currentQuid ?? '');
-				q.color = `#${hexColor}`;
-			},
-		);
+		await quid.update({ color: `#${hexColor}` });
 
 		// This is always a reply
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
-				.setColor(userData.quid.color)
-				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
-				.setTitle(`Profile color set to ${userData.quid.color}!`)],
+				.setColor(quid.color)
+				.setAuthor({
+					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+					iconURL: quid.avatarURL,
+				})
+				.setTitle(`Profile color set to ${quid.color}!`)],
 		});
 		return;
 	},

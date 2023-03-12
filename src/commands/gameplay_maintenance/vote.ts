@@ -1,12 +1,11 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, StringSelectMenuBuilder, SlashCommandBuilder } from 'discord.js';
-import { readFileSync, writeFileSync } from 'fs';
 import { handle } from '../..';
-import { VoteList } from '../../typings/data/general';
+import Quid from '../../models/quid';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
-import { getMapData, getSmallerNumber, respond } from '../../utils/helperFunctions';
+import { now, respond } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 const { default_color } = require('../../../config.json');
 
@@ -20,18 +19,21 @@ export const command: SlashCommand = {
 	position: 6,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
-	sendCommand: async (interaction, userData) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
 
 		if (await missingPermissions(interaction, [
 			'ViewChannel', // Needed because of createCommandComponentDisabler
 		]) === true) { return; }
 
-		if (!hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
+		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
+		if (!user) { throw new TypeError('user is undefined'); }
 
 		let restEmbed: EmbedBuilder[] = [];
 		if (interaction.inGuild()) {
 
-			const restEmbedOrFalse = await isInvalid(interaction, userData);
+			if (!userToServer) { throw new TypeError('userToServer is undefined'); }
+			if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
+			const restEmbedOrFalse = await isInvalid(interaction, user, userToServer, quid, quidToServer);
 			if (restEmbedOrFalse === false) { return; }
 			else { restEmbed = restEmbedOrFalse; }
 		}
@@ -59,7 +61,7 @@ export const command: SlashCommand = {
 					]),
 				new ActionRowBuilder<StringSelectMenuBuilder>()
 					.setComponents(new StringSelectMenuBuilder()
-						.setCustomId(`vote_options_@${userData._id}`)
+						.setCustomId(`vote_options_@${user.id}`)
 						.setPlaceholder('Select the site on which you voted')
 						.setOptions([
 							{ label: 'top.gg', value: 'top.gg' },
@@ -72,38 +74,39 @@ export const command: SlashCommand = {
 			fetchReply: interaction.inGuild() ? true : false,
 		});
 
-		if (interaction.inGuild()) { saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction); }
+		if (interaction.inGuild()) { saveCommandDisablingInfo(userToServer!, interaction, interaction.channelId, botReply.id); }
 	},
-	async sendMessageComponentResponse(interaction, userData) {
+	async sendMessageComponentResponse(interaction, { user, quid, quidToServer }) {
 
 		if (!interaction.isStringSelectMenu()) { return; }
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
+		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
+		if (!user) { throw new TypeError('user is undefined'); }
+		if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
-		const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8')) as VoteList;
-		const twelveHoursInMs = 43_200_000;
+		const twelveHoursInS = 43_200;
 
 		const successfulTopVote = interaction.values[0] === 'top.gg'
 		&& (
-			(voteCache['id_' + interaction.user.id]?.lastRecordedTopVote ?? 0) > Date.now() - twelveHoursInMs
+			(user.lastRecordedTopVote ?? 0) > now() - twelveHoursInS
 			|| await handle.votes.top?.client?.hasVoted(interaction.user.id)
 		);
 		const redeemedTopVote = successfulTopVote
-		&& Date.now() <= (voteCache['id_' + interaction.user.id]?.nextRedeemableTopVote ?? 0);
+		&& now() <= (user.nextRedeemableTopVote ?? 0);
 
 		const discordsVote: { voted: boolean, votes: Array<{ expires: number; }>; } | undefined = await handle.votes.bfd?.client?.checkVote(interaction.user.id);
 		const successfulDiscordsVote = interaction.values[0] === 'discords.com'
 		&& (
-			(voteCache['id_' + interaction.user.id]?.lastRecordedDiscordsVote ?? 0) > Date.now() - twelveHoursInMs
+			(user.lastRecordedDiscordsVote ?? 0) > now() - twelveHoursInS
 			|| discordsVote?.voted
 		);
 		const redeemedDiscordsVote = successfulDiscordsVote
-		&& Date.now() <= (voteCache['id_' + interaction.user.id]?.nextRedeemableDiscordsVote ?? 0);
+		&& now() <= (user.nextRedeemableDiscordsVote ?? 0);
 
 		const successfulDblVote = interaction.values[0] === 'discordbotlist.com'
-		&& (voteCache['id_' + interaction.user.id]?.lastRecordedDblVote ?? 0) > Date.now() - twelveHoursInMs;
+		&& (user.lastRecordedDblVote ?? 0) > now() - twelveHoursInS;
 		const redeemedDblVote = successfulDblVote
-		&& Date.now() <= (voteCache['id_' + interaction.user.id]?.nextRedeemableDblVote ?? 0);
+		&& now() <= (user.nextRedeemableDblVote ?? 0);
 
 		if (successfulTopVote || successfulDiscordsVote || successfulDblVote) {
 
@@ -117,30 +120,20 @@ export const command: SlashCommand = {
 				return;
 			}
 
-			const newUserVoteCache = voteCache['id_' + interaction.user.id] ?? {};
+			if (successfulTopVote) { await user.update({ nextRedeemableTopVote: (user.lastRecordedTopVote || now()) + twelveHoursInS }); }
+			if (successfulDiscordsVote) { await user.update({ nextRedeemableDiscordsVote: (user.lastRecordedDiscordsVote || now()) + twelveHoursInS }); }
+			if (successfulDblVote) { await user.update({ nextRedeemableDblVote: (user.lastRecordedDblVote || now()) + twelveHoursInS }); }
 
-			if (successfulTopVote) { newUserVoteCache.nextRedeemableTopVote = (voteCache['id_' + interaction.user.id]?.lastRecordedTopVote ?? Date.now()) + twelveHoursInMs; }
-			if (successfulDiscordsVote === true) { newUserVoteCache.nextRedeemableDiscordsVote = (voteCache['id_' + interaction.user.id]?.lastRecordedDiscordsVote ?? Date.now()) + twelveHoursInMs; }
-			if (successfulDblVote === true) { newUserVoteCache.nextRedeemableDblVote = (voteCache['id_' + interaction.user.id]?.lastRecordedDblVote ?? Date.now()) + twelveHoursInMs; }
+			const energyPoints = Math.min(quidToServer.maxEnergy - quidToServer.energy, 30);
 
-			voteCache['id_' + interaction.user.id] = newUserVoteCache;
-			writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
-
-			const energyPoints = getSmallerNumber(userData.quid.profile.maxEnergy - userData.quid.profile.energy, 30);
-
-			await userData.update(
-				(u) => {
-					const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
-					p.energy += energyPoints;
-				},
-			);
+			await quidToServer.update({ energy: quidToServer.energy + energyPoints });
 
 			// This is always a reply
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(default_color)
 					.setTitle('Thank you for voting ☺️')
-					.setFooter({ text: `+${energyPoints} energy (${userData.quid.profile.energy}/${userData.quid.profile.maxEnergy})` })],
+					.setFooter({ text: `+${energyPoints} energy (${quidToServer.energy}/${quidToServer.maxEnergy})` })],
 			});
 			return;
 		}

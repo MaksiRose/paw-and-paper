@@ -1,46 +1,47 @@
 import { Message } from 'discord.js';
 import { sendMessage } from '../commands/interaction/say';
-import serverModel from '../models/serverModel';
-import { userModel } from '../models/userModel';
+import DiscordUser from '../models/discordUser';
+import Server from '../models/server';
+import User from '../models/user';
 import { DiscordEvent } from '../typings/main';
 import { hasName } from '../utils/checkUserState';
 import { getMissingPermissionContent, hasPermission, permissionDisplay } from '../utils/permissionHandler';
+import { createGuild } from '../utils/updateGuild';
 import { checkForProxy } from './messageCreate';
 
 export const event: DiscordEvent = {
 	name: 'messageUpdate',
 	once: false,
-	async execute(oldMessage: Message, newMessage: Message) {
+	async execute(_oldMessage: Message, message: Message) {
 
-		if (newMessage.author.bot || !newMessage.inGuild()) { return; }
+		if (message.author.bot || !message.inGuild()) { return; }
 
-		const _userData = (() => {
-			try { return userModel.findOne(u => Object.keys(u.userIds).includes(newMessage.author.id)); }
-			catch { return null; }
-		})();
-		const serverData = (() => {
-			try { return serverModel.findOne(s => s.serverId === newMessage.guildId); }
-			catch { return null; }
-		})();
+		const discordUser = await DiscordUser.findByPk(message.author.id, {
+			include: [{ model: User, as: 'user' }],
+		});
+		const user = discordUser?.user;
 
-		if (_userData === null || serverData === null) { return; }
+		const server = (await Server.findByPk(message.guildId)) ?? await createGuild(message.guild);
 
-		const { replaceMessage, userData } = checkForProxy(newMessage, _userData, serverData);
+		if (user === undefined || server === null) { return; }
 
-		if (hasName(userData) && replaceMessage && (newMessage.content.length > 0 || newMessage.attachments.size > 0)) {
+		const { replaceMessage, quid } = await checkForProxy(message, user, server);
 
-			const isSuccessful = await sendMessage(newMessage.channel, newMessage.content, userData, newMessage.author.id, newMessage.attachments.size > 0 ? Array.from(newMessage.attachments.values()) : undefined, newMessage.reference ?? undefined)
+		if (replaceMessage && hasName(quid) && (message.content.length > 0 || message.attachments.size > 0)) {
+
+			const isSuccessful = await sendMessage(message.channel, message.content, quid, message.author.id, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined)
 				.catch(error => { console.error(error); });
+
 			if (!isSuccessful) { return; }
-			console.log(`\x1b[32m${newMessage.author.tag} (${newMessage.author.id})\x1b[0m successfully \x1b[31mproxied \x1b[0man edited message in \x1b[32m${newMessage.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			console.log(`\x1b[32m${message.author.tag} (${message.author.id})\x1b[0m successfully \x1b[31mproxied \x1b[0man edited message in \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
-			if (await hasPermission(newMessage.guild.members.me || newMessage.client.user.id, newMessage.channel, 'ManageMessages')) {
+			if (await hasPermission(message.guild.members.me || message.client.user.id, message.channel, 'ManageMessages')) {
 
-				await newMessage.delete();
+				await message.delete();
 			}
-			else if (await hasPermission(newMessage.guild.members.me || newMessage.client.user.id, newMessage.channel, newMessage.channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) {
+			else if (await hasPermission(message.guild.members.me || message.client.user.id, message.channel, message.channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) {
 
-				await newMessage.reply(getMissingPermissionContent(permissionDisplay.ManageMessages));
+				await message.reply(getMissingPermissionContent(permissionDisplay.ManageMessages));
 			}
 		}
 	},

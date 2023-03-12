@@ -1,13 +1,14 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ModalBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { capitalizeString, keyInObject, respond } from '../../utils/helperFunctions';
+import { capitalize, keyInObject, respond } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
-import { getMapData } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { speciesInfo } from '../..';
 import { SpeciesNames } from '../../typings/data/general';
 import { SlashCommand } from '../../typings/handle';
 import { constructCustomId, constructSelectOptions, deconstructCustomId, deconstructSelectOptions } from '../../utils/customId';
+import Quid from '../../models/quid';
+import { getDisplayname, getDisplayspecies, pronoun } from '../../utils/getQuidInfo';
 
 type CustomIdArgs = ['speciesselect' | 'displayedspeciesmodal'] | []
 type SelectOptionArgs = [SpeciesNames] | ['nextpage', `${number}`]
@@ -23,57 +24,64 @@ export const command: SlashCommand = {
 	position: 1,
 	disablePreviousCommand: true,
 	modifiesServerProfile: false,
-	sendCommand: async (interaction, userData) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
 
 		if (await missingPermissions(interaction, [
 			'ViewChannel', // Needed because of createCommandComponentDisabler
 		]) === true) { return; }
 
-		if (!hasName(userData, interaction)) { return; } // this would always be a reply
+		if (!hasName(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
+		if (!user) { throw new TypeError('user is undefined'); }
 
 		/* Define displayed species button */
-		const displayedSpeciesButton = getDisplayedSpeciesButton(userData.quid._id);
+		const displayedSpeciesButton = getDisplayedSpeciesButton(quid.id);
 		/* Define species select menu */
-		const speciesMenu = getSpeciesSelectMenu(0, userData.quid._id);
+		const speciesMenu = getSpeciesSelectMenu(0, quid.id);
 
 		/* Define embeds */
 		const newSpeciesEmbed = new EmbedBuilder()
-			.setColor(userData.quid.color)
-			.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
-			.setTitle(`What species is ${userData.quid.name}?`)
+			.setColor(quid.color)
+			.setAuthor({
+				name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+				iconURL: quid.avatarURL,
+			})
+			.setTitle(`What species is ${quid.name}?`)
 			.setDescription('Choosing a species is only necessary for the RPG parts of the bot, and is **permanent**. If you want an earthly, extant species added that is not on the list, [use this form](https://github.com/MaksiRose/paw-and-paper/issues/new?assignees=&labels=improvement%2Cnon-code&template=species_request.yaml&title=New+species%3A+) to suggest it. Alternatively, you can choose a species that\'s similar and use the button below to change what species is displayed to be anything you want. You can change the displayed species as many times as you want.');
 		const existingSpeciesEmbed = new EmbedBuilder()
-			.setColor(userData.quid.color)
-			.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
-			.setDescription(`${userData.quid.name} is a ${userData.quid.getDisplayspecies()}! You cannot change ${userData.quid.pronoun(2)} species, but you can create another quid via \`/profile\`. Alternatively, you can use the button below to change what species is displayed to be anything you want.`)
+			.setColor(quid.color)
+			.setAuthor({
+				name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+				iconURL: quid.avatarURL,
+			})
+			.setDescription(`${quid.name} is a ${getDisplayspecies(quid)}! You cannot change ${pronoun(quid, 2)} species, but you can create another quid via \`/profile\`. Alternatively, you can use the button below to change what species is displayed to be anything you want.`)
 			.setFooter({ text: `Here is a list of species that you can choose when making a new quid: ${speciesNameArray.join(', ')}` });
 
 		// This is always a reply
 		const botReply = await respond(interaction, {
-			embeds: userData.quid.species === '' ? [newSpeciesEmbed] : [existingSpeciesEmbed],
+			embeds: quid.species === null ? [newSpeciesEmbed] : [existingSpeciesEmbed],
 			components: [
-				...(userData.quid.species === '' ? [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([speciesMenu])] : []),
+				...(quid.species === null ? [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([speciesMenu])] : []),
 				new ActionRowBuilder<ButtonBuilder>().setComponents([displayedSpeciesButton]),
 			],
 			fetchReply: true,
 		});
 
-		saveCommandDisablingInfo(userData, interaction.guildId || 'DMs', interaction.channelId, botReply.id, interaction);
+		if (userToServer) { saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, botReply.id); }
 	},
-	async sendMessageComponentResponse(interaction, userData) {
+	async sendMessageComponentResponse(interaction, { quid, user, userToServer, quidToServer }) {
 
 		if (await missingPermissions(interaction, [
 			'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call
 		]) === true) { return; }
 
 		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
-		if (!hasName(userData) || !customId) { return; } // this would always be a reply
+		if (!hasName(quid) || !customId) { return; } // this would always be a reply
 
 		if (interaction.isButton() && customId.args[0] === 'displayedspeciesmodal') {
 
 			await interaction
 				.showModal(new ModalBuilder()
-					.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, []))
+					.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, quid.id, []))
 					.setTitle('Change displayed species')
 					.setComponents(
 						new ActionRowBuilder<TextInputBuilder>()
@@ -82,7 +90,7 @@ export const command: SlashCommand = {
 								.setLabel('Displayed species')
 								.setStyle(TextInputStyle.Short)
 								.setMaxLength(24)
-								.setValue(userData.quid.displayedSpecies),
+								.setValue(quid.displayedSpecies),
 							]),
 					),
 				);
@@ -111,19 +119,17 @@ export const command: SlashCommand = {
 		else if (interaction.isStringSelectMenu() && customId.args[0] === 'speciesselect' && keyInObject(speciesInfo, selectOptionId[0])) {
 
 			const chosenSpecies = selectOptionId[0];
-			await userData.update(
-				(u) => {
-					const q = getMapData(u.quids, customId.executorId);
-					q.species = chosenSpecies;
-				},
-			);
+			await quid.update({ species: chosenSpecies });
 
 			// This should always be an update on the message
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
-					.setColor(userData.quid.color)
-					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
-					.setDescription(`*A stranger carefully steps over the pack's borders. ${capitalizeString(userData.quid.pronoun(2))} face seems friendly. Curious eyes watch ${userData.quid.pronoun(1)} as ${userData.quid.pronoun(0)} come close to the Alpha.* "Welcome," *the Alpha says.* "What is your name?" \n"${userData.quid.name}," *the ${chosenSpecies} responds. The Alpha takes a friendly step towards ${userData.quid.pronoun(1)}.* "It's nice to have you here, ${userData.quid.name}," *they say. More and more packmates come closer to greet the newcomer.*`)
+					.setColor(quid.color)
+					.setAuthor({
+						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+						iconURL: quid.avatarURL,
+					})
+					.setDescription(`*A stranger carefully steps over the pack's borders. ${capitalize(pronoun(quid, 2))} face seems friendly. Curious eyes watch ${pronoun(quid, 1)} as ${pronoun(quid, 0)} come close to the Alpha.* "Welcome," *the Alpha says.* "What is your name?" \n"${quid.name}," *the ${chosenSpecies} responds. The Alpha takes a friendly step towards ${pronoun(quid, 1)}.* "It's nice to have you here, ${quid.name}," *they say. More and more packmates come closer to greet the newcomer.*`)
 					.setFooter({ text: 'You are now done setting up your quid for RPGing! Type "/profile" to look at it.\nWith "/help" you can see how else you can customize your profile, as well as your other options.\nYou can use the button below to change your displayed species.' })],
 				components: [
 					new ActionRowBuilder<ButtonBuilder>().setComponents([getDisplayedSpeciesButton(customId.executorId)]),
@@ -137,25 +143,23 @@ export const command: SlashCommand = {
 			return;
 		}
 	},
-	async sendModalResponse(interaction, userData) {
+	async sendModalResponse(interaction, { quid, user, userToServer, quidToServer }) {
 
 		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
-		if (!hasName(userData) || !customId) { return; } // this would always be a reply
+		if (!hasName(quid) || !customId) { return; } // this would always be a reply
 
 		const displayedSpecies = interaction.fields.getTextInputValue('displayedspecies');
 
-		await userData.update(
-			(u) => {
-				const q = getMapData(u.quids, customId.executorId);
-				q.displayedSpecies = displayedSpecies;
-			},
-		);
+		await quid.update({ displayedSpecies: displayedSpecies });
 
 		// This is always a reply
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
-				.setColor(userData.quid.color)
-				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+				.setColor(quid.color)
+				.setAuthor({
+					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+					iconURL: quid.avatarURL,
+				})
 				.setTitle(displayedSpecies === '' ? 'Successfully removed your displayed species!' : `Successfully changed displayed species to ${displayedSpecies}!`)],
 		});
 		return;

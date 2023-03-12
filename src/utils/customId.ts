@@ -3,7 +3,7 @@ import { AnySelectMenuInteraction } from 'discord.js';
 export type DeconstructedCustomId<T extends string[]> = {
 	/** This equals the name of the slash command this interaction belongs to */
 	commandName: string;
-	/** This can be a UserSchema#_id, a QuidSchema#_id, or a discord user snowflake */
+	/** This can be a user.id, a quid.id, or a discordUser.id */
 	executorId: string;
 	/** These are additional arguments that were provided */
 	args: T

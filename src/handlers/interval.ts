@@ -1,11 +1,16 @@
-import { readFileSync, unlinkSync, writeFileSync } from 'fs';
+import { Op } from 'sequelize';
 import { isResting, startResting } from '../commands/gameplay_maintenance/rest';
 import { lastInteractionMap, serverActiveUsersMap } from '../events/interactionCreate';
-import serverModel from '../models/serverModel';
-import { userModel, getUserData } from '../models/userModel';
-import { DeleteList } from '../typings/data/general';
+import DiscordUser from '../models/discordUser';
+import DiscordUserToServer from '../models/discordUserToServer';
+import Quid from '../models/quid';
+import QuidToServer from '../models/quidToServer';
+import Server from '../models/server';
+import TemporaryStatIncrease from '../models/temporaryStatIncrease';
+import User from '../models/user';
+import UserToServer from '../models/userToServer';
 import { hasNameAndSpecies } from '../utils/checkUserState';
-import { getMapData, sendErrorMessage, userDataServersObject } from '../utils/helperFunctions';
+import { now, sendErrorMessage } from '../utils/helperFunctions';
 
 /** It's checking whether the deletionTime of a property on the toDeleteList is older than an hour from now, and if it is, delete the property and delete the file from the toDelete folder. It's also checking whether a profile has a temporaryStatIncrease with a timestamp that is older than a week ago, and if it does, bring the stat back and delete the property from temporaryStatIncrease. */
 export async function execute(): Promise<void> {
@@ -13,103 +18,86 @@ export async function execute(): Promise<void> {
 	setInterval(async () => {
 
 		/* It's checking whether the deletionTime of a property on the toDeleteList is older than an hour from now, and if it is, delete the property and delete the file from the toDelete folder. */
-		const toDeleteList: DeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8'));
+		// const toDeleteList: DeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8'));
 
-		for (const [filename, deletionTime] of Object.entries(toDeleteList)) {
+		// for (const [filename, deletionTime] of Object.entries(toDeleteList)) {
 
-			if (deletionTime < Date.now() + 3_600_000) {
+		// 	if (deletionTime < Date.now() + 3_600_000) {
 
-				unlinkSync(`./database/toDelete/${filename}.json`);
-				delete toDeleteList[filename];
-			}
-		}
+		// 		unlinkSync(`./database/toDelete/${filename}.json`);
+		// 		delete toDeleteList[filename];
+		// 	}
+		// }
 
-		writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
+		// writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
 
 
 		/* It's checking whether a profile has a temporaryStatIncrease with a timestamp that is older than a week ago, and if it does, bring the stat back and delete the property from temporaryStatIncrease. */
-		const userList = await userModel.find();
-		for (const userData of userList) {
+		const temporaryStatIncreases = await TemporaryStatIncrease.findAll({ where: { startedTimestamp: { [Op.lt]: now() - 604_800 } } });
+		for (const temporaryStatIncrease of temporaryStatIncreases) {
 
-			for (const quidData of Object.values(userData.quids)) {
+			const quidToServer = await QuidToServer.findByPk(temporaryStatIncrease.quidToServerId);
+			if (quidToServer) {
 
-				for (const profileData of Object.values(quidData.profiles)) {
-
-					for (const [timestamp, statKind] of Object.entries(profileData.temporaryStatIncrease)) {
-
-						if (Number(timestamp) < Date.now() - 604_800_000) {
-
-							userModel.findOneAndUpdate(
-								u => u._id === userData._id,
-								(u) => {
-									const p = getMapData(getMapData(u.quids, quidData._id).profiles, profileData.serverId);
-									p[statKind] -= 10;
-									const stat = (statKind.replace('max', '').toLowerCase()) as 'health' | 'energy' | 'hunger' | 'thirst';
-									if (p[stat] > p[statKind]) { p[stat] = p[statKind]; }
-									delete p.temporaryStatIncrease[timestamp];
-								},
-							);
-						}
-					}
-				}
+				const stat = (temporaryStatIncrease.type.replace('max', '').toLowerCase()) as 'health' | 'energy' | 'hunger' | 'thirst';
+				const newStatAmount = Math.min(quidToServer[stat], quidToServer[temporaryStatIncrease.type]);
+				await quidToServer.update({ [temporaryStatIncrease.type]: quidToServer[temporaryStatIncrease.type] - 10, [stat]: newStatAmount });
 			}
+			await temporaryStatIncrease.destroy();
 		}
 	}, 3_600_000);
 
 
 	async function tenSecondInterval() {
 
-		const userArray = await userModel.find();
-		for (const user of userArray) {
+		const tenMinutesInS = 600;
+		const usersToServers = await UserToServer.findAll({
+			where: {
+				activeQuidId: { [Op.not]: null },
+				lastInteraction_timestamp: { [Op.not]: null, [Op.lt]: now() - tenMinutesInS },
+				hasCooldown: false,
+			},
+		});
+		for (const userToServer of usersToServers) {
 
-			for (const [guildId, { currentQuid: quidId }] of Object.entries(user.servers)) {
+			if (!userToServer.activeQuidId || !userToServer.lastInteraction_timestamp) { continue; } // This should never happen and is just for typings
+			const quid = await Quid.findByPk(userToServer.activeQuidId);
 
-				if (!quidId) { continue; }
-				const userData = getUserData(user, guildId, getMapData(user.quids, quidId));
+			/* start resting if possible */
+			if (!hasNameAndSpecies(quid)) { continue; }
 
-				/* start resting if possible */
-				if (!hasNameAndSpecies(userData)) { continue; }
-				const tenMinutesInMs = 600_000;
+			const user = await User.findByPk(userToServer.userId);
+			const quidToServer = await QuidToServer.findOne({ where: { quidId: quid.id } });
+			const server = await Server.findByPk(userToServer.serverId);
+			const discordUsers = await DiscordUser.findAll({ where: { userId: userToServer.userId } });
+			const discordUsersToServer = await DiscordUserToServer.findOne({
+				where: {
+					discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
+					isMember: true,
+				},
+			});
+			if (!user || !quidToServer || !server || !discordUsersToServer) { continue; }
 
-				const serverInfo = userData.serverInfo;
-				if (!serverInfo || !serverInfo.lastInteractionTimestamp) { continue; }
+			const hasLessThanMaxEnergy = quidToServer.energy < quidToServer.maxEnergy;
+			const isConscious = quidToServer.energy > 0 || quidToServer.health > 0 || quidToServer.hunger > 0 || quidToServer.thirst > 0;
+			if (isResting(userToServer) === false && hasLessThanMaxEnergy && isConscious) {
 
-				const serverData = (() => {
-					try { return serverModel.findOne(s => s.serverId === guildId); }
-					catch { return null; }
-				})();
-				if (!serverData) { continue; }
+				const lastInteraction = lastInteractionMap.get(user.id + server.id);
+				await startResting(lastInteraction, discordUsersToServer.discordUserId, user, quid, userToServer, quidToServer, server, '', true)
+					.catch(async (error) => {
+						if (lastInteraction !== undefined) {
 
-				const lastInteractionIsTenMinutesAgo = serverInfo.lastInteractionTimestamp < Date.now() - tenMinutesInMs;
-				const hasLessThanMaxEnergy = userData.quid.profile.energy < userData.quid.profile.maxEnergy;
-				const isConscious = userData.quid.profile.energy > 0 || userData.quid.profile.health > 0 || userData.quid.profile.hunger > 0 || userData.quid.profile.thirst > 0;
-				const hasNoCooldown = userData.serverInfo?.hasCooldown !== true;
-				if (lastInteractionIsTenMinutesAgo && isResting(userData) === false && hasLessThanMaxEnergy && isConscious && hasNoCooldown) {
+							await sendErrorMessage(lastInteraction, error)
+								.catch(e => { console.error(e); });
+							lastInteractionMap.delete(user.id + server.id); // This is to avoid sending repeating error messages every 10 seconds
+						}
+						else {
 
-					const lastInteraction = lastInteractionMap.get(userData._id + guildId);
-					await startResting(lastInteraction, userData, serverData, '', true)
-						.catch(async (error) => {
-							if (lastInteraction !== undefined) {
-
-								await sendErrorMessage(lastInteraction, error)
-									.catch(e => { console.error(e); });
-								lastInteractionMap.delete(userData._id + guildId); // This is to avoid sending repeating error messages every 10 seconds
-							}
-							else {
-
-								console.error(error);
-								// This is to avoid sending repeating error messages to the console every 10 seconds
-								userData.update(
-									(u) => {
-										u.servers[guildId] = {
-											...userDataServersObject(u, guildId),
-											lastInteractionTimestamp: null,
-										};
-									},
-								);
-							}
-						});
-				}
+							console.error(error);
+							// This is to avoid sending repeating error messages to the console every 10 seconds
+							await userToServer.update({ lastInteraction_timestamp: null });
+						}
+					});
 			}
 		}
 
@@ -117,13 +105,10 @@ export async function execute(): Promise<void> {
 
 			for (const userId of array) {
 
-				const userData = (() => {
-					try { return userModel.findOne(u => Object.keys(u.userIds).includes(userId)); }
-					catch { return null; }
-				})();
-				const serverInfo = userData?.servers[guildId];
+				const userToServer = await UserToServer.findOne({ where: { userId: userId, serverId: guildId } });
+
 				/* If there is no last interaction or if the last interaction was created more than 5 minutes ago, remove the user from the array */
-				if (!serverInfo || !serverInfo.lastInteractionTimestamp || serverInfo.lastInteractionTimestamp <= Date.now() - 300_000) { array = array.filter(v => v !== userId); }
+				if (!userToServer || !userToServer.lastInteraction_timestamp || userToServer.lastInteraction_timestamp <= now() - 300) { array = array.filter(v => v !== userId); }
 			}
 			serverActiveUsersMap.set(guildId, array);
 		}

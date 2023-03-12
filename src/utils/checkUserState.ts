@@ -1,25 +1,25 @@
 import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, MessageContextMenuCommandInteraction, AnySelectMenuInteraction } from 'discord.js';
 import { respond } from './helperFunctions';
-import { UserData } from '../typings/data/user';
+import Quid from '../models/quid';
 const { default_color } = require('../../config.json');
 
 /**
  * Checks if there is an account and if the account has a name, returns false if they do, and if not, sends a message telling the user to create an account and return true.
  */
 export function hasName(
-	userData: UserData<undefined, ''> | null | undefined,
-	interaction?: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction,
-): userData is UserData<never, ''> {
+	quid: Quid | null | undefined,
+	options?: {interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction, hasQuids: boolean},
+): quid is Quid {
 
-	if (userData?.quid === undefined || userData.quid.name === '') {
+	if (quid === null || quid === undefined || quid.name === '') {
 
-		if (interaction) {
+		if (options) {
 
 			// This is always a reply
-			respond(interaction, {
+			respond(options.interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(default_color)
-					.setDescription(Object.keys(userData?.quids || {}).length > 0 ? 'Please type "/profile" to switch to a quid!' : 'Please type "/name" to create a new quid!')],
+					.setDescription(options.hasQuids ? 'Please type "/profile" to switch to a quid!' : 'Please type "/name" to create a new quid!')],
 			});
 		}
 
@@ -33,34 +33,20 @@ export function hasName(
  * Checks if the account has a species, returns false if they do, and if not, sends a message telling the user to create an account and returns true.
  */
 export function hasNameAndSpecies(
-	userData: UserData<undefined, ''> | null | undefined,
-	interaction?: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction,
-): userData is UserData<never, never> {
+	quid: Quid | null | undefined,
+	options?: {interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction, hasQuids: boolean},
+): quid is Quid<true> {
 
-	if (!hasName(userData, interaction)) { return false; }
-	if (userData.quid.species === '') {
+	if (!hasName(quid, options)) { return false; }
+	if (quid.species === null) {
 
-		if (interaction) {
-
-			// This is always a reply
-			respond(interaction, {
-				embeds: [new EmbedBuilder()
-					.setColor(default_color)
-					.setDescription(`To access this command, you need to choose ${userData.quid.name}'s species (with "/species")!`)],
-			});
-		}
-
-		return false;
-	}
-	if (userData.quid.profile === undefined) {
-
-		if (interaction) {
+		if (options) {
 
 			// This is always a reply
-			respond(interaction, {
+			respond(options.interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(default_color)
-					.setDescription('Uh-oh, an error occurred and some data is missing. Please use "/profile" to select another quid (or an empty slot) and then re-select this quid. If this error persists, open a ticket with "/ticket".')],
+					.setDescription(`To access this command, you need to choose ${quid.name}'s species (with "/species")!`)],
 			});
 		}
 

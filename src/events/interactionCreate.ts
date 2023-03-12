@@ -1,25 +1,28 @@
 import { EmbedBuilder, Interaction, RepliableInteraction } from 'discord.js';
 import { createNewTicket } from '../commands/miscellaneous/ticket';
-import serverModel from '../models/serverModel';
-import { userModel, getUserData } from '../models/userModel';
 import { DiscordEvent } from '../typings/main';
 import { disableCommandComponent, disableAllComponents } from '../utils/componentDisabling';
-import { getMapData, keyInObject, respond, userDataServersObject } from '../utils/helperFunctions';
+import { addCommasAndAnd, keyInObject, now, respond } from '../utils/helperFunctions';
 import { createGuild } from '../utils/updateGuild';
 import { sendErrorMessage } from '../utils/helperFunctions';
-import { generateId } from 'crystalid';
-import { readFileSync, writeFileSync } from 'fs';
 import { missingPermissions } from '../utils/permissionHandler';
 import { client, handle } from '../index';
-import { ErrorStacks } from '../typings/data/general';
-import { hasNameAndSpecies } from '../utils/checkUserState';
 import { deconstructCustomId } from '../utils/customId';
+import DiscordUser from '../models/discordUser';
+import Server from '../models/server';
+import UserToServer from '../models/userToServer';
+import Quid from '../models/quid';
+import DiscordUserToServer from '../models/discordUserToServer';
+import QuidToServer from '../models/quidToServer';
+import { getDisplayname, getDisplayspecies, pronoun, pronounAndPlural } from '../utils/getQuidInfo';
+import User from '../models/user';
+import ErrorInfo from '../models/errorInfo';
+import { generateId } from 'crystalid';
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
 export const lastInteractionMap: Map<string, RepliableInteraction<'cached'>> = new Map();
 export const serverActiveUsersMap: Map<string, string[]> = new Map();
-
 export const event: DiscordEvent = {
 	name: 'interactionCreate',
 	once: false,
@@ -29,39 +32,60 @@ export const event: DiscordEvent = {
 			/* This is only null when in DM without CHANNEL partial, or when channel cache is sweeped. Therefore, this is technically unsafe since this value could become null after this check. This scenario is unlikely though. */
 			if (!interaction.channel) { await client.channels.fetch(interaction.channelId || ''); }
 
-			const _userData = (() => {
-				try { return userModel.findOne(u => Object.keys(u.userIds).includes(interaction.user.id)); }
-				catch { return null; }
-			})();
-			const userData = _userData === null ? null : getUserData(_userData, interaction.guildId ?? 'DMs', _userData.quids[_userData.servers[interaction.guildId ?? 'DMs']?.currentQuid ?? '']);
-			let serverData = (() => {
-				try { return serverModel.findOne(s => s.serverId === interaction.guildId); }
-				catch { return null; }
-			})();
+			const discordUser = await DiscordUser.findByPk(interaction.user.id, {
+				include: [{ model: User, as: 'user' }],
+			}) ?? undefined;
+			const user = discordUser?.user;
 
-			/* It's setting the last interaction timestamp for the user to now. */
-			if (userData && interaction.inCachedGuild() && interaction.isRepliable()) {
+			const server = interaction.inCachedGuild()
+				? ((await Server.findByPk(interaction.guildId)) ?? await createGuild(interaction.guild))
+				: undefined;
 
-				lastInteractionMap.set(userData._id + interaction.guildId, interaction);
-				await userData.update(
-					(u) => {
-						u.servers[interaction.guildId] = {
-							...userDataServersObject(u, interaction.guildId),
-							lastInteractionTimestamp: interaction.createdTimestamp,
-							lastInteractionToken: interaction.token,
-							lastInteractionChannelId: interaction.channelId,
-						};
-					},
-					{ log: false },
-				);
+			const userToServer = (user && server)
+				? (
+					(await UserToServer.findOne({
+						where: { userId: user.id, serverId: server.id },
+						include: [{ model: Quid, as: 'activeQuid' }],
+					}))
+					?? (await UserToServer.create({
+						id: generateId(), userId: user.id, serverId: server.id,
+					}, { include: [{ model: Quid, as: 'activeQuid' }] }))
+				)
+				: undefined;
 
-				const serverActiveUsers = serverActiveUsersMap.get(interaction.guildId);
-				if (!serverActiveUsers) { serverActiveUsersMap.set(interaction.guildId, [interaction.user.id]); }
+			const quid: Quid | undefined = (user && !server)
+				? (user.lastGlobalActiveQuidId ? ((await Quid.findByPk(user.lastGlobalActiveQuidId)) ?? undefined) : undefined)
+				: (userToServer?.activeQuid ?? undefined);
+
+			/* It's updating the last interaction info for the user in the server. */
+			if (userToServer && interaction.inCachedGuild() && interaction.isRepliable()) {
+
+				lastInteractionMap.set(userToServer.userId + userToServer.serverId, interaction);
+				await userToServer.update({
+					lastInteraction_timestamp: Math.round(interaction.createdTimestamp / 1000),
+					lastInteraction_channelId: interaction.channelId,
+				}, { logging: false });
+
+				const serverActiveUsers = serverActiveUsersMap.get(userToServer.serverId);
+				if (!serverActiveUsers) { serverActiveUsersMap.set(userToServer.serverId, [interaction.user.id]); }
 				else if (!serverActiveUsers.includes(interaction.user.id)) { serverActiveUsers.push(interaction.user.id); }
 			}
 
-			/* Checking if the serverData is null. If it is null, it will create a guild. */
-			if (!serverData && interaction.inCachedGuild()) { serverData = await createGuild(interaction.guild); }
+			/* It's updating the info for the discord user in the server */
+			const discordUserToServer = (discordUser && server)
+				? await DiscordUserToServer.findOne({ where: { discordUserId: discordUser.id, serverId: server.id } }).then((row) => {
+					if (row) { return row.update({ isMember: true, lastUpdatedTimestamp: now() }, { logging: false }); }
+					else { return DiscordUserToServer.create({ id: generateId(), discordUserId: discordUser.id, serverId: server.id, isMember: true, lastUpdatedTimestamp: now() }); }
+				}) : undefined;
+
+			/* It's updating the info for the quid in the server, if it exists */
+			const quidToServer = (quid && interaction.inGuild())
+				? await QuidToServer.findOne({
+					where: { quidId: quid.id, serverId: interaction.guildId },
+				}).then((row) => {
+					if (row) { return row.update({ lastActiveTimestamp: now() }, { logging: false }); }
+					else { return QuidToServer.create({ id: generateId(), quidId: userToServer!.activeQuidId!, serverId: userToServer!.serverId, lastActiveTimestamp: now() }); }
+				}) : undefined;
 
 			if (interaction.isRepliable() && interaction.inRawGuild()) {
 
@@ -84,7 +108,7 @@ export const event: DiscordEvent = {
 				if (command === undefined || command.sendAutocomplete === undefined) { return; }
 
 				/* It's sending the autocomplete message. */
-				await command.sendAutocomplete(interaction, userData, serverData);
+				await command.sendAutocomplete(interaction, { user, userToServer, quid, quidToServer, discordUser, discordUserToServer, server });
 				return;
 			}
 
@@ -94,77 +118,46 @@ export const event: DiscordEvent = {
 				const command = handle.slashCommands.get(interaction.commandName);
 				if (command === undefined || !keyInObject(command, 'sendCommand')) { return await sendErrorMessage(interaction, new Error('Unknown command')); }
 
-				/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-				if (userData && command.disablePreviousCommand) {
+				/* It's disabling all components if userToServer exists and the command is set to disable a previous command. */
+				if (userToServer && command.disablePreviousCommand) {
 
 					if (await missingPermissions(interaction, [
 						'ViewChannel',
 					]) === true) { return; }
 
-					await disableCommandComponent(userData);
-				}
-
-				if (userData && interaction.inGuild()) {
-
-					await userData
-						.update(
-							(u) => {
-								u.userIds[interaction.user.id] = {
-									...(u.userIds[interaction.user.id] ?? {}),
-									[interaction.guildId]: { isMember: true, lastUpdatedTimestamp: Date.now() },
-								};
-
-								if (userData.quid && command.modifiesServerProfile) {
-
-									const p = getMapData(getMapData(u.quids, userData!.quid!._id).profiles, interaction.guildId);
-									p.lastActiveTimestamp = Date.now();
-								}
-							},
-						);
+					await disableCommandComponent(userToServer);
 				}
 
 				/* This sends the command and error message if an error occurs. */
-				console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully executed \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-				await command.sendCommand(interaction, userData, serverData);
+				{ console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully executed \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`); }
+				await command.sendCommand(interaction, { user, userToServer, quid, quidToServer, discordUser, discordUserToServer, server });
 
-				if (interaction.inGuild()) {
+				/* If sapling exists, a gentle reminder has not been sent and the watering time is after the perfect time, send a gentle reminder */
+				if (interaction.inGuild() && quid && quidToServer && quidToServer.sapling_exists && !quidToServer.sapling_sentGentleReminder && Date.now() > (quidToServer.sapling_nextWaterTimestamp || 0) + 60) { // The 60 seconds is so this doesn't trigger when you just found your sapling while exploring
 
-					/* If sapling exists, a gentle reminder has not been sent and the watering time is after the perfect time, send a gentle reminder */
-					if (hasNameAndSpecies(userData) && userData.quid.profile.sapling.exists && !userData.quid.profile.sapling.sentGentleReminder && Date.now() > (userData.quid.profile.sapling.nextWaterTimestamp || 0) + 60_000) { // The 60 seconds is so this doesn't trigger when you just found your sapling while exploring
+					await quidToServer.update({ sapling_sentGentleReminder: true });
 
-						await userData.update(
-							(u) => {
-								const p = getMapData(getMapData(u.quids, userData!.quid!._id).profiles, interaction.guildId);
-								p.sapling.sentGentleReminder = true;
-							},
-						);
-
-						// This is always a followUp
-						await respond(interaction, {
-							embeds: [new EmbedBuilder()
-								.setColor(userData.quid.color)
-								.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
-								.setDescription(`*Engrossed in ${userData.quid.pronoun(2)} work, ${userData.quid.name} suddenly remembers that ${userData.quid.pronounAndPlural(0, 'has', 'have')} not yet watered ${userData.quid.pronoun(2)} plant today. The ${userData.quid.getDisplayspecies()} should really do it soon!*`)
-								.setFooter({ text: 'Type "/water-tree" to water your ginkgo sapling!' })],
-						});
-					}
+					// This is always a followUp
+					await respond(interaction, {
+						embeds: [new EmbedBuilder()
+							.setColor(quidToServer.quid.color)
+							.setAuthor({ name: await getDisplayname(quid, { serverId: quidToServer.serverId, quidToServer, userToServer }), iconURL: quid.avatarURL })
+							.setDescription(`*Engrossed in ${pronoun(quid, 2)} work, ${quid.name} suddenly remembers that ${pronounAndPlural(quid, 0, 'has', 'have')} not yet watered ${pronoun(quid, 2)} plant today. The ${getDisplayspecies(quid)} should really do it soon!*`)
+							.setFooter({ text: 'Type "/water-tree" to water your ginkgo sapling!' })],
+					});
 				}
 
 				/* This is checking if the user has used the bot since the last update. If they haven't, it will
 				send them a message telling them that there is a new update. */
-				if (Number(userData?.lastPlayedVersion) < Number(version.split('.').slice(0, -1).join('.'))) {
+				const splitVersion = version.split('.').slice(0, -1).join('.');
+				if (user && Number(user.lastPlayedVersion) < Number(splitVersion)) {
 
 					// This is always a followUp
 					await respond(interaction, {
-						content: `A new update has come out since you last used the bot! You can view the changelog here: <https://github.com/MaksiRose/paw-and-paper/releases/tag/v${version.split('.').slice(0, -1).join('.')}.0>`,
+						content: `A new update has come out since you last used the bot! You can view the changelog here: <https://github.com/MaksiRose/paw-and-paper/releases/tag/v${splitVersion}.0>`,
 					});
 
-					await userModel.findOneAndUpdate(
-						u => Object.keys(u.userIds).includes(interaction.user.id),
-						(u) => {
-							u.lastPlayedVersion = version.split('.').slice(0, -1).join('.');
-						},
-					);
+					await user.update({ lastPlayedVersion: splitVersion });
 				}
 				return;
 			}
@@ -194,19 +187,24 @@ export const event: DiscordEvent = {
 				if (command === undefined || command.sendModalResponse === undefined) { return; }
 
 				/* It's sending the autocomplete message. */
-				await command.sendModalResponse(interaction, userData, serverData);
+				await command.sendModalResponse(interaction, { user, userToServer, quid, quidToServer, discordUser, discordUserToServer, server });
 				return;
 			}
 
 			if (interaction.isMessageComponent()) {
 
+				const quids = user ? await Quid.findAll({
+					where: { userId: user.id },
+					attributes: ['id'],
+					raw: true,
+				}) : [];
 				/* It's checking if the user that created the command is the same as the user that is interacting with the command, or if the user that is interacting is mentioned in the interaction.customId. If neither is true, it will send an error message. */
 				const isCommandCreator = interaction.message.interaction !== null && interaction.message.interaction.user.id === interaction.user.id;
-				const isMentioned = interaction.customId.includes('@' + interaction.user.id) || interaction.customId.includes('@EVERYONE') || (_userData && (interaction.customId.includes(_userData._id) || Object.keys(_userData.quids).some(q => interaction.customId.includes('@' + q))));
+				const isMentioned = interaction.customId.includes('@' + interaction.user.id) || interaction.customId.includes('@EVERYONE') || (user && (interaction.customId.includes(user.id) || quids.some(q => interaction.customId.includes('@' + q.id))));
 
 				if (interaction.isAnySelectMenu()) {
 
-					console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully selected \x1b[31m${interaction.values.join(', ')} \x1b[0mfrom the menu \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+					console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully selected \x1b[31m${addCommasAndAnd(interaction.values)} \x1b[0mfrom the menu \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 				}
 
 				if (interaction.isButton()) {
@@ -230,11 +228,11 @@ export const event: DiscordEvent = {
 							components: disableAllComponents(interaction.message.components),
 						}, 'update', interaction.message.id);
 
-						const errorId = interaction.customId.split('_')[2] || generateId();
-						const errorStacks = JSON.parse(readFileSync('./database/errorStacks.json', 'utf-8')) as ErrorStacks;
-						const description = errorStacks[errorId] ? `\`\`\`\n${errorStacks[errorId]!.substring(0, 4090)}\n\`\`\`` : interaction.message.embeds[0]?.description;
+						const errorId = interaction.customId.split('_')[2];
+						const errorInfo = await ErrorInfo.findByPk(errorId);
+						const description = errorInfo ? `Stack:\n\`\`\`\n${errorInfo.stack}\n\`\`\`\nInteraction info:\`\`\`json\n${JSON.stringify(errorInfo.interactionInfo, null, '\t')}\n\`\`\``.substring(0, 4096) : null;
 
-						if (!description) {
+						if (!errorId || !errorInfo || !description) {
 
 							// This should always be a followUp to the updated error message
 							await respond(interaction, {
@@ -246,9 +244,18 @@ export const event: DiscordEvent = {
 							return;
 						}
 
+						if (errorInfo.isReported) {
+
+							// This should always be a followUp to the updated error message
+							await respond(interaction, {
+								content: 'Thank you for attempting to report this error. Fortunately, it already got reported by another user.\nIf you still have questions, you can join our support server (Link is in the help command page 5), or use the ticket command.\nIf you want to know when the bot gets updated, you can again join our support server, or ask an admin of this server to enable getting updates via the server-settings command',
+								ephemeral: true,
+							});
+							return;
+						}
+
 						await createNewTicket(interaction, `Error ${errorId}`, description, 'bug', null, errorId);
-						delete errorStacks[errorId];
-						writeFileSync('./database/errorStacks.json', JSON.stringify(errorStacks, null, '\t'));
+						await errorInfo.update({ isReported: true });
 						return;
 					}
 				}
@@ -270,7 +277,7 @@ export const event: DiscordEvent = {
 				}
 
 				/* It's sending the autocomplete message. */
-				await command.sendMessageComponentResponse(interaction, userData, serverData);
+				await command.sendMessageComponentResponse(interaction, { user, userToServer, quid, quidToServer, discordUser, discordUserToServer, server });
 				return;
 			}
 		}

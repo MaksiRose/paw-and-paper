@@ -1,8 +1,10 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { getMessageId, respond } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
-import { getMapData } from '../../utils/helperFunctions';
 import { SlashCommand } from '../../typings/handle';
+import Quid from '../../models/quid';
+import DiscordUser from '../../models/discordUser';
+import { getDisplayname } from '../../utils/getQuidInfo';
 const { error_color, default_color } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -14,9 +16,10 @@ export const command: SlashCommand = {
 	position: 3,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (interaction, userData) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
 
-		if (!hasName(userData, interaction)) { return; } // This is always a reply
+		if (!hasName(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
+		if (!user) { throw new TypeError('user is undefined'); }
 
 		const channel = interaction.channel ?? await interaction.client.channels.fetch(interaction.channelId);
 		if (channel === null) { throw new TypeError('channel is null'); }
@@ -29,9 +32,10 @@ export const command: SlashCommand = {
 				.setDescription('Please upload an image to this channel within the next 60 seconds to set as your quids avatar!')],
 		});
 
+		const discordUserIds = (await DiscordUser.findAll({ where: { userId: user.id } })).map(du => du.id);
 		await channel
 			.awaitMessages({
-				filter: m => Object.keys(userData.userIds).includes(m.author.id) && m.attachments.size > 0,
+				filter: m => discordUserIds.includes(m.author.id) && m.attachments.size > 0,
 				time: 60_000,
 				max: 1,
 				errors: ['time'],
@@ -58,19 +62,17 @@ export const command: SlashCommand = {
 					return;
 				}
 
-				await userData.update(
-					(u) => {
-						const q = getMapData(u.quids, getMapData(u.servers, interaction.guildId || 'DMs').currentQuid ?? '');
-						q.avatarURL = imageURL;
-					},
-				);
+				await quid.update({ avatarURL: imageURL });
 
 				// This is always a followUp
 				await respond(interaction, {
 					embeds: [new EmbedBuilder()
-						.setColor(userData.quid.color)
-						.setAuthor({ name: userData.quid.getDisplayname(), iconURL: imageURL })
-						.setTitle(`Profile picture for ${userData.quid.name} set!`)
+						.setColor(quid.color)
+						.setAuthor({
+							name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+							iconURL: quid.avatarURL,
+						})
+						.setTitle(`Profile picture for ${quid.name} set!`)
 						.setImage(imageURL)],
 				});
 			})

@@ -1,16 +1,18 @@
 import { Message } from 'discord.js';
 import { sendMessage } from '../commands/interaction/say';
+import DiscordUser from '../models/discordUser';
+import ProxyLimits from '../models/proxyLimits';
+import Quid from '../models/quid';
+import Server from '../models/server';
+import DiscordUserToServer from '../models/discordUserToServer';
+import User from '../models/user';
+import UserToServer from '../models/userToServer';
 // import { sendVisitMessage } from '../commands/interaction/requestvisit';
-import serverModel from '../models/serverModel';
-import { userModel, getUserData } from '../models/userModel';
-import { ProxyListType } from '../typings/data/general';
-import { ServerSchema } from '../typings/data/server';
-import { AutoproxyConfigType, StickymodeConfigType, UserData, UserSchema } from '../typings/data/user';
 import { DiscordEvent } from '../typings/main';
 import { hasName } from '../utils/checkUserState';
-import { userDataServersObject } from '../utils/helperFunctions';
 import { getMissingPermissionContent, hasPermission, permissionDisplay } from '../utils/permissionHandler';
 import { createGuild } from '../utils/updateGuild';
+import { now } from '../utils/helperFunctions';
 
 export const event: DiscordEvent = {
 	name: 'messageCreate',
@@ -25,32 +27,20 @@ export const event: DiscordEvent = {
 			return;
 		}
 
-		const _userData = (() => {
-			try { return userModel.findOne(u => Object.keys(u.userIds).includes(message.author.id)); }
-			catch { return null; }
-		})();
-		let serverData = (() => {
-			try { return serverModel.findOne(s => s.serverId === message.guildId); }
-			catch { return null; }
-		})();
+		const discordUser = await DiscordUser.findByPk(message.author.id, {
+			include: [{ model: User, as: 'user' }],
+		});
+		const user = discordUser?.user;
 
-		/* Checking if the serverData is null. If it is null, it will create a guild. */
-		if (!serverData && message.inGuild()) {
+		const server = (await Server.findByPk(message.guildId)) ?? await createGuild(message.guild);
 
-			serverData = await createGuild(message.guild)
-				.catch(async (error) => {
-					console.error(error);
-					return null;
-				});
-		}
+		if (user === undefined || server === null) { return; }
 
-		if (_userData === null || serverData === null) { return; }
+		let { replaceMessage, quid } = await checkForProxy(message, user, server);
 
-		let { replaceMessage, userData } = checkForProxy(message, _userData, serverData);
+		if (server.currentlyVisitingChannelId !== null && message.channel.id === server.visitChannelId) {
 
-		if (serverData.currentlyVisiting !== null && message.channel.id === serverData.visitChannelId) {
-
-			const otherServerData = await serverModel.findOne(s => s.serverId === serverData?.currentlyVisiting);
+			const otherServerData = await Server.findOne({ where: { id: server.currentlyVisitingChannelId } });
 
 			if (otherServerData) {
 
@@ -59,10 +49,11 @@ export const event: DiscordEvent = {
 			}
 		}
 
-		if (hasName(userData) && replaceMessage && (message.content.length > 0 || message.attachments.size > 0)) {
+		if (replaceMessage && hasName(quid) && (message.content.length > 0 || message.attachments.size > 0)) {
 
-			const isSuccessful = await sendMessage(message.channel, message.content, userData, message.author.id, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined)
+			const isSuccessful = await sendMessage(message.channel, message.content, quid, message.author.id, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined)
 				.catch(error => { console.error(error); });
+
 			if (!isSuccessful) { return; }
 			console.log(`\x1b[32m${message.author.tag} (${message.author.id})\x1b[0m successfully \x1b[31mproxied \x1b[0ma new message in \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
@@ -78,107 +69,97 @@ export const event: DiscordEvent = {
 	},
 };
 
-export function checkForProxy(
+export async function checkForProxy(
 	message: Message<true> & Message<boolean>,
-	_userData: UserSchema,
-	serverData: ServerSchema,
-): { replaceMessage: boolean, userData: UserData<undefined, ''>; } {
+	user: User,
+	server: Server,
+): Promise<{ replaceMessage: boolean, quid: Quid | null }> {
 
 	let replaceMessage = false;
-	let quidId = _userData.servers[message.guildId]?.currentQuid ?? null;
+	const userToServer = await UserToServer.findOne({
+		where: { serverId: message.guildId, userId: user.id },
+		include: [{ model: Quid, as: 'activeQuid' }],
+	});
+	let chosenQuid = userToServer?.activeQuid ?? null;
+
+	let channelLimits = await ProxyLimits.findByPk(server.proxy_channelLimitsId);
+	if (!channelLimits) {
+		channelLimits = await ProxyLimits.create();
+		server.update({ proxy_channelLimitsId: channelLimits.id });
+	}
 
 	const proxyIsDisabled = (
-		serverData.proxySettings.channels.setTo === ProxyListType.Blacklist
-		&& serverData.proxySettings.channels.blacklist.includes(message.channelId)
+		channelLimits.setToWhitelist === false
+		&& channelLimits.blacklist.includes(message.channelId)
 	) || (
-		serverData.proxySettings.channels.setTo === ProxyListType.Whitelist
-			&& !serverData.proxySettings.channels.whitelist.includes(message.channelId)
+		channelLimits.setToWhitelist === true
+			&& !channelLimits.whitelist.includes(message.channelId)
 	);
-	const serverProxySettings = _userData.settings.proxy.servers[message.guildId];
 
 	/* Checking if the user has autoproxy enabled in the current channel, and if so, it is adding the prefix to the message. */
-	const autoproxyIsToggled = (
-		serverProxySettings?.autoproxy.setTo === AutoproxyConfigType.Whitelist
-		&& serverProxySettings?.autoproxy.channels.whitelist.includes(message.channelId)
-	) || (
-		serverProxySettings?.autoproxy.setTo === AutoproxyConfigType.Blacklist
-			&& !serverProxySettings?.autoproxy.channels.blacklist.includes(message.channelId)
-	) || (
-		(
-			serverProxySettings === undefined
-				|| serverProxySettings?.autoproxy.setTo === AutoproxyConfigType.FollowGlobal
-		) && _userData.settings.proxy.global.autoproxy === true
-	);
+	const autoproxyIsToggled = userToServer === null
+		? user.proxy_globalAutoproxy === true
+		: (
+			userToServer.autoproxy_setToWhitelist === null
+			&& user.proxy_globalAutoproxy === true
+		) || (
+			userToServer?.autoproxy_setToWhitelist === true
+			&& userToServer.autoproxy_whitelist.includes(message.channelId)
+		) || (
+			userToServer?.autoproxy_setToWhitelist === false
+			&& !userToServer.autoproxy_blacklist.includes(message.channelId)
+		);
 
-	const stickymodeIsToggledLocally = serverProxySettings?.stickymode === StickymodeConfigType.Enabled;
+	const stickymodeIsToggledLocally = userToServer?.stickymode_setTo === true;
 	const stickymodeIsToggledGlobally = (
-		serverProxySettings === undefined
-		|| serverProxySettings.stickymode === StickymodeConfigType.FollowGlobal
-	) && _userData.settings.proxy.global.stickymode === true;
+		userToServer === null
+		|| userToServer.stickymode_setTo === null
+	) && user.proxy_globalStickymode === true;
 
 	if (autoproxyIsToggled && !proxyIsDisabled) {
 
 		replaceMessage = true;
 
-		if (stickymodeIsToggledLocally) { quidId = _userData.servers[serverData.serverId]?.lastProxied ?? _userData.servers['DMs']?.lastProxied ?? quidId; }
-		if (stickymodeIsToggledGlobally) { quidId = _userData.servers['DMs']?.lastProxied ?? quidId; }
+		const quidId = stickymodeIsToggledLocally ? userToServer.lastProxiedQuidId : stickymodeIsToggledGlobally ? user.proxy_lastGlobalProxiedQuidId : false;
+		if (quidId !== false) { chosenQuid = quidId === null ? null : await Quid.findByPk(quidId); }
+		if (chosenQuid === null) { replaceMessage = false; }
 	}
 
 	/* Checking if the message starts with the quid's proxy start and ends with the quid's proxy end. If it does, it will set the current quid to the quid that the message is being sent from. */
-	for (const quid of Object.values(_userData.quids)) {
+	for (const quid of (await Quid.findAll({ where: { userId: user.id } }))) {
 
 		/* Checking if the message includes the proxy. If it does, it will change the message content to the prefix + 'say ' + the message content without the proxy. */
-		const hasProxy = quid.proxy.startsWith !== ''
-			|| quid.proxy.endsWith !== '';
+		const hasProxy = quid.proxy_startsWith !== ''
+			|| quid.proxy_endsWith !== '';
 
-		const messageIncludesProxy = message.content.startsWith(quid.proxy.startsWith)
-			&& message.content.endsWith(quid.proxy.endsWith);
+		const messageIncludesProxy = message.content.startsWith(quid.proxy_startsWith)
+			&& message.content.endsWith(quid.proxy_endsWith);
 
 		if (hasProxy && messageIncludesProxy && !proxyIsDisabled) {
 
-			quidId = quid._id;
+			console.log('test?');
+			chosenQuid = quid;
 
-			message.content = message.content.substring(quid.proxy.startsWith.length, message.content.length - quid.proxy.endsWith.length);
+			message.content = message.content.substring(quid.proxy_startsWith.length, message.content.length - quid.proxy_endsWith.length);
 
 			replaceMessage = true;
 		}
 	}
 
 
-	let isAntiProxied = false;
-
-	const hasAntiProxy = _userData.antiproxy.startsWith !== ''
-		|| _userData.antiproxy.endsWith !== '';
-	const messageIncludesAntiProxy = message.content.startsWith(_userData.antiproxy.startsWith)
-			&& message.content.endsWith(_userData.antiproxy.endsWith);
+	const hasAntiProxy = user.antiproxy_startsWith !== ''
+		|| user.antiproxy_endsWith !== '';
+	const messageIncludesAntiProxy = message.content.startsWith(user.antiproxy_startsWith)
+			&& message.content.endsWith(user.antiproxy_endsWith);
 	if (hasAntiProxy && messageIncludesAntiProxy) {
 
-		quidId = null;
+		chosenQuid = null;
 		replaceMessage = false;
-		isAntiProxied = true;
 	}
 
-	const userData = getUserData(_userData, message.guildId, _userData.quids[quidId ?? '']);
+	await DiscordUserToServer.update({ isMember: true, lastUpdatedTimestamp: now() }, { where: { discordUserId: message.author.id, serverId: message.guildId } });
+	await userToServer?.update({ lastProxiedQuidId: chosenQuid?.id ?? null });
+	await user.update({ proxy_lastGlobalProxiedQuidId: chosenQuid?.id ?? null });
 
-	userData.update(
-		(u) => {
-			u.userIds[message.author.id] = {
-				...(u.userIds[message.author.id] ?? {}),
-				[message.guildId]: { isMember: true, lastUpdatedTimestamp: Date.now() },
-			};
-			if (replaceMessage || isAntiProxied) {
-				u.servers[message.guildId] = {
-					...userDataServersObject(u, message.guildId),
-					lastProxied: quidId,
-				};
-				u.servers['DMs'] = {
-					...userDataServersObject(u, 'DMs'),
-					lastProxied: quidId,
-				};
-			}
-		},
-		{ log: false },
-	);
-
-	return { replaceMessage, userData };
+	return { replaceMessage, quid: chosenQuid };
 }

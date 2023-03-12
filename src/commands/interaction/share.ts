@@ -1,14 +1,21 @@
 import { EmbedBuilder, SlashCommandBuilder, SnowflakeUtil } from 'discord.js';
+import { Op } from 'sequelize';
 import { client } from '../..';
-import { userModel, getUserData } from '../../models/userModel';
-import { CurrentRegionType, QuidSchema, RankType, UserSchema } from '../../typings/data/user';
+import DiscordUser from '../../models/discordUser';
+import Quid from '../../models/quid';
+import QuidToServer from '../../models/quidToServer';
+import User from '../../models/user';
+import UserToServer from '../../models/userToServer';
+import { CurrentRegionType, RankType } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition, infectWithChance } from '../../utils/changeCondition';
+import { updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
-import { capitalizeString, getMapData, respond, userDataServersObject } from '../../utils/helperFunctions';
+import { getDisplayname, getDisplayspecies, pronoun, pronounAndPlural } from '../../utils/getQuidInfo';
+import { capitalize, getArrayElement, respond } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
@@ -32,33 +39,40 @@ export const command: SlashCommand = {
 	position: 1,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
-	sendCommand: async (interaction, userData1, serverData) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server, discordUser }) => {
 
 		if (await missingPermissions(interaction, [
 			'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints
 		]) === true) { return; }
 
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData1, interaction)) { return; } // This is always a reply
+		if (server === undefined) { throw new Error('server is undefined'); }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
+		if (!discordUser) { throw new TypeError('discordUser is undefined'); }
+		if (!user) { throw new TypeError('user is undefined'); }
+		if (!userToServer) { throw new TypeError('userToServer is undefined'); }
+		if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
-		const restEmbed = await isInvalid(interaction, userData1);
+		const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
 		if (restEmbed === false) { return; }
 
 		/* Define messageContent as the return of remindOfAttack */
 		const messageContent = remindOfAttack(interaction.guildId);
 
 		/* Checks whether the user has shared within the last two hours. */
-		const sharingCooldown = sharingCooldownAccountsMap.get(userData1.quid._id + interaction.guildId);
+		const sharingCooldown = sharingCooldownAccountsMap.get(quid.id + interaction.guildId);
 		if (sharingCooldown && Date.now() - sharingCooldown < twoHoursInMs) {
 
 			// This is always a reply
 			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
-					.setColor(userData1.quid.color)
-					.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
+					.setColor(quid.color)
+					.setAuthor({
+						name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
+						iconURL: quid.avatarURL,
+					})
 					.setTitle('You can only share every 2 hours!')
 					.setDescription(`You can share again <t:${Math.floor((sharingCooldown + twoHoursInMs) / 1_000)}:R>.`),
 				],
@@ -67,127 +81,128 @@ export const command: SlashCommand = {
 		}
 
 		/* Checks whether the user is an elderly. */
-		if (userData1.quid.profile.rank !== 'Elderly') {
+		if (quidToServer.rank !== 'Elderly') {
 
 			// This is always a reply
 			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
-					.setColor(userData1.quid.color)
-					.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-					.setDescription(`*${userData1.quid.name} is about to begin sharing a story when an elderly interrupts them.* "Oh, young ${userData1.quid.getDisplayspecies()}, you need to have a lot more adventures before you can start advising others!"`),
+					.setColor(quid.color)
+					.setAuthor({
+						name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
+						iconURL: quid.avatarURL,
+					})
+					.setDescription(`*${quid.name} is about to begin sharing a story when an elderly interrupts them.* "Oh, young ${getDisplayspecies(quid)}, you need to have a lot more adventures before you can start advising others!"`),
 				],
 			});
 			return;
 		}
 
 		/* Gets the mentioned user. */
-		const mentionedUser = interaction.options.getUser('user');
+		let mentionedUser = interaction.options.getUser('user');
 
 		/* Checks whether the mentioned user is associated with the account. */
-		if (mentionedUser && Object.keys(userData1.userIds).includes(mentionedUser.id)) {
+		const discordUser2 = mentionedUser ? await DiscordUser.findByPk(mentionedUser.id) : null;
+		if (mentionedUser && (discordUser.id === mentionedUser.id || discordUser2?.userId === user.id)) {
 
 			// This is always a reply
 			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
-					.setColor(userData1.quid.color)
-					.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-					.setDescription(`*${userData1.quid.name} is very wise from all the adventures ${userData1.quid.pronoun(0)} had, but also a little... quaint. Sometimes ${userData1.quid.pronounAndPlural(0, 'sit')} down at the fireplace, mumbling to ${userData1.quid.pronoun(4)} a story from back in the day. Busy packmates look at ${userData1.quid.pronoun(1)} in confusion as they pass by.*`),
+					.setColor(quid.color)
+					.setAuthor({
+						name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
+						iconURL: quid.avatarURL,
+					})
+					.setDescription(`*${quid.name} is very wise from all the adventures ${pronoun(quid, 0)} had, but also a little... quaint. Sometimes ${pronounAndPlural(quid, 0, 'sit')} down at the fireplace, mumbling to ${pronoun(quid, 4)} a story from back in the day. Busy packmates look at ${pronoun(quid, 1)} in confusion as they pass by.*`),
 				],
 			});
 			return;
 		}
 
 
-		let _userData2 = mentionedUser ? (() => {
-			try { return userModel.findOne(u => Object.keys(u.userIds).includes(mentionedUser.id)); }
-			catch { return null; }
-		})() : null;
-
+		let user2 = discordUser2 ? await User.findByPk(discordUser2.userId, { rejectOnEmpty: true }) : undefined;
+		let userToServer2 = user2 ? await UserToServer.findOne({ where: { userId: user2.id, serverId: server.id }, rejectOnEmpty: true }) : undefined;
+		let quid2 = userToServer2?.activeQuidId ? await Quid.findByPk(userToServer2.activeQuidId, { rejectOnEmpty: true }) : undefined;
+		let quidToServer2 = quid2 ? await QuidToServer.findOne({ where: { quidId: quid2.id, serverId: server.id }, rejectOnEmpty: true }) : undefined;
 		if (!mentionedUser) {
 
-			const usersEligibleForSharing = (await userModel
-				.find(
-					u => Object.values(u.quids).filter(q => isEligableForSharing(u, q, interaction.guildId)).length > 0,
-				))
-				.filter(u => u._id !== userData1._id);
+			const quidsToServers = await findSharableQuidsToServers(user.id, interaction.guildId);
 
-			if (usersEligibleForSharing.length <= 0) {
+			if (quidsToServers.length <= 0) {
 
 				// This is always a reply
 				await respond(interaction, {
 					content: messageContent,
 					embeds: [...restEmbed, new EmbedBuilder()
-						.setColor(userData1.quid.color)
-						.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-						.setDescription(`*${userData1.quid.name} sits on an old wooden trunk at the ruins, ready to tell a story to any willing listener. But to ${userData1.quid.pronoun(2)} disappointment, no one seems to be around.*`),
+						.setColor(quid.color)
+						.setAuthor({
+							name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
+							iconURL: quid.avatarURL,
+						})
+						.setDescription(`*${quid.name} sits on an old wooden trunk at the ruins, ready to tell a story to any willing listener. But to ${pronoun(quid, 2)} disappointment, no one seems to be around.*`),
 					],
 				});
 				return;
 			}
 
-			_userData2 = usersEligibleForSharing[getRandomNumber(usersEligibleForSharing.length)] || null;
-			if (_userData2) {
+			quidToServer2 = getArrayElement(quidsToServers, getRandomNumber(quidsToServers.length));
+			quid2 = quidToServer2.quid;
+			user2 = await User.findByPk(quid2.userId, { rejectOnEmpty: true });
+			userToServer2 = user2 ? await UserToServer.findOne({ where: { userId: user2.id, serverId: server.id } }) ?? undefined : undefined;
 
-				const newCurrentQuid = Object.values(_userData2.quids).find(q => isEligableForSharing(_userData2!, q, interaction.guildId));
-				if (newCurrentQuid) {
-
-					userDataServersObject;
-					_userData2.servers[interaction.guildId] = {
-						...userDataServersObject(_userData2, interaction.guildId),
-						currentQuid: newCurrentQuid._id,
-					};
-				}
-			}
+			const member2 = (await updateAndGetMembers(user2.id, interaction.guild))[0];
+			if (!member2) { throw new TypeError('member2 is undefined'); }
+			mentionedUser = member2.user;
 		}
 
 		/* Check if the user is interactable, and if they are, define quid data and profile data. */
-		const userData2 = _userData2 ? getUserData(_userData2, interaction.guildId, _userData2.quids[_userData2.servers[interaction.guildId]?.currentQuid ?? '']) : null;
-		if (!isInteractable(interaction, userData2, messageContent, restEmbed)) { return; }
-		if (userData2.quid.profile.rank === RankType.Youngling) {
+		if (!isInteractable(interaction, quid2, quidToServer2, user2, userToServer2, messageContent, restEmbed) || !user2 || !userToServer2 || !quidToServer2) { return; }
+		if (quidToServer2.rank === RankType.Youngling) {
 
 			// This is always a reply
 			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
-					.setColor(userData1.quid.color)
-					.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-					.setDescription(`*${userData1.quid.name} wants to share a story with ${userData2.quid.name}, but the ${userData2.quid.getDisplayspecies()} is too young to sit down and listen and runs away to play.*`),
+					.setColor(quid.color)
+					.setAuthor({
+						name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
+						iconURL: quid.avatarURL,
+					})
+					.setDescription(`*${quid.name} wants to share a story with ${quid2.name}, but the ${getDisplayspecies(quid2)} is too young to sit down and listen and runs away to play.*`),
 				],
 			});
 			return;
 		}
 
 		/* Add the sharing cooldown to user */
-		sharingCooldownAccountsMap.set(userData1.quid._id + interaction.guildId, Date.now());
+		sharingCooldownAccountsMap.set(quid.id + interaction.guildId, Date.now());
 
 		/* Change the condition for user 1 */
-		const decreasedStatsData = await changeCondition(userData1, 0, CurrentRegionType.Ruins);
+		const decreasedStatsData = await changeCondition(quidToServer, quid, 0, CurrentRegionType.Ruins);
 
 		/* Give user 2 experience */
-		const experienceIncrease = getRandomNumber(Math.round(userData2.quid.profile.levels * 7.5), Math.round(userData2.quid.profile.levels * 2.5));
-		await userData2.update(
-			(u) => {
-				const p = getMapData(getMapData(u.quids, userData2.quid._id).profiles, interaction.guildId);
-				p.experience += experienceIncrease;
-			},
-		);
+		const experienceIncrease = getRandomNumber(Math.round(quidToServer2.levels * 7.5), Math.round(quidToServer2.levels * 2.5));
+		await quidToServer2.update({ experience: quidToServer2.experience + experienceIncrease });
 
 		/* If user 2 had a cold, infect user 1 with a 30% chance. */
-		const infectedEmbed = await infectWithChance(userData1, userData2);
+		const infectedEmbed = await infectWithChance(quidToServer, quid, quidToServer2, quid2);
 
-		const levelUpEmbed = await checkLevelUp(interaction, userData2, serverData);
+		const members = await updateAndGetMembers(user.id, interaction.guild);
+		const levelUpEmbed = await checkLevelUp(interaction, quid, quidToServer, members);
 
 		// This is always a reply
 		const botReply = await respond(interaction, {
-			content: `<@${Object.keys(userData2.userIds)[0]}>\n${messageContent}`,
+			content: `<@${mentionedUser.id}>\n${messageContent}`,
 			embeds: [
 				new EmbedBuilder()
-					.setColor(userData1.quid.color)
-					.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-					.setDescription(`*${userData2.quid.name} comes running to the old wooden trunk at the ruins where ${userData1.quid.name} sits, ready to tell an exciting story from long ago. ${capitalizeString(userData2.quid.pronoun(2))} eyes are sparkling as the ${userData1.quid.getDisplayspecies()} recounts great adventures and the lessons to be learned from them.*`)
-					.setFooter({ text: `${decreasedStatsData.statsUpdateText}\n\n+${experienceIncrease} XP (${userData2.quid.profile.experience}/${userData2.quid.profile.levels * 50}) for ${userData2.quid.name}` }),
+					.setColor(quid.color)
+					.setAuthor({
+						name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
+						iconURL: quid.avatarURL,
+					})
+					.setDescription(`*${quid2.name} comes running to the old wooden trunk at the ruins where ${quid.name} sits, ready to tell an exciting story from long ago. ${capitalize(pronoun(quid2, 2))} eyes are sparkling as the ${getDisplayspecies(quid)} recounts great adventures and the lessons to be learned from them.*`)
+					.setFooter({ text: `${decreasedStatsData.statsUpdateText}\n\n+${experienceIncrease} XP (${quidToServer2.experience}/${quidToServer2.levels * 50}) for ${quid2.name}` }),
 				...decreasedStatsData.injuryUpdateEmbed,
 				...infectedEmbed,
 				...levelUpEmbed,
@@ -196,23 +211,50 @@ export const command: SlashCommand = {
 
 		const channel = interaction.channel ?? await client.channels.fetch(interaction.channelId);
 		if (channel === null || !channel.isTextBased()) { throw new TypeError('interaction.channel is null or not text based'); }
-		await addFriendshipPoints({ createdTimestamp: SnowflakeUtil.timestampFrom(botReply.id), channel: channel }, userData1, userData2); // I have to call SnowflakeUtil since InteractionResponse wrongly misses the createdTimestamp which is hopefully added in the future
+		await addFriendshipPoints({ createdTimestamp: SnowflakeUtil.timestampFrom(botReply.id), channel: channel }, quid, quid2, { serverId: interaction.guildId, userToServer, quidToServer, user }); // I have to call SnowflakeUtil since InteractionResponse wrongly misses the createdTimestamp which is hopefully added in the future
 
-		await isPassedOut(interaction, userData1, true);
+		await isPassedOut(interaction, user, userToServer, quid, quidToServer, true);
 
-		await restAdvice(interaction, userData1);
-		await drinkAdvice(interaction, userData1);
-		await eatAdvice(interaction, userData1);
+		await restAdvice(interaction, user, quidToServer);
+		await drinkAdvice(interaction, user, quidToServer);
+		await eatAdvice(interaction, user, quidToServer);
 		return;
 	},
 };
 
-function isEligableForSharing(
-	userData: UserSchema,
-	quid: QuidSchema<''>,
+async function findSharableQuidsToServers(
+	userId: string,
 	guildId: string,
-): quid is QuidSchema<never> {
+) {
 
-	const user = getUserData(userData, guildId, quid);
-	return hasNameAndSpecies(user) && user.quid.profile !== undefined && user.quid.profile.rank !== RankType.Youngling && user.quid.profile.currentRegion === CurrentRegionType.Ruins && user.quid.profile.energy > 0 && user.quid.profile.health > 0 && user.quid.profile.hunger > 0 && user.quid.profile.thirst > 0 && user.quid.profile.injuries.cold === false && user.serverInfo?.hasCooldown !== true && isResting(user) === false;
+	const rows = await QuidToServer.findAll({
+		include: [{
+			model: Quid<true>,
+			where: {
+				userId: { [Op.not]: userId },
+				name: { [Op.not]: '' },
+				species: { [Op.not]: null },
+			},
+		}],
+		where: {
+			serverId: guildId,
+			rank: { [Op.not]: RankType.Youngling },
+			currentRegion: CurrentRegionType.Ruins,
+			health: { [Op.gt]: 0 },
+			energy: { [Op.gt]: 0 },
+			hunger: { [Op.gt]: 0 },
+			thirst: { [Op.gt]: 0 },
+			injuries_cold: false,
+		},
+	});
+
+	return await Promise.all(rows.filter(async (row) => {
+
+		const userToServer = await UserToServer.findOne({ where: { userId: row.quid.userId, serverId: guildId } });
+
+		return row.quid.name !== '' &&
+			row.quid.species !== null &&
+			userToServer?.hasCooldown !== true &&
+			(userToServer == null ? false : isResting(userToServer)) !== true;
+	}));
 }
