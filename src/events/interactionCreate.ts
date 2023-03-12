@@ -133,7 +133,7 @@ export const event: DiscordEvent = {
 				await command.sendCommand(interaction, { user, userToServer, quid, quidToServer, discordUser, discordUserToServer, server });
 
 				/* If sapling exists, a gentle reminder has not been sent and the watering time is after the perfect time, send a gentle reminder */
-				if (interaction.inGuild() && quid && quidToServer && quidToServer.sapling_exists && !quidToServer.sapling_sentGentleReminder && Date.now() > (quidToServer.sapling_nextWaterTimestamp || 0) + 60) { // The 60 seconds is so this doesn't trigger when you just found your sapling while exploring
+				if (interaction.inGuild() && quid && quidToServer && quidToServer.sapling_exists && !quidToServer.sapling_sentGentleReminder && now() > (quidToServer.sapling_nextWaterTimestamp || 0) + 60) { // The 60 seconds is so this doesn't trigger when you just found your sapling while exploring
 
 					await quidToServer.update({ sapling_sentGentleReminder: true });
 
