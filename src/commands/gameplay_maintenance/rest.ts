@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, Message, RepliableInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, EmbedBuilder, Message, RepliableInteraction, SlashCommandBuilder } from 'discord.js';
 import { client } from '../..';
 import Den from '../../models/den';
 import Quid from '../../models/quid';
@@ -127,7 +127,7 @@ export async function startResting(
 	if (userToServer.resting_messageId && userToServer.resting_channelId) {
 
 		const channel = await client.channels.fetch(userToServer.resting_channelId);
-		if (!channel || !channel.isTextBased()) { throw new TypeError('channel is not TextBasedChannel'); }
+		if (!channel || !channel.isTextBased() || channel.type === ChannelType.GuildStageVoice) { throw new TypeError('channel is not TextBasedChannel'); }
 		botReply = await channel.messages.fetch(userToServer.resting_messageId);
 
 		const embedFooterLines = botReply.embeds[0]?.footer?.text.split('\n');
@@ -160,7 +160,7 @@ export async function startResting(
 		else if (userToServer.lastInteraction_channelId) {
 
 			const channel = await client.channels.fetch(userToServer.lastInteraction_channelId);
-			if (!channel || !channel.isTextBased()) { throw new TypeError('channel is not TextBasedChannel'); }
+			if (!channel || !channel.isTextBased() || channel.type === ChannelType.GuildStageVoice) { throw new TypeError('channel is not TextBasedChannel'); }
 			botReply = await channel.send(messageOptions);
 		}
 		else {
@@ -195,6 +195,7 @@ export async function startResting(
 
 				await botReply.delete();
 
+				if (botReply.channel.type === ChannelType.GuildStageVoice) { return; }
 				await botReply.channel.send({
 					content: user.reminders_resting ? (interaction?.user.toString() || `<@${discordUserId}>`) : undefined,
 					embeds: [embed.setDescription(`*${quid.name}'s eyes blink open, ${pronounAndPlural(quid, 0, 'sit')} up to stretch and then walk out into the light and buzz of late morning camp. Younglings are spilling out of the nursery, ambitious to start the day, Hunters and Healers are traveling in and out of the camp border. It is the start of the next good day!*`)],

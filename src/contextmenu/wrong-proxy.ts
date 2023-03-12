@@ -1,4 +1,4 @@
-import { ActionRowBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData } from 'discord.js';
+import { ActionRowBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, ChannelType } from 'discord.js';
 import DiscordUser from '../models/discordUser';
 import Quid from '../models/quid';
 import User from '../models/user';
@@ -96,6 +96,8 @@ export const command: ContextMenuCommand = {
 
 			const webhookChannel = (channel && channel.isThread()) ? channel.parent : channel;
 			if (webhookChannel === null || channel === null) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
+			if (channel.type === ChannelType.GuildStageVoice) { throw new Error('discord.js is janky'); }
+			if (webhookChannel.type === ChannelType.GuildStageVoice) { throw new Error('discord.js is janky'); }
 			if (await canManageWebhooks(channel) === false) { return; }
 			const webhook = (await webhookChannel.fetchWebhooks()).find(webhook => webhook.name === 'PnP Profile Webhook')
 			|| await webhookChannel.createWebhook({ name: 'PnP Profile Webhook' });
