@@ -150,6 +150,8 @@ export const command: SlashCommand = {
 					return;
 				}
 
+				if (guild) { await guild.leave(); }
+
 				// This is always a reply
 				await respond(interaction, {
 					content: `Banned server ${id}, deleted their account but was not able to notify the guild owner about it.`,

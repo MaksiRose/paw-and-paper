@@ -10,6 +10,11 @@ import QuidToServer from '../../models/quidToServer';
 import Quid from '../../models/quid';
 import QuidToServerToShopRole from '../../models/quidToServerToShopRole';
 import ProxyLimits from '../../models/proxyLimits';
+import { Op } from 'sequelize';
+import Den from '../../models/den';
+import DiscordUserToServer from '../../models/discordUserToServer';
+import GroupToServer from '../../models/groupToServer';
+import UserToServer from '../../models/userToServer';
 const { default_color, update_channel_id } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -40,7 +45,7 @@ export const command: SlashCommand = {
 	},
 	async sendMessageComponentResponse(interaction, { server }) {
 
-		if (!server) { throw new Error('serverData is null'); }
+		if (!server) { throw new Error('server is null'); }
 		if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
 		const selectOptionId = interaction.isAnySelectMenu() ? interaction.values[0] : undefined;
 
@@ -178,7 +183,7 @@ export const command: SlashCommand = {
 								return;
 							}
 
-							/* Update the serverData, by removing a potential existing entry and making a new entry. */
+							/* Update the server, by removing a potential existing entry and making a new entry. */
 							const shopRole = await ShopRole.create({
 								id: roleId,
 								serverId: i.guildId,
@@ -474,6 +479,32 @@ export const command: SlashCommand = {
 			}
 		}
 
+		if (interaction.isStringSelectMenu() && interaction.values[0] === 'server-settings_delete') {
+
+			// This is always an update to the message with the select menu
+			await respond(interaction, await getDeletionMessage(interaction), 'update', interaction.message.id);
+			return;
+		}
+
+		if (interaction.isButton() && interaction.customId.startsWith('server-settings_delete_confirm_@')) {
+
+			await respond(interaction, { content: 'All information will be deleted now.' }, 'update', interaction.message.id);
+
+			await Den.destroy({ where: { [Op.or]: [{ id: server.foodDenId }, { id: server.medicineDenId }, { id: server.sleepingDenId }] } });
+			await ProxyLimits.destroy({ where: { [Op.or]: [{ id: server.proxy_roleLimitsId }, { id: server.proxy_channelLimitsId }] } });
+			await UserToServer.destroy({ where: { serverId: server.id } });
+			await GroupToServer.destroy({ where: { serverId: server.id } });
+			await DiscordUserToServer.destroy({ where: { serverId: server.id } });
+			const quidToServers = await QuidToServer.findAll({ where: { serverId: server.id } });
+			for (const quidToServer of quidToServers) {
+				await QuidToServerToShopRole.destroy({ where: { quidToServerId: quidToServer.id } });
+				await quidToServer.destroy();
+			}
+			await ShopRole.destroy({ where: { serverId: server.id } });
+			await server.destroy();
+
+			await interaction.guild.leave();
+		}
 	},
 };
 
@@ -495,6 +526,7 @@ function getOriginalMessage(
 					{ value: 'server-settings_updates', label: 'Updates', description: 'Get updates for new releases sent to a channel' },
 					{ value: 'server-settings_visits', label: 'Visits', description: 'Configure a channel to connect with other servers' },
 					{ value: 'server-settings_proxying', label: 'Proxying', description: 'Manage proxying' },
+					{ value: 'server-settings_delete', label: 'Deletion', description: 'Delete all information around this server and remove the bot' },
 				)])],
 	};
 }
@@ -744,5 +776,30 @@ async function getProxyingMessage(
 				.setCustomId(`server-settings_proxying_options_@${interaction.user.id}`)
 				.setPlaceholder(`Select channels to ${channelLimits.setToWhitelist ? 'enable' : 'disable'} proxying for`)
 				.setOptions(disableSelectMenuOptions)])],
+	};
+}
+
+async function getDeletionMessage(
+	interaction: AnySelectMenuInteraction<'cached'> | ButtonInteraction<'cached'>,
+): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
+
+
+	return {
+		embeds: [new EmbedBuilder()
+			.setColor(default_color)
+			.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() ?? undefined })
+			.setTitle('Settings ➜ Delete')
+			.setDescription('Are you sure you want to delete all information related to this server? This includes things such as settings and user profiles on this server. If you click yes, the bot will delete all information related to this server and leave this server afterwards. If you have an issue or want to delete individual information, you can open a ticket with `/ticket` or join the server (Link is on page 5 of the help command).')],
+		components: [new ActionRowBuilder<ButtonBuilder>()
+			.setComponents([new ButtonBuilder()
+				.setCustomId(`server-settings_mainpage_@${interaction.user.id}`)
+				.setLabel('Back')
+				.setEmoji('⬅️')
+				.setStyle(ButtonStyle.Secondary)]),
+		new ActionRowBuilder<ButtonBuilder>()
+			.setComponents([new ButtonBuilder()
+				.setCustomId(`server-settings_delete_confirm_@${interaction.user.id}`)
+				.setLabel('Confirm')
+				.setStyle(ButtonStyle.Danger)])],
 	};
 }
