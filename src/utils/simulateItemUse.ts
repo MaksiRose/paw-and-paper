@@ -164,7 +164,9 @@ function getNeededMedicineItems(
 			const itemInfo = { ...specialPlantsInfo, ...commonPlantsInfo, ...highestRank > 0 ? uncommonPlantsInfo : {}, ...highestRank > 1 ? rarePlantsInfo : {} };
 
 			// Based on the quids condition, choose item to pick. 0 thirst: water, 0 energy: itemInfo.filter(givesEnergy), 0 hunger: itemInfo.filter(edibility === PlantEdibilityType.Edible), wound: itemInfo.filter(healsWounds), infection: itemInfo.filter(healsInfection), cold: itemInfo.filter(healsColds), sprains: itemInfo.filter(healsSprains), poison: itemInfo.filter(healsPoison). If this returns undefined (which it can, ie when theres nothing that can heal poison), break the while loop.
-			const specificItems = (Object.entries(itemInfo) as [CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames, PlantInfo][]).filter(([, info]) => quidToServer.energy <= 0 ? info.givesEnergy : quidToServer.hunger <= 0 ? info.edibility === PlantEdibilityType.Edible : quidToServer.injuries_wounds > 0 ? info.healsWounds : quidToServer.injuries_infections > 0 ? info.healsInfections : quidToServer.injuries_cold ? info.healsColds : quidToServer.injuries_sprains > 0 ? info.healsSprains : info.healsPoison);
+			const specificItems = (Object.entries(itemInfo) as [CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames, PlantInfo][])
+				.filter(([, info]) => quidToServer.energy <= 0 ? info.givesEnergy : quidToServer.hunger <= 0 ? info.edibility === PlantEdibilityType.Edible : quidToServer.injuries_wounds > 0 ? info.healsWounds : quidToServer.injuries_infections > 0 ? info.healsInfections : quidToServer.injuries_cold ? info.healsColds : quidToServer.injuries_sprains > 0 ? info.healsSprains : info.healsPoison);
+
 			const item = quidToServer.thirst <= 0 ? 'water' : specificItems[getRandomNumber(specificItems.length)]?.[0];
 			if (item === undefined) { break; }
 			if (item !== 'water') { neededItems += 1; }
@@ -466,7 +468,7 @@ function pickItem<T extends string>(items: Map<T, number>): T {
 	for (const [item, inventory] of items) {
 
 		const entry = inventoryMap.get(inventory);
-		if (!entry) { inventoryMap.set(inventory, []); }
+		if (!entry) { inventoryMap.set(inventory, [item]); }
 		else { entry.push(item); }
 	}
 
@@ -502,9 +504,7 @@ export async function simulateMaterialUse(
 	const existingItems = server.inventory.filter(i => materialNames.includes(i)).length;
 	const neededItems = Object.values(getNeededMaterialItems(quidsToServer, medicineDen, foodDen, sleepingDen)).reduce((a, b) => a + b, 0);
 
-	const itemDifference = existingItems - neededItems;
-
-	return itemDifference;
+	return existingItems - neededItems;
 }
 
 
