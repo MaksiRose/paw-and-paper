@@ -239,7 +239,7 @@ async function getMaterials(
 			...selectMenuOptions.length > 0
 				? [new ActionRowBuilder<StringSelectMenuBuilder>()
 					.setComponents(new StringSelectMenuBuilder()
-						.setCustomId(`repair_options_${chosenDen}_@${quid.userId}`)
+						.setCustomId(`repair_options_${chosenDenType}_@${quid.userId}`)
 						.setPlaceholder('Select an item to repair the den with')
 						.addOptions(selectMenuOptions))]
 				: [],

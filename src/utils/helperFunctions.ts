@@ -232,7 +232,9 @@ export async function sendErrorMessage(
 
 		try {
 
-			const stack = `${(isObject(error) && error.stack) || JSON.stringify(error, null, '\t')}`;
+			const stack = `${isObject(error) && keyInObject(error, 'stack') && typeof error.stack === 'string'
+				? filterStacktrace(error.stack)
+				: JSON.stringify(error, null, 2)}`;
 			const errorInfo = await ErrorInfo.findOne({ where: { stack } });
 
 			if (errorInfo) {
@@ -282,6 +284,12 @@ export async function sendErrorMessage(
 					console.error('Failed to send backup error message to user:', error3);
 				});
 		});
+
+	function filterStacktrace(stack: string) {
+		const lines = stack.split('\n');
+		const filteredLines = lines.filter(line => line.includes('/dist/'));
+		return [filteredLines[0], ...filteredLines.slice(1).filter(line => !line.includes('/dist/') && !line.includes('/src/'))].join('\n');
+	}
 }
 
 
@@ -323,6 +331,14 @@ export function addCommasAndAnd<T>(
 
 	if (list.length < 3) { return list.join(' and '); }
 	return `${list.slice(0, -1).join(', ')}, and ${getArrayElement(list, list.length - 1)}`;
+}
+
+export function getFirstLine(
+	str: string,
+) {
+
+	const index = str.indexOf('\n');
+	return str.substring(0, index !== -1 ? index : str.length);
 }
 
 export async function setCooldown(
