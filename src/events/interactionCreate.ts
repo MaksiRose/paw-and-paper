@@ -140,7 +140,7 @@ export const event: DiscordEvent = {
 					// This is always a followUp
 					await respond(interaction, {
 						embeds: [new EmbedBuilder()
-							.setColor(quidToServer.quid.color)
+							.setColor(quid.color)
 							.setAuthor({ name: await getDisplayname(quid, { serverId: quidToServer.serverId, quidToServer, userToServer }), iconURL: quid.avatarURL })
 							.setDescription(`*Engrossed in ${pronoun(quid, 2)} work, ${quid.name} suddenly remembers that ${pronounAndPlural(quid, 0, 'has', 'have')} not yet watered ${pronoun(quid, 2)} plant today. The ${getDisplayspecies(quid)} should really do it soon!*`)
 							.setFooter({ text: 'Type "/water-tree" to water your ginkgo sapling!' })],
