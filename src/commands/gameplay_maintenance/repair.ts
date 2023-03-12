@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, StringSelectMenuBuilder, SlashCommandBuilder, WebhookEditMessageOptions, ChatInputCommandInteraction, ButtonInteraction } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, StringSelectMenuBuilder, SlashCommandBuilder, WebhookMessageEditOptions, ChatInputCommandInteraction, ButtonInteraction } from 'discord.js';
 import { materialsInfo } from '../..';
 import Den from '../../models/den';
 import Quid from '../../models/quid';
@@ -211,7 +211,7 @@ async function getMaterials(
 	displaynameOptions: Parameters<typeof getDisplayname>[1],
 	restEmbed: EmbedBuilder[],
 	messageContent: string,
-): Promise<Omit<InteractionReplyOptions & WebhookEditMessageOptions, 'flags'>> {
+): Promise<Omit<InteractionReplyOptions & WebhookMessageEditOptions, 'flags'>> {
 
 	const { selectMenuOptions, embedDescription: description } = getInventoryElements(server.inventory, 4);
 	const chosenDen = await Den.findByPk(server[chosenDenType], { rejectOnEmpty: true });
@@ -239,7 +239,7 @@ async function getMaterials(
 			...selectMenuOptions.length > 0
 				? [new ActionRowBuilder<StringSelectMenuBuilder>()
 					.setComponents(new StringSelectMenuBuilder()
-						.setCustomId(`repair_options_${chosenDen}_@${quid.userId}`)
+						.setCustomId(`repair_options_${chosenDenType}_@${quid.userId}`)
 						.setPlaceholder('Select an item to repair the den with')
 						.addOptions(selectMenuOptions))]
 				: [],

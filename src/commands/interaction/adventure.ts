@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ComponentType, EmbedBuilder, SlashCommandBuilder, Snowflake } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, SlashCommandBuilder, Snowflake } from 'discord.js';
 import { deepCopy, delay, getArrayElement, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
@@ -248,7 +248,6 @@ export const command: SlashCommand = {
 		let lastMessageId = await sendNextRoundMessage(interaction, user1IsPlaying ? userId1 : userId2, quid, quid2, { serverId: interaction.guildId, userToServer, quidToServer, user }, componentArray, interaction.replied);
 		let lastInteraction = interaction;
 
-		if (interaction.channel.type === ChannelType.GuildStageVoice) { return; }
 		const collector = interaction.channel.createMessageComponentCollector({
 			componentType: ComponentType.Button,
 			// This returns `reason` as 'idle' on end event

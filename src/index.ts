@@ -28,11 +28,30 @@ export const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 			sequelizeLogParams.instance._changed
 		) {
 			if (sequelizeLogParams.type === 'UPDATE') {
-				const changes = (Array.from(sequelizeLogParams.instance._changed) as string[]).map((columnName) => ({
-					column: columnName,
-					before: sequelizeLogParams.instance._previousDataValues[columnName],
-					after: sequelizeLogParams.instance.dataValues[columnName],
-				}));
+				const changes = (Array.from(sequelizeLogParams.instance._changed) as string[]).map((columnName) => {
+
+					const before = sequelizeLogParams.instance._previousDataValues[columnName];
+					const after = sequelizeLogParams.instance.dataValues[columnName];
+
+					if (Array.isArray(after) && Array.isArray(before)) {
+						const countMap = new Map<any, number>();
+						before.forEach(val => countMap.set(val, (countMap.get(val) || 0) - 1));
+						after.forEach(val => countMap.set(val, (countMap.get(val) || 0) + 1));
+
+						const removed = Array.from(countMap.entries())
+							.filter(([, count]) => count < 0)
+							.flatMap(([val, count]) => Array(Math.abs(count)).fill(val));
+
+						const added = Array.from(countMap.entries())
+							.filter(([, count]) => count > 0)
+							.flatMap(([val, count]) => Array(count).fill(val));
+
+						return { column: columnName, removed, added };
+					}
+					else {
+						return { column: columnName, before, after };
+					}
+				});
 				console.log(`${sequelizeLogParams.instance.constructor.name} ${sequelizeLogParams.instance.id} updated:`, changes);
 			}
 			else if (sequelizeLogParams.type === 'INSERT') {

@@ -90,6 +90,7 @@ export const command: SlashCommand = {
 								.setLabel('Displayed species')
 								.setStyle(TextInputStyle.Short)
 								.setMaxLength(24)
+								.setRequired(false)
 								.setValue(quid.displayedSpecies),
 							]),
 					),

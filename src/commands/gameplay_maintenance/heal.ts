@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder, SnowflakeUtil } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import Fuse from 'fuse.js';
 import { Op } from 'sequelize';
 import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../..';
@@ -629,7 +629,7 @@ export async function getHealResponse(
 
 		const disablingInteraction = componentDisablingInteractions.get(user.id + interaction.guildId);
 		const fifteenMinutesInMs = 900_000;
-		if (disablingInteraction !== undefined && userToServer.componentDisabling_messageId != null && SnowflakeUtil.timestampFrom(disablingInteraction.id) > Date.now() - fifteenMinutesInMs) {
+		if (disablingInteraction !== undefined && userToServer.componentDisabling_messageId != null && disablingInteraction.createdTimestamp > Date.now() - fifteenMinutesInMs) {
 
 			await disablingInteraction.webhook.deleteMessage(userToServer.componentDisabling_messageId)
 				.catch(async error => {
@@ -650,7 +650,7 @@ export async function getHealResponse(
 
 	const channel = interaction.channel ?? await interaction.client.channels.fetch(interaction.channelId);
 	if (channel === null || !channel.isTextBased()) { throw new TypeError('interaction.channel is null or not text based'); }
-	if (user2.id !== user.id) { await addFriendshipPoints({ createdTimestamp: SnowflakeUtil.timestampFrom(botReply.id), channel: channel }, quid, quid2, { serverId: server.id, userToServer, quidToServer, user }); } // I have to call SnowflakeUtil since InteractionResponse wrongly misses the createdTimestamp which is hopefully added in the future
+	if (user2.id !== user.id) { await addFriendshipPoints({ createdTimestamp: botReply.createdTimestamp, channel: channel }, quid, quid2, { serverId: server.id, userToServer, quidToServer, user }); }
 
 	return;
 }

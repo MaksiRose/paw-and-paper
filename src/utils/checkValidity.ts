@@ -35,6 +35,7 @@ export async function isPassedOut(
 		}
 
 		// This is always a followUp
+		const footerText = isNew ? await decreaseLevel(quidToServer, interaction) : '';
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(quid.color)
@@ -43,7 +44,7 @@ export async function isPassedOut(
 					iconURL: quid.avatarURL,
 				})
 				.setDescription(`*${quid.name} lies on the ground near the pack borders, barely awake.* "Healer!" *${pronounAndPlural(quid, 0, 'screeches', 'screech')} with ${pronoun(quid, 2)} last energy. Without help, ${pronoun(quid, 0)} will not be able to continue.*\n\nIf no one heals you, you will stop being unconscious ${time(quidToServer.passedOutTimestamp + sixHoursInS, 'R')}.`)
-				.setFooter(isNew ? { text: await decreaseLevel(quidToServer, interaction) } : null)],
+				.setFooter(footerText.length > 0 ? { text: footerText } : null)],
 		});
 
 		/* This is a tip that is sent to the user when they pass out for the first time. */

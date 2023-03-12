@@ -6,7 +6,6 @@ import Webhook from '../models/webhook';
 import Quid from '../models/quid';
 import User from '../models/user';
 import DiscordUser from '../models/discordUser';
-import { ChannelType } from 'discord.js';
 
 export const command: ContextMenuCommand = {
 	data: {
@@ -52,7 +51,6 @@ export const command: ContextMenuCommand = {
 		if (interaction.channel === null) { throw new Error('Interaction channel is null.'); }
 		const webhookChannel = interaction.channel.isThread() ? interaction.channel.parent : interaction.channel;
 		if (webhookChannel === null) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
-		if (webhookChannel.type === ChannelType.GuildStageVoice) { throw new Error('discord.js is janky'); }
 		if (await canManageWebhooks(interaction.channel) === false) { return; }
 		const webhook = (await webhookChannel.fetchWebhooks()).find(webhook => webhook.name === 'PnP Profile Webhook')
 			|| await webhookChannel.createWebhook({ name: 'PnP Profile Webhook' });

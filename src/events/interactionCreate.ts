@@ -2,7 +2,7 @@ import { EmbedBuilder, Interaction, RepliableInteraction } from 'discord.js';
 import { createNewTicket } from '../commands/miscellaneous/ticket';
 import { DiscordEvent } from '../typings/main';
 import { disableCommandComponent, disableAllComponents } from '../utils/componentDisabling';
-import { addCommasAndAnd, keyInObject, now, respond } from '../utils/helperFunctions';
+import { addCommasAndAnd, getFirstLine, keyInObject, now, respond } from '../utils/helperFunctions';
 import { createGuild } from '../utils/updateGuild';
 import { sendErrorMessage } from '../utils/helperFunctions';
 import { missingPermissions } from '../utils/permissionHandler';
@@ -133,14 +133,14 @@ export const event: DiscordEvent = {
 				await command.sendCommand(interaction, { user, userToServer, quid, quidToServer, discordUser, discordUserToServer, server });
 
 				/* If sapling exists, a gentle reminder has not been sent and the watering time is after the perfect time, send a gentle reminder */
-				if (interaction.inGuild() && quid && quidToServer && quidToServer.sapling_exists && !quidToServer.sapling_sentGentleReminder && Date.now() > (quidToServer.sapling_nextWaterTimestamp || 0) + 60) { // The 60 seconds is so this doesn't trigger when you just found your sapling while exploring
+				if (interaction.inGuild() && quid && quidToServer && quidToServer.sapling_exists && !quidToServer.sapling_sentGentleReminder && now() > (quidToServer.sapling_nextWaterTimestamp || 0) + 60) { // The 60 seconds is so this doesn't trigger when you just found your sapling while exploring
 
 					await quidToServer.update({ sapling_sentGentleReminder: true });
 
 					// This is always a followUp
 					await respond(interaction, {
 						embeds: [new EmbedBuilder()
-							.setColor(quidToServer.quid.color)
+							.setColor(quid.color)
 							.setAuthor({ name: await getDisplayname(quid, { serverId: quidToServer.serverId, quidToServer, userToServer }), iconURL: quid.avatarURL })
 							.setDescription(`*Engrossed in ${pronoun(quid, 2)} work, ${quid.name} suddenly remembers that ${pronounAndPlural(quid, 0, 'has', 'have')} not yet watered ${pronoun(quid, 2)} plant today. The ${getDisplayspecies(quid)} should really do it soon!*`)
 							.setFooter({ text: 'Type "/water-tree" to water your ginkgo sapling!' })],
@@ -230,7 +230,7 @@ export const event: DiscordEvent = {
 
 						const errorId = interaction.customId.split('_')[2];
 						const errorInfo = await ErrorInfo.findByPk(errorId);
-						const description = errorInfo ? `Stack:\n\`\`\`\n${errorInfo.stack}\n\`\`\`\nInteraction info:\`\`\`json\n${JSON.stringify(errorInfo.interactionInfo, null, '\t')}\n\`\`\``.substring(0, 4096) : null;
+						const description = errorInfo ? `Stack:\n\`\`\`\n${errorInfo.stack}\n\`\`\`\nInteraction info:\n\`\`\`json\n${JSON.stringify(errorInfo.interactionInfo, null, 2)}\n\`\`\``.substring(0, 4096) : null;
 
 						if (!errorId || !errorInfo || !description) {
 
@@ -254,7 +254,7 @@ export const event: DiscordEvent = {
 							return;
 						}
 
-						await createNewTicket(interaction, `Error ${errorId}`, description, 'bug', null, errorId);
+						await createNewTicket(interaction, `${getFirstLine(description)} (${errorId})`, description, 'bug', null, errorId);
 						await errorInfo.update({ isReported: true });
 						return;
 					}

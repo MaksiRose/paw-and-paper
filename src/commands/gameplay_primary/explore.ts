@@ -359,7 +359,7 @@ async function executeExploring(
 	else if (pullFromWeightedTable({ 0: 10, 1: 90 + quidToServer.sapling_waterCycles }) === 0) {
 
 		const materials = Object.keys(materialsInfo);
-		const serverMaterialsCount = server.inventory.filter(materials.includes).length;
+		const serverMaterialsCount = server.inventory.filter(i => materials.includes(i)).length;
 
 		if (!quidToServer.sapling_exists) {
 

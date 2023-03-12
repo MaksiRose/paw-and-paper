@@ -67,19 +67,20 @@ export async function execute(): Promise<void> {
 			if (!hasNameAndSpecies(quid)) { continue; }
 
 			const user = await User.findByPk(userToServer.userId);
-			const quidToServer = await QuidToServer.findOne({ where: { quidId: quid.id } });
+			const quidToServer = await QuidToServer.findOne({ where: { quidId: quid.id, serverId: userToServer.serverId } });
 			const server = await Server.findByPk(userToServer.serverId);
 			const discordUsers = await DiscordUser.findAll({ where: { userId: userToServer.userId } });
 			const discordUsersToServer = await DiscordUserToServer.findOne({
 				where: {
 					discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
 					isMember: true,
+					serverId: userToServer.serverId,
 				},
 			});
 			if (!user || !quidToServer || !server || !discordUsersToServer) { continue; }
 
 			const hasLessThanMaxEnergy = quidToServer.energy < quidToServer.maxEnergy;
-			const isConscious = quidToServer.energy > 0 || quidToServer.health > 0 || quidToServer.hunger > 0 || quidToServer.thirst > 0;
+			const isConscious = quidToServer.energy > 0 && quidToServer.health > 0 && quidToServer.hunger > 0 && quidToServer.thirst > 0;
 			if (isResting(userToServer) === false && hasLessThanMaxEnergy && isConscious) {
 
 				const lastInteraction = lastInteractionMap.get(user.id + server.id);

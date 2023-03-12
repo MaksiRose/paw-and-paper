@@ -1,5 +1,5 @@
 import { generateId } from 'crystalid';
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, RepliableInteraction, WebhookEditMessageOptions, Snowflake, InteractionResponse, ChannelType } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, RepliableInteraction, WebhookMessageEditOptions, Snowflake, InteractionResponse } from 'discord.js';
 import DiscordUser from '../models/discordUser';
 import ErrorInfo from '../models/errorInfo';
 import Server from '../models/server';
@@ -35,19 +35,19 @@ export function getArrayElement<T>(
  */
 export async function respond(
 	interaction: RepliableInteraction,
-	options: InteractionReplyOptions & WebhookEditMessageOptions & {fetchReply: true},
+	options: InteractionReplyOptions & WebhookMessageEditOptions & {fetchReply: true},
 	type?: 'reply' | 'update',
 	editId?: Snowflake | '@original',
 ): Promise<Message<boolean>>
 export async function respond(
 	interaction: RepliableInteraction,
-	options: InteractionReplyOptions & WebhookEditMessageOptions & {fetchReply?: boolean},
+	options: InteractionReplyOptions & WebhookMessageEditOptions & {fetchReply?: boolean},
 	type?: 'reply' | 'update',
 	editId?: Snowflake | '@original',
 ): Promise<InteractionResponse<boolean> | Message<boolean>>
 export async function respond(
 	interaction: RepliableInteraction,
-	options: InteractionReplyOptions & WebhookEditMessageOptions & {fetchReply?: boolean},
+	options: InteractionReplyOptions & WebhookMessageEditOptions & {fetchReply?: boolean},
 	type: 'reply' | 'update' = 'reply',
 	editId?: Snowflake | '@original',
 ): Promise<InteractionResponse<boolean> | Message<boolean>> {
@@ -89,8 +89,6 @@ export async function respond(
 
 				const channel = interaction.channel || (interaction.channelId ? await interaction.client.channels.fetch(interaction.channelId, { force: false }) : null);
 				if (channel && channel.isTextBased()) {
-
-					if (channel.type === ChannelType.GuildStageVoice) { throw new Error('discord.js is janky'); }
 					botReply = await channel.messages.edit(editId, { ...options, content: options.content === '' ? undefined : options.content, flags: undefined });
 				}
 				else { throw error; }
@@ -99,7 +97,6 @@ export async function respond(
 
 				const channel = interaction.channel || (interaction.channelId ? await interaction.client.channels.fetch(interaction.channelId, { force: false }) : null);
 				if (channel && channel.isTextBased()) {
-					if (channel.type === ChannelType.GuildStageVoice) { throw new Error('discord.js is janky'); }
 					botReply = await channel.send({ ...options, content: options.content === '' ? undefined : options.content, flags: undefined });
 				}
 				else { throw error; }
@@ -235,7 +232,9 @@ export async function sendErrorMessage(
 
 		try {
 
-			const stack = `${(isObject(error) && error.stack) || JSON.stringify(error, null, '\t')}`;
+			const stack = `${isObject(error) && keyInObject(error, 'stack') && typeof error.stack === 'string'
+				? filterStacktrace(error.stack)
+				: JSON.stringify(error, null, 2)}`;
 			const errorInfo = await ErrorInfo.findOne({ where: { stack } });
 
 			if (errorInfo) {
@@ -278,7 +277,6 @@ export async function sendErrorMessage(
 				if (interaction.isMessageComponent()) { await interaction.message.reply({ ...messageOptions, failIfNotExists: false }); }
 				if (interaction.isMessageContextMenuCommand()) { await interaction.targetMessage.reply({ ...messageOptions, failIfNotExists: false }); }
 				if (interaction.isUserContextMenuCommand() || interaction.isChatInputCommand() || interaction.type === InteractionType.ModalSubmit) {
-					if (interaction.channel?.type === ChannelType.GuildStageVoice) { throw new Error('discord.js is janky'); }
 					await interaction.channel?.send(messageOptions);
 				}
 			})()
@@ -286,6 +284,12 @@ export async function sendErrorMessage(
 					console.error('Failed to send backup error message to user:', error3);
 				});
 		});
+
+	function filterStacktrace(stack: string) {
+		const lines = stack.split('\n');
+		const filteredLines = lines.filter(line => line.includes('/dist/'));
+		return [filteredLines[0], ...filteredLines.slice(1).filter(line => !line.includes('/dist/') && !line.includes('/src/'))].join('\n');
+	}
 }
 
 
@@ -327,6 +331,14 @@ export function addCommasAndAnd<T>(
 
 	if (list.length < 3) { return list.join(' and '); }
 	return `${list.slice(0, -1).join(', ')}, and ${getArrayElement(list, list.length - 1)}`;
+}
+
+export function getFirstLine(
+	str: string,
+) {
+
+	const index = str.indexOf('\n');
+	return str.substring(0, index !== -1 ? index : str.length);
 }
 
 export async function setCooldown(

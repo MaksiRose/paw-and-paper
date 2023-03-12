@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, AnySelectMenuInteraction, SlashCommandBuilder, InteractionResponse, SnowflakeUtil, ChannelType } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, AnySelectMenuInteraction, SlashCommandBuilder, InteractionResponse } from 'discord.js';
 import { serverActiveUsersMap } from '../../events/interactionCreate';
 import Quid from '../../models/quid';
 import QuidToServer from '../../models/quidToServer';
@@ -390,13 +390,13 @@ export async function startAttack(
 					try {
 
 						const fifteenMinutesInS = 900;
-						if (Math.round(SnowflakeUtil.timestampFrom(interaction.id) / 1000) < now() - fifteenMinutesInS) { throw new Error('Interaction is older than 15 minutes'); }
+						if (Math.round(interaction.createdTimestamp / 1000) < now() - fifteenMinutesInS) { throw new Error('Interaction is older than 15 minutes'); }
 						await respond(interaction, { embeds: [embed] });
 					}
 					catch {
 
 						const channel = botReply instanceof Message ? botReply.channel : botReply.interaction.channel ?? (botReply.interaction.isRepliable() ? (await botReply.interaction.fetchReply()).channel : null);
-						if (!channel || channel.type === ChannelType.GuildStageVoice) { throw new TypeError('channel is null'); }
+						if (!channel) { throw new TypeError('channel is null'); }
 						await channel.send({ embeds: [embed] });
 					}
 				}
@@ -486,13 +486,13 @@ async function remainingHumans(
 	try {
 
 		const fifteenMinutesInS = 900;
-		if (Math.round(SnowflakeUtil.timestampFrom(interaction.id) / 1000) < now() - fifteenMinutesInS) { throw new Error('Interaction is older than 15 minutes'); }
+		if (Math.round(interaction.createdTimestamp / 1000) < now() - fifteenMinutesInS) { throw new Error('Interaction is older than 15 minutes'); }
 		await respond(interaction, { embeds: [embed] });
 	}
 	catch {
 
 		const channel = botReply instanceof Message ? botReply.channel : botReply.interaction.channel ?? (botReply.interaction.isRepliable() ? (await botReply.interaction.fetchReply()).channel : null);
-		if (!channel || channel.type === ChannelType.GuildStageVoice) { throw new TypeError('channel is null'); }
+		if (!channel) { throw new TypeError('channel is null'); }
 		await channel.send({ embeds: [embed] });
 	}
 }

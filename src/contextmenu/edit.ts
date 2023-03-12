@@ -75,7 +75,6 @@ export const command: ContextMenuCommand = {
 		const webhookChannel = (interaction.channel.isThread() || false) ? interaction.channel.parent : interaction.channel;
 		if (webhookChannel === null) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
 		if (webhookChannel.type === ChannelType.DM || interaction.channel.type === ChannelType.DM) { throw new Error('Webhook can\'t be edited, channel is DMChannel.'); }
-		if (webhookChannel.type === ChannelType.GuildStageVoice) { throw new Error('discord.js is janky'); }
 		if (await canManageWebhooks(interaction.channel) === false) { return; }
 		const webhook = (await webhookChannel.fetchWebhooks()).find(webhook => webhook.name === 'PnP Profile Webhook')
 		|| await webhookChannel.createWebhook({ name: 'PnP Profile Webhook' });

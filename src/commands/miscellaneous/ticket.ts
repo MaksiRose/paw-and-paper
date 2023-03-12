@@ -7,9 +7,10 @@ import { hasPermission } from '../../utils/permissionHandler';
 import { client, octokit } from '../..';
 import { SlashCommand } from '../../typings/handle';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
+import ErrorInfo from '../../models/errorInfo';
 const { error_color, default_color, ticket_channel_id } = require('../../../config.json');
 
-type CustomIdArgs = ['contact', 'user' | 'channel', string, string, `${boolean}`] | ['reject'] | ['approve', string];
+type CustomIdArgs = ['contact', 'user' | 'channel', string, string, `${boolean}`] | ['approve' | 'reject', string];
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -125,6 +126,13 @@ export const command: SlashCommand = {
 				});
 		}
 
+		if (customId.args[0] === 'reject') {
+
+			const ticketId = customId.args[1];
+			const errorInfo = await ErrorInfo.findByPk(ticketId);
+			if (errorInfo) { await errorInfo.update({ isReported: false }); }
+		}
+
 		// This is always an update to the message with the button
 		await respond(interaction, {
 			components: disableAllComponents(interaction.message.components),
@@ -167,7 +175,6 @@ export const command: SlashCommand = {
 			}
 			throw new Error('Couldn\'t get a channel');
 		}();
-		if (respondChannel.type === ChannelType.GuildStageVoice) { throw new Error('discord.js is janky'); }
 
 		await respondChannel
 			.send({
@@ -208,7 +215,7 @@ export async function createNewTicket(
 				.setStyle(ButtonStyle.Success),
 			getRespondButton(true, interaction.user.id, ticketId, true),
 			new ButtonBuilder()
-				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, 'EVERYONE', ['reject']))
+				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, 'EVERYONE', ['reject', ticketId]))
 				.setLabel('Reject')
 				.setStyle(ButtonStyle.Danger)])],
 	};
@@ -221,7 +228,6 @@ export async function createNewTicket(
 			.catch(() => { return null; });
 
 		if (serverChannel !== null && !serverChannel.isDMBased()) {
-			if (serverChannel.type === ChannelType.GuildStageVoice) { throw new Error('discord.js is janky'); }
 
 			const memberResolvable = serverChannel.guild.members.me ?? serverChannel.client.user.id;
 
@@ -237,7 +243,7 @@ export async function createNewTicket(
 						return;
 					}
 				}
-				else if (serverChannel.type !== ChannelType.GuildVoice && await hasPermission(memberResolvable, serverChannel, 'CreatePublicThreads')) {
+				else if (serverChannel.type !== ChannelType.GuildVoice && serverChannel.type !== ChannelType.GuildStageVoice && await hasPermission(memberResolvable, serverChannel, 'CreatePublicThreads')) {
 
 					if (await hasPermission(memberResolvable, serverChannel, 'SendMessagesInThreads')) {
 
