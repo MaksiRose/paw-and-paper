@@ -1,4 +1,4 @@
-import { ComponentType, ButtonStyle, APIActionRowComponent, ActionRowBuilder, ActionRow, MessageActionRowComponent, APIMessageActionRowComponent, MessageActionRowComponentBuilder, ButtonBuilder, ButtonComponent, APIButtonComponent, StringSelectMenuBuilder, SelectMenuComponent, APISelectMenuComponent, isJSONEncodable, SnowflakeUtil, RepliableInteraction, RoleSelectMenuBuilder, UserSelectMenuBuilder, ChannelSelectMenuBuilder, MentionableSelectMenuBuilder } from 'discord.js';
+import { ComponentType, ButtonStyle, APIActionRowComponent, ActionRowBuilder, ActionRow, MessageActionRowComponent, APIMessageActionRowComponent, MessageActionRowComponentBuilder, ButtonBuilder, ButtonComponent, APIButtonComponent, StringSelectMenuBuilder, SelectMenuComponent, APISelectMenuComponent, isJSONEncodable, SnowflakeUtil, RepliableInteraction, RoleSelectMenuBuilder, UserSelectMenuBuilder, ChannelSelectMenuBuilder, MentionableSelectMenuBuilder, ChannelType } from 'discord.js';
 import { client } from '..';
 import UserToServer from '../models/userToServer';
 import { now } from './helperFunctions';
@@ -59,6 +59,7 @@ export async function disableCommandComponent(
 			console.error(new TypeError(`Unable to disable command-component because the channel with ID ${userToServer.componentDisabling_channelId} could not be fetched or is not text based`));
 			return;
 		}
+		if (channel.type === ChannelType.GuildStageVoice) { throw new Error('discord.js is janky'); }
 
 		const botReply = await channel.messages.fetch(userToServer.componentDisabling_messageId).catch(() => null);
 		if (!botReply) {

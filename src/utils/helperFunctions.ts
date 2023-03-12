@@ -1,5 +1,5 @@
 import { generateId } from 'crystalid';
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, RepliableInteraction, WebhookEditMessageOptions, Snowflake, InteractionResponse } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, RepliableInteraction, WebhookEditMessageOptions, Snowflake, InteractionResponse, ChannelType } from 'discord.js';
 import DiscordUser from '../models/discordUser';
 import ErrorInfo from '../models/errorInfo';
 import Server from '../models/server';
@@ -90,6 +90,7 @@ export async function respond(
 				const channel = interaction.channel || (interaction.channelId ? await interaction.client.channels.fetch(interaction.channelId, { force: false }) : null);
 				if (channel && channel.isTextBased()) {
 
+					if (channel.type === ChannelType.GuildStageVoice) { throw new Error('discord.js is janky'); }
 					botReply = await channel.messages.edit(editId, { ...options, content: options.content === '' ? undefined : options.content, flags: undefined });
 				}
 				else { throw error; }
@@ -97,7 +98,10 @@ export async function respond(
 			else {
 
 				const channel = interaction.channel || (interaction.channelId ? await interaction.client.channels.fetch(interaction.channelId, { force: false }) : null);
-				if (channel && channel.isTextBased()) { botReply = await channel.send({ ...options, content: options.content === '' ? undefined : options.content, flags: undefined }); }
+				if (channel && channel.isTextBased()) {
+					if (channel.type === ChannelType.GuildStageVoice) { throw new Error('discord.js is janky'); }
+					botReply = await channel.send({ ...options, content: options.content === '' ? undefined : options.content, flags: undefined });
+				}
 				else { throw error; }
 			}
 		}
@@ -273,7 +277,10 @@ export async function sendErrorMessage(
 			await (async () => {
 				if (interaction.isMessageComponent()) { await interaction.message.reply({ ...messageOptions, failIfNotExists: false }); }
 				if (interaction.isMessageContextMenuCommand()) { await interaction.targetMessage.reply({ ...messageOptions, failIfNotExists: false }); }
-				if (interaction.isUserContextMenuCommand() || interaction.isChatInputCommand() || interaction.type === InteractionType.ModalSubmit) { await interaction.channel?.send(messageOptions); }
+				if (interaction.isUserContextMenuCommand() || interaction.isChatInputCommand() || interaction.type === InteractionType.ModalSubmit) {
+					if (interaction.channel?.type === ChannelType.GuildStageVoice) { throw new Error('discord.js is janky'); }
+					await interaction.channel?.send(messageOptions);
+				}
 			})()
 				.catch((error3) => {
 					console.error('Failed to send backup error message to user:', error3);

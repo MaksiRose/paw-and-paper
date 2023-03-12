@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { Op } from 'sequelize';
 import { client } from '../..';
 import DiscordUser from '../../models/discordUser';
@@ -259,6 +259,7 @@ export async function sendReminder(
 					},
 				});
 
+				if (channel.type === ChannelType.GuildStageVoice) { return; }
 				await channel.send({
 					content: `<@${discordUserToServer?.discordUserId ?? discordUsers[0]?.id ?? 'error'}>`,
 					embeds: [new EmbedBuilder()

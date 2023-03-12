@@ -1,4 +1,4 @@
-import { Attachment, EmbedBuilder, GuildTextBasedChannel, MessageReference, SlashCommandBuilder } from 'discord.js';
+import { Attachment, ChannelType, EmbedBuilder, GuildTextBasedChannel, MessageReference, SlashCommandBuilder } from 'discord.js';
 import { respond } from '../../utils/helperFunctions';
 import { hasName, isInGuild } from '../../utils/checkUserState';
 import { canManageWebhooks, getMissingPermissionContent, hasPermission, missingPermissions, permissionDisplay } from '../../utils/permissionHandler';
@@ -95,6 +95,7 @@ export async function sendMessage(
 
 	const webhookChannel = channel.isThread() ? channel.parent : channel;
 	if (webhookChannel === null) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
+	if (channel.type === ChannelType.GuildStageVoice || webhookChannel.type === ChannelType.GuildStageVoice) { throw new Error('discord.js is janky'); }
 	const webhook = (await webhookChannel.fetchWebhooks()).find(webhook => webhook.name === 'PnP Profile Webhook')
 		|| await webhookChannel.createWebhook({ name: 'PnP Profile Webhook' });
 

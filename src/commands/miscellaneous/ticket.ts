@@ -167,6 +167,7 @@ export const command: SlashCommand = {
 			}
 			throw new Error('Couldn\'t get a channel');
 		}();
+		if (respondChannel.type === ChannelType.GuildStageVoice) { throw new Error('discord.js is janky'); }
 
 		await respondChannel
 			.send({
@@ -220,6 +221,7 @@ export async function createNewTicket(
 			.catch(() => { return null; });
 
 		if (serverChannel !== null && !serverChannel.isDMBased()) {
+			if (serverChannel.type === ChannelType.GuildStageVoice) { throw new Error('discord.js is janky'); }
 
 			const memberResolvable = serverChannel.guild.members.me ?? serverChannel.client.user.id;
 
