@@ -76,6 +76,7 @@ export async function checkForProxy(
 ): Promise<{ replaceMessage: boolean, quid: Quid | null }> {
 
 	let replaceMessage = false;
+	let isAntiProxy = false;
 	const userToServer = await UserToServer.findOne({
 		where: { serverId: message.guildId, userId: user.id },
 		include: [{ model: Quid, as: 'activeQuid' }],
@@ -122,7 +123,11 @@ export async function checkForProxy(
 
 		const quidId = stickymodeIsToggledLocally ? userToServer.lastProxiedQuidId : stickymodeIsToggledGlobally ? user.proxy_lastGlobalProxiedQuidId : false;
 		if (quidId !== false) { chosenQuid = quidId === null ? null : await Quid.findByPk(quidId); }
-		if (chosenQuid === null) { replaceMessage = false; }
+		if (chosenQuid === null) {
+
+			replaceMessage = false;
+			isAntiProxy = true;
+		}
 	}
 
 	/* Checking if the message starts with the quid's proxy start and ends with the quid's proxy end. If it does, it will set the current quid to the quid that the message is being sent from. */
@@ -155,11 +160,16 @@ export async function checkForProxy(
 
 		chosenQuid = null;
 		replaceMessage = false;
+		isAntiProxy = true;
 	}
 
 	await DiscordUserToServer.update({ isMember: true, lastUpdatedTimestamp: now() }, { where: { discordUserId: message.author.id, serverId: message.guildId } });
-	await userToServer?.update({ lastProxiedQuidId: chosenQuid?.id ?? null });
-	await user.update({ proxy_lastGlobalProxiedQuidId: chosenQuid?.id ?? null });
+
+	if (replaceMessage || isAntiProxy) {
+
+		await userToServer?.update({ lastProxiedQuidId: chosenQuid?.id ?? null });
+		await user.update({ proxy_lastGlobalProxiedQuidId: chosenQuid?.id ?? null });
+	}
 
 	return { replaceMessage, quid: chosenQuid };
 }
