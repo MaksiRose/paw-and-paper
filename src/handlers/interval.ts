@@ -79,7 +79,7 @@ export async function execute(): Promise<void> {
 			if (!user || !quidToServer || !server || !discordUsersToServer) { continue; }
 
 			const hasLessThanMaxEnergy = quidToServer.energy < quidToServer.maxEnergy;
-			const isConscious = quidToServer.energy > 0 || quidToServer.health > 0 || quidToServer.hunger > 0 || quidToServer.thirst > 0;
+			const isConscious = quidToServer.energy > 0 && quidToServer.health > 0 && quidToServer.hunger > 0 && quidToServer.thirst > 0;
 			if (isResting(userToServer) === false && hasLessThanMaxEnergy && isConscious) {
 
 				const lastInteraction = lastInteractionMap.get(user.id + server.id);
