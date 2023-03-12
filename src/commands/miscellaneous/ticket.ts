@@ -7,9 +7,10 @@ import { hasPermission } from '../../utils/permissionHandler';
 import { client, octokit } from '../..';
 import { SlashCommand } from '../../typings/handle';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
+import ErrorInfo from '../../models/errorInfo';
 const { error_color, default_color, ticket_channel_id } = require('../../../config.json');
 
-type CustomIdArgs = ['contact', 'user' | 'channel', string, string, `${boolean}`] | ['reject'] | ['approve', string];
+type CustomIdArgs = ['contact', 'user' | 'channel', string, string, `${boolean}`] | ['approve' | 'reject', string];
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -125,6 +126,13 @@ export const command: SlashCommand = {
 				});
 		}
 
+		if (customId.args[0] === 'reject') {
+
+			const ticketId = customId.args[1];
+			const errorInfo = await ErrorInfo.findByPk(ticketId);
+			if (errorInfo) { await errorInfo.update({ isReported: false }); }
+		}
+
 		// This is always an update to the message with the button
 		await respond(interaction, {
 			components: disableAllComponents(interaction.message.components),
@@ -208,7 +216,7 @@ export async function createNewTicket(
 				.setStyle(ButtonStyle.Success),
 			getRespondButton(true, interaction.user.id, ticketId, true),
 			new ButtonBuilder()
-				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, 'EVERYONE', ['reject']))
+				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, 'EVERYONE', ['reject', ticketId]))
 				.setLabel('Reject')
 				.setStyle(ButtonStyle.Danger)])],
 	};
