@@ -271,8 +271,8 @@ export async function pickPlant(
 	const items = new Map<CommonPlantNames | UncommonPlantNames | RarePlantNames, number>();
 	Object.keys(itemInfo).forEach((item) => {
 
-		if ((include < 2 && keyInObject(rarePlantsInfo, item)) ||
-			(include < 1 && keyInObject(uncommonPlantsInfo, item)) ||
+		if ((include === 2 && keyInObject(rarePlantsInfo, item)) ||
+			(include >= 1 && keyInObject(uncommonPlantsInfo, item)) ||
 			keyInObject(commonPlantsInfo, item)) {
 
 			items.set(item, inventory.filter(i => i === item).length);
