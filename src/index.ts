@@ -35,8 +35,8 @@ export const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 
 					if (Array.isArray(after) && Array.isArray(before)) {
 						const countMap = new Map<any, number>();
-						before.forEach(val => countMap.set(val, (countMap.get(val) || 0) - 1));
-						after.forEach(val => countMap.set(val, (countMap.get(val) || 0) + 1));
+						for (const val of before) { countMap.set(val, (countMap.get(val) || 0) - 1); }
+						for (const val of after) { countMap.set(val, (countMap.get(val) || 0) + 1); }
 
 						const removed = Array.from(countMap.entries())
 							.filter(([, count]) => count < 0)
