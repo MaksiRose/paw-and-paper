@@ -1,4 +1,5 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, StringSelectMenuBuilder, SlashCommandBuilder, Snowflake, StringSelectMenuInteraction } from 'discord.js';
+import { generateId } from 'crystalid';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, StringSelectMenuBuilder, SlashCommandBuilder, Snowflake, StringSelectMenuInteraction, Collection } from 'discord.js';
 import { Op } from 'sequelize';
 import DiscordUser from '../../models/discordUser';
 import DiscordUserToServer from '../../models/discordUserToServer';
@@ -12,7 +13,7 @@ import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
 import { getDisplayname, getDisplayspecies, pronoun, pronounAndPlural } from '../../utils/getQuidInfo';
-import { respond, valueInObject } from '../../utils/helperFunctions';
+import { now, respond, valueInObject } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { sendDrinkMessage } from '../gameplay_maintenance/drink';
 import { getHealResponse } from '../gameplay_maintenance/heal';
@@ -21,6 +22,9 @@ import { executeResting } from '../gameplay_maintenance/rest';
 import { sendStoreMessage } from '../gameplay_maintenance/store';
 import { remindOfAttack } from './attack';
 import { executePlaying } from './play';
+
+const oneWeekInS = 604_800;
+const oneMonthInS = 2_629_746;
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -176,21 +180,47 @@ async function sendTravelMessage(
 		const foodDenUsers = await User.findAll({ where: { id: { [Op.in]: foodDenQuids.map(q => q.userId) } } });
 
 		let foodDenDiscordUsersList = '';
-		for (const foodDenUser of foodDenUsers) {
+		allUsersLoop: for (const foodDenUser of foodDenUsers) {
 
 			const discordUsers = await DiscordUser.findAll({ where: { userId: foodDenUser.id } });
-			const discordUserToServer = await DiscordUserToServer.findOne({
+			const discordUsersToServer = await DiscordUserToServer.findAll({
 				where: {
 					discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
 					serverId: interaction.guildId,
 				},
 			});
 
-			if (discordUserToServer) {
+			const sortedDiscordUsersToServer = new Collection(discordUsers
+				.map(du => [du.id, discordUsersToServer.find(duts => duts.discordUserId === du.id)]))
+				.sort((duts1, duts2) => ((duts2?.lastUpdatedTimestamp ?? 0) - (duts1?.lastUpdatedTimestamp ?? 0))); // This sorts the userIds in such a way that the one with the newest update is first and the one with the oldest update (or undefined) is last. In the for loop, it will therefore do as little tests and fetches as possible.
 
+			userIdLoop: for (let [discordUserId, discordUserToServer] of sortedDiscordUsersToServer) {
+
+				/* It's checking if there is no cache or if the cache is more than one week old. If it is, get new cache. If there is still no cache or the member is not in the guild, continue. */
+				const timeframe = discordUserToServer?.isMember ? oneWeekInS : oneMonthInS; // If a person is supposedly in a guild, we want to be really sure they are actually in the guild since assuming wrongly can lead to unwanted behavior, and these checks are the only way of finding out when they left. On the contrary, when they are supposedly not in the guild, we might find out anyways through them using the bot in the server, so we don't need to check that often.
+				if (!discordUserToServer || discordUserToServer.lastUpdatedTimestamp < now() - timeframe) {
+
+					const member = await interaction.guild.members.fetch(discordUserId).catch(() => { return null; });
+
+					if (!discordUserToServer) {
+
+						discordUserToServer = await DiscordUserToServer.create({
+							id: generateId(),
+							discordUserId: discordUserId,
+							serverId: interaction.guild.id,
+							isMember: member !== null,
+							lastUpdatedTimestamp: now(),
+						});
+					}
+					else if (discordUserToServer) { await discordUserToServer.update({ isMember: member !== null, lastUpdatedTimestamp: now() }); }
+				}
+				if (!discordUserToServer || !discordUserToServer.isMember) { continue; }
+
+				/* For each quid, check if there is a profile, and if there is, add that profile to the rankTexts. */
 				const discordUserMention = `<@${discordUserToServer.discordUserId}>\n`;
-				if ((foodDenDiscordUsersList + discordUserMention).length > 1024) { break; }
+				if ((foodDenDiscordUsersList + discordUserMention).length > 1024) { break allUsersLoop; }
 				else { foodDenDiscordUsersList += discordUserMention; }
+				break userIdLoop;
 			}
 		}
 
@@ -221,21 +251,47 @@ async function sendTravelMessage(
 		const medicineDenUsers = await User.findAll({ where: { id: { [Op.in]: medicineDenQuids.map(q => q.userId) } } });
 
 		let medicineDenDiscordUsersList = '';
-		for (const medicineDenUser of medicineDenUsers) {
+		allUsersLoop: for (const medicineDenUser of medicineDenUsers) {
 
 			const discordUsers = await DiscordUser.findAll({ where: { userId: medicineDenUser.id } });
-			const discordUserToServer = await DiscordUserToServer.findOne({
+			const discordUsersToServer = await DiscordUserToServer.findAll({
 				where: {
 					discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
 					serverId: interaction.guildId,
 				},
 			});
 
-			if (discordUserToServer) {
+			const sortedDiscordUsersToServer = new Collection(discordUsers
+				.map(du => [du.id, discordUsersToServer.find(duts => duts.discordUserId === du.id)]))
+				.sort((duts1, duts2) => ((duts2?.lastUpdatedTimestamp ?? 0) - (duts1?.lastUpdatedTimestamp ?? 0))); // This sorts the userIds in such a way that the one with the newest update is first and the one with the oldest update (or undefined) is last. In the for loop, it will therefore do as little tests and fetches as possible.
 
+			userIdLoop: for (let [discordUserId, discordUserToServer] of sortedDiscordUsersToServer) {
+
+				/* It's checking if there is no cache or if the cache is more than one week old. If it is, get new cache. If there is still no cache or the member is not in the guild, continue. */
+				const timeframe = discordUserToServer?.isMember ? oneWeekInS : oneMonthInS; // If a person is supposedly in a guild, we want to be really sure they are actually in the guild since assuming wrongly can lead to unwanted behavior, and these checks are the only way of finding out when they left. On the contrary, when they are supposedly not in the guild, we might find out anyways through them using the bot in the server, so we don't need to check that often.
+				if (!discordUserToServer || discordUserToServer.lastUpdatedTimestamp < now() - timeframe) {
+
+					const member = await interaction.guild.members.fetch(discordUserId).catch(() => { return null; });
+
+					if (!discordUserToServer) {
+
+						discordUserToServer = await DiscordUserToServer.create({
+							id: generateId(),
+							discordUserId: discordUserId,
+							serverId: interaction.guild.id,
+							isMember: member !== null,
+							lastUpdatedTimestamp: now(),
+						});
+					}
+					else if (discordUserToServer) { await discordUserToServer.update({ isMember: member !== null, lastUpdatedTimestamp: now() }); }
+				}
+				if (!discordUserToServer || !discordUserToServer.isMember) { continue; }
+
+				/* For each quid, check if there is a profile, and if there is, add that profile to the rankTexts. */
 				const discordUserMention = `<@${discordUserToServer.discordUserId}>\n`;
-				if ((medicineDenDiscordUsersList + discordUserMention).length > 1024) { break; }
+				if ((medicineDenDiscordUsersList + discordUserMention).length > 1024) { break allUsersLoop; }
 				else { medicineDenDiscordUsersList += discordUserMention; }
+				break userIdLoop;
 			}
 		}
 
@@ -246,21 +302,47 @@ async function sendTravelMessage(
 		const healerUsers = await User.findAll({ where: { id: { [Op.in]: healerQuids.map(q => q.userId) } } });
 
 		let healerDiscordUsersList = '';
-		for (const healerUser of healerUsers) {
+		allUsersLoop: for (const healerUser of healerUsers) {
 
 			const discordUsers = await DiscordUser.findAll({ where: { userId: healerUser.id } });
-			const discordUserToServer = await DiscordUserToServer.findOne({
+			const discordUsersToServer = await DiscordUserToServer.findAll({
 				where: {
 					discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
 					serverId: interaction.guildId,
 				},
 			});
 
-			if (discordUserToServer) {
+			const sortedDiscordUsersToServer = new Collection(discordUsers
+				.map(du => [du.id, discordUsersToServer.find(duts => duts.discordUserId === du.id)]))
+				.sort((duts1, duts2) => ((duts2?.lastUpdatedTimestamp ?? 0) - (duts1?.lastUpdatedTimestamp ?? 0))); // This sorts the userIds in such a way that the one with the newest update is first and the one with the oldest update (or undefined) is last. In the for loop, it will therefore do as little tests and fetches as possible.
 
+			userIdLoop: for (let [discordUserId, discordUserToServer] of sortedDiscordUsersToServer) {
+
+				/* It's checking if there is no cache or if the cache is more than one week old. If it is, get new cache. If there is still no cache or the member is not in the guild, continue. */
+				const timeframe = discordUserToServer?.isMember ? oneWeekInS : oneMonthInS; // If a person is supposedly in a guild, we want to be really sure they are actually in the guild since assuming wrongly can lead to unwanted behavior, and these checks are the only way of finding out when they left. On the contrary, when they are supposedly not in the guild, we might find out anyways through them using the bot in the server, so we don't need to check that often.
+				if (!discordUserToServer || discordUserToServer.lastUpdatedTimestamp < now() - timeframe) {
+
+					const member = await interaction.guild.members.fetch(discordUserId).catch(() => { return null; });
+
+					if (!discordUserToServer) {
+
+						discordUserToServer = await DiscordUserToServer.create({
+							id: generateId(),
+							discordUserId: discordUserId,
+							serverId: interaction.guild.id,
+							isMember: member !== null,
+							lastUpdatedTimestamp: now(),
+						});
+					}
+					else if (discordUserToServer) { await discordUserToServer.update({ isMember: member !== null, lastUpdatedTimestamp: now() }); }
+				}
+				if (!discordUserToServer || !discordUserToServer.isMember) { continue; }
+
+				/* For each quid, check if there is a profile, and if there is, add that profile to the rankTexts. */
 				const discordUserMention = `<@${discordUserToServer.discordUserId}>\n`;
-				if ((healerDiscordUsersList + discordUserMention).length > 1024) { break; }
+				if ((healerDiscordUsersList + discordUserMention).length > 1024) { break allUsersLoop; }
 				else { healerDiscordUsersList += discordUserMention; }
+				break userIdLoop;
 			}
 		}
 
@@ -288,21 +370,47 @@ async function sendTravelMessage(
 		const ruinsUsers = await User.findAll({ where: { id: { [Op.in]: ruinsQuids.map(q => q.userId) } } });
 
 		let ruinsDiscordUsersList = '';
-		for (const ruinsUser of ruinsUsers) {
+		allUsersLoop: for (const ruinsUser of ruinsUsers) {
 
 			const discordUsers = await DiscordUser.findAll({ where: { userId: ruinsUser.id } });
-			const discordUserToServer = await DiscordUserToServer.findOne({
+			const discordUsersToServer = await DiscordUserToServer.findAll({
 				where: {
 					discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
 					serverId: interaction.guildId,
 				},
 			});
 
-			if (discordUserToServer) {
+			const sortedDiscordUsersToServer = new Collection(discordUsers
+				.map(du => [du.id, discordUsersToServer.find(duts => duts.discordUserId === du.id)]))
+				.sort((duts1, duts2) => ((duts2?.lastUpdatedTimestamp ?? 0) - (duts1?.lastUpdatedTimestamp ?? 0))); // This sorts the userIds in such a way that the one with the newest update is first and the one with the oldest update (or undefined) is last. In the for loop, it will therefore do as little tests and fetches as possible.
 
+			userIdLoop: for (let [discordUserId, discordUserToServer] of sortedDiscordUsersToServer) {
+
+				/* It's checking if there is no cache or if the cache is more than one week old. If it is, get new cache. If there is still no cache or the member is not in the guild, continue. */
+				const timeframe = discordUserToServer?.isMember ? oneWeekInS : oneMonthInS; // If a person is supposedly in a guild, we want to be really sure they are actually in the guild since assuming wrongly can lead to unwanted behavior, and these checks are the only way of finding out when they left. On the contrary, when they are supposedly not in the guild, we might find out anyways through them using the bot in the server, so we don't need to check that often.
+				if (!discordUserToServer || discordUserToServer.lastUpdatedTimestamp < now() - timeframe) {
+
+					const member = await interaction.guild.members.fetch(discordUserId).catch(() => { return null; });
+
+					if (!discordUserToServer) {
+
+						discordUserToServer = await DiscordUserToServer.create({
+							id: generateId(),
+							discordUserId: discordUserId,
+							serverId: interaction.guild.id,
+							isMember: member !== null,
+							lastUpdatedTimestamp: now(),
+						});
+					}
+					else if (discordUserToServer) { await discordUserToServer.update({ isMember: member !== null, lastUpdatedTimestamp: now() }); }
+				}
+				if (!discordUserToServer || !discordUserToServer.isMember) { continue; }
+
+				/* For each quid, check if there is a profile, and if there is, add that profile to the rankTexts. */
 				const discordUserMention = `<@${discordUserToServer.discordUserId}>\n`;
-				if ((ruinsDiscordUsersList + discordUserMention).length > 1024) { break; }
+				if ((ruinsDiscordUsersList + discordUserMention).length > 1024) { break allUsersLoop; }
 				else { ruinsDiscordUsersList += discordUserMention; }
+				break userIdLoop;
 			}
 		}
 
@@ -337,21 +445,47 @@ async function sendTravelMessage(
 		const prairieUsers = await User.findAll({ where: { id: { [Op.in]: prairieQuids.map(q => q.userId) } } });
 
 		let prairieDiscordUsersList = '';
-		for (const prairieUser of prairieUsers) {
+		allUsersLoop: for (const prairieUser of prairieUsers) {
 
 			const discordUsers = await DiscordUser.findAll({ where: { userId: prairieUser.id } });
-			const discordUserToServer = await DiscordUserToServer.findOne({
+			const discordUsersToServer = await DiscordUserToServer.findAll({
 				where: {
 					discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
 					serverId: interaction.guildId,
 				},
 			});
 
-			if (discordUserToServer) {
+			const sortedDiscordUsersToServer = new Collection(discordUsers
+				.map(du => [du.id, discordUsersToServer.find(duts => duts.discordUserId === du.id)]))
+				.sort((duts1, duts2) => ((duts2?.lastUpdatedTimestamp ?? 0) - (duts1?.lastUpdatedTimestamp ?? 0))); // This sorts the userIds in such a way that the one with the newest update is first and the one with the oldest update (or undefined) is last. In the for loop, it will therefore do as little tests and fetches as possible.
 
+			userIdLoop: for (let [discordUserId, discordUserToServer] of sortedDiscordUsersToServer) {
+
+				/* It's checking if there is no cache or if the cache is more than one week old. If it is, get new cache. If there is still no cache or the member is not in the guild, continue. */
+				const timeframe = discordUserToServer?.isMember ? oneWeekInS : oneMonthInS; // If a person is supposedly in a guild, we want to be really sure they are actually in the guild since assuming wrongly can lead to unwanted behavior, and these checks are the only way of finding out when they left. On the contrary, when they are supposedly not in the guild, we might find out anyways through them using the bot in the server, so we don't need to check that often.
+				if (!discordUserToServer || discordUserToServer.lastUpdatedTimestamp < now() - timeframe) {
+
+					const member = await interaction.guild.members.fetch(discordUserId).catch(() => { return null; });
+
+					if (!discordUserToServer) {
+
+						discordUserToServer = await DiscordUserToServer.create({
+							id: generateId(),
+							discordUserId: discordUserId,
+							serverId: interaction.guild.id,
+							isMember: member !== null,
+							lastUpdatedTimestamp: now(),
+						});
+					}
+					else if (discordUserToServer) { await discordUserToServer.update({ isMember: member !== null, lastUpdatedTimestamp: now() }); }
+				}
+				if (!discordUserToServer || !discordUserToServer.isMember) { continue; }
+
+				/* For each quid, check if there is a profile, and if there is, add that profile to the rankTexts. */
 				const discordUserMention = `<@${discordUserToServer.discordUserId}>\n`;
-				if ((prairieDiscordUsersList + discordUserMention).length > 1024) { break; }
+				if ((prairieDiscordUsersList + discordUserMention).length > 1024) { break allUsersLoop; }
 				else { prairieDiscordUsersList += discordUserMention; }
+				break userIdLoop;
 			}
 		}
 
