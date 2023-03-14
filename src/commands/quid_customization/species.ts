@@ -1,7 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ModalBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { capitalize, keyInObject, respond } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
-import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { speciesInfo } from '../..';
 import { SpeciesNames } from '../../typings/data/general';
@@ -25,10 +24,6 @@ export const command: SlashCommand = {
 	disablePreviousCommand: true,
 	modifiesServerProfile: false,
 	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
-
-		if (await missingPermissions(interaction, [
-			'ViewChannel', // Needed because of createCommandComponentDisabler
-		]) === true) { return; }
 
 		if (!hasName(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
 		if (!user) { throw new TypeError('user is undefined'); }
@@ -57,16 +52,13 @@ export const command: SlashCommand = {
 			.setFooter({ text: `Here is a list of species that you can choose when making a new quid: ${speciesNameArray.join(', ')}` });
 
 		// This is always a reply
-		const botReply = await respond(interaction, {
+		await respond(interaction, {
 			embeds: quid.species === null ? [newSpeciesEmbed] : [existingSpeciesEmbed],
 			components: [
 				...(quid.species === null ? [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([speciesMenu])] : []),
 				new ActionRowBuilder<ButtonBuilder>().setComponents([displayedSpeciesButton]),
 			],
-			fetchReply: true,
 		});
-
-		if (userToServer) { saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, botReply.id); }
 	},
 	async sendMessageComponentResponse(interaction, { quid, user, userToServer, quidToServer }) {
 

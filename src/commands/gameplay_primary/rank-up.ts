@@ -5,10 +5,8 @@ import { SlashCommand } from '../../typings/handle';
 import { checkRankRequirements, updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
-import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
 import { getDisplayname, getDisplayspecies, pronoun, pronounAndPlural } from '../../utils/getQuidInfo';
 import { getArrayElement, respond } from '../../utils/helperFunctions';
-import { missingPermissions } from '../../utils/permissionHandler';
 import { remindOfAttack } from './attack';
 
 export const command: SlashCommand = {
@@ -22,10 +20,6 @@ export const command: SlashCommand = {
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
-
-		if (await missingPermissions(interaction, [
-			'ViewChannel', // Needed because of createCommandComponentDisabler
-		]) === true) { return; }
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (server === undefined) { throw new Error('serverData is null'); }
@@ -64,7 +58,7 @@ export const command: SlashCommand = {
 		else if (quidToServer.unlockedRanks === 2 && quidToServer.rank === RankType.Apprentice) {
 
 			// This is always a reply
-			const { id } = await respond(interaction, {
+			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(quid.color)
@@ -89,8 +83,6 @@ export const command: SlashCommand = {
 					]),
 				],
 			});
-
-			saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, id);
 
 			return;
 		}
@@ -154,6 +146,11 @@ export const command: SlashCommand = {
 		if (!userToServer) { throw new TypeError('userToServer is undefined'); }
 		if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
+		/* Checks if the profile is resting, on a cooldown or passed out. */
+		let restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
+		if (restEmbed === false) { return; }
+		restEmbed = restEmbed.length <= 0 && interaction.message.embeds.length > 1 ? [EmbedBuilder.from(interaction.message.embeds[0]!)] : [];
+
 		const rank = getArrayElement(interaction.customId.split('_'), 1);
 		if (rank !== RankType.Hunter && rank !== RankType.Healer) { throw new Error('rank is not of RankType Hunter or Healer'); }
 
@@ -161,7 +158,7 @@ export const command: SlashCommand = {
 
 		// This is always an update to the message with the button
 		await respond(interaction, {
-			embeds: [new EmbedBuilder()
+			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(quid.color)
 				.setAuthor({
 					name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),

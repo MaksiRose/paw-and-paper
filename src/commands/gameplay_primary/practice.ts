@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, AnySelectMenuInteraction, SlashCommandBuilder, Message, InteractionResponse } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, AnySelectMenuInteraction, SlashCommandBuilder, Message, InteractionResponse } from 'discord.js';
 import Quid from '../../models/quid';
 import QuidToServer from '../../models/quidToServer';
 import User from '../../models/user';
@@ -10,12 +10,11 @@ import { changeCondition } from '../../utils/changeCondition';
 import { updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
+import { disableAllComponents } from '../../utils/componentDisabling';
 import { createFightGame } from '../../utils/gameBuilder';
 import { getDisplayname, pronoun, pronounAndPlural, getDisplayspecies } from '../../utils/getQuidInfo';
 import { respond, setCooldown } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
-import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from './attack';
 
@@ -30,10 +29,6 @@ export const command: SlashCommand = {
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
-
-		if (await missingPermissions(interaction, [
-			'ViewChannel', // Needed because of createCommandComponentDisabler
-		]) === true) { return; }
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
@@ -79,7 +74,7 @@ export const command: SlashCommand = {
 		];
 
 		// This is always a reply
-		let botReply: Message | InteractionResponse = await respond(interaction, {
+		await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(quid.color)
@@ -90,27 +85,29 @@ export const command: SlashCommand = {
 				.setDescription(`*A very experienced Elderly approaches ${quid.name}.* "I've seen that you have not performed well in fights lately. Do you want to practice with me for a bit to strengthen your skills?"`)
 				.setFooter({ text: 'You will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response. The footer will provide hints as to which button you should click. This is a memory game, so try to remember which button to click in which situation.' })],
 			components: components,
-			fetchReply: true,
 		});
+	},
+	sendMessageComponentResponse: async (interaction, { user, quid, userToServer, quidToServer }) => {
 
-		saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, botReply.id);
+		/* This ensures that the user is in a guild and has a completed account. */
+		if (!interaction.isButton()) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
+		if (!user) { throw new TypeError('user is undefined'); }
+		if (!userToServer) { throw new TypeError('userToServer is undefined'); }
+		if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
-		const int = await botReply
-			.awaitMessageComponent({
-				componentType: ComponentType.Button,
-				filter: i => i.user.id === interaction.user.id,
-				time: 300_000,
-			})
-			.then(async i => {
+		/* Checks if the profile is resting, on a cooldown or passed out. */
+		let restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
+		if (restEmbed === false) { return; }
+		restEmbed = restEmbed.length <= 0 && interaction.message.embeds.length > 1 ? [EmbedBuilder.from(interaction.message.embeds[0]!)] : [];
 
-				return i;
-			})
-			.catch(() => { return undefined; });
+		const messageContent = remindOfAttack(interaction.guildId);
 
-		if (int === undefined || int.customId === 'practice-decline') {
+		if (interaction.customId === 'practice_decline') {
 
-			// This is an edit to the reply if there is no int, or an update
-			botReply = await respond(int ?? interaction, {
+			// This is always an update
+			await respond(interaction ?? interaction, {
+				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(quid.color)
 					.setAuthor({
@@ -118,13 +115,12 @@ export const command: SlashCommand = {
 						iconURL: quid.avatarURL,
 					})
 					.setDescription(`*After a bit of thinking, ${quid.name} decides that now is not a good time to practice ${pronoun(quid, 2)} fighting skills. Politely, ${pronounAndPlural(quid, 0, 'decline')} the Elderlies offer.*`)],
-				components: disableAllComponents(components),
-			}, int !== undefined ? 'update' : 'reply', int?.message.id);
+				components: disableAllComponents(interaction.message.components),
+			}, 'update', interaction?.message.id);
 			return;
 		}
 
 		await setCooldown(userToServer, true);
-		deleteCommandDisablingInfo(userToServer);
 
 		const experiencePoints = getRandomNumber(5, 1);
 		const changedCondition = await changeCondition(quidToServer, quid, experiencePoints);
@@ -139,15 +135,15 @@ export const command: SlashCommand = {
 		let totalCycles: 0 | 1 | 2 = 0;
 		let winLoseRatio = 0;
 
-		await interactionCollector(interaction, user, userToServer, quid, quidToServer, int, restEmbed);
+		await interactionCollector(interaction, user, userToServer, quid, quidToServer, messageContent, restEmbed);
 
 		async function interactionCollector(
-			interaction: ChatInputCommandInteraction<'cached'>,
+			interaction: ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 			user: User,
 			userToServer: UserToServer,
 			quid: Quid,
 			quidToServer: QuidToServer,
-			newInteraction: ButtonInteraction | AnySelectMenuInteraction,
+			messageContent: string,
 			restEmbed: EmbedBuilder[],
 			previousFightComponents?: ActionRowBuilder<ButtonBuilder>,
 			lastRoundCycleIndex?: number,
@@ -173,15 +169,16 @@ export const command: SlashCommand = {
 			else { throw new Error('cycleKind is not attack, dodge or defend'); }
 
 			// This is always an update to the interaction
-			botReply = await respond(newInteraction, {
+			const botReply = await respond(interaction, {
+				content: messageContent,
 				embeds: [...restEmbed, embed],
 				components: [...previousFightComponents ? [previousFightComponents] : [], fightGame.fightComponent],
-			}, 'update', newInteraction.message.id);
+			}, 'update', interaction.message.id);
 
 			/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 			fightGame.fightComponent = fightGame.correctButtonOverwrite();
 
-			newInteraction = await botReply
+			interaction = await (botReply as InteractionResponse<true> | Message<true>)
 				.awaitMessageComponent({
 					componentType: ComponentType.Button,
 					filter: i => i.user.id === interaction.user.id,
@@ -212,7 +209,7 @@ export const command: SlashCommand = {
 				.catch(() => {
 
 					winLoseRatio -= 1;
-					return newInteraction;
+					return interaction;
 				});
 
 			fightGame.fightComponent.setComponents(fightGame.fightComponent.components.map(c => c.setDisabled(true)));
@@ -221,7 +218,7 @@ export const command: SlashCommand = {
 
 			if (totalCycles < 3) {
 
-				await interactionCollector(interaction, user, userToServer, quid, quidToServer, newInteraction, restEmbed, fightGame.fightComponent, fightGame.thisRoundCycleIndex);
+				await interactionCollector(interaction, user, userToServer, quid, quidToServer, messageContent, restEmbed, fightGame.fightComponent, fightGame.thisRoundCycleIndex);
 				return;
 			}
 
@@ -245,7 +242,8 @@ export const command: SlashCommand = {
 			const levelUpEmbed = await checkLevelUp(interaction, quid, quidToServer, members);
 
 			// This is always an update
-			await respond(newInteraction, {
+			await respond(interaction, {
+				content: messageContent,
 				embeds: [
 					...restEmbed,
 					embed,
@@ -253,7 +251,7 @@ export const command: SlashCommand = {
 					...levelUpEmbed,
 				],
 				components: [fightGame.fightComponent],
-			}, 'update', newInteraction.message.id);
+			}, 'update', interaction.message.id);
 
 			await isPassedOut(interaction, user, userToServer, quid, quidToServer, true);
 

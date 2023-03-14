@@ -12,7 +12,6 @@ import { changeCondition } from '../../utils/changeCondition';
 import { updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { disableCommandComponent } from '../../utils/componentDisabling';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { createFightGame } from '../../utils/gameBuilder';
 import { getDisplayname, pronounAndPlural, pronoun, getDisplayspecies } from '../../utils/getQuidInfo';
@@ -71,9 +70,6 @@ async function executeAttacking(
 	if (!user) { throw new TypeError('user is undefined'); }
 	if (!userToServer) { throw new TypeError('userToServer is undefined'); }
 	if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
-
-	/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-	if (command.disablePreviousCommand) { await disableCommandComponent(userToServer); }
 
 	/* Checks if the profile is resting, on a cooldown or passed out. */
 	const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);

@@ -4,9 +4,7 @@ import Quid from '../../models/quid';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
-import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
 import { now, respond } from '../../utils/helperFunctions';
-import { missingPermissions } from '../../utils/permissionHandler';
 const { default_color } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -20,10 +18,6 @@ export const command: SlashCommand = {
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
-
-		if (await missingPermissions(interaction, [
-			'ViewChannel', // Needed because of createCommandComponentDisabler
-		]) === true) { return; }
 
 		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
 		if (!user) { throw new TypeError('user is undefined'); }
@@ -39,7 +33,7 @@ export const command: SlashCommand = {
 		}
 
 		// This is always a reply
-		const botReply = await respond(interaction, {
+		await respond(interaction, {
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(default_color)
 				.setDescription('Click a button to be sent to that websites bot page. After voting for this bot, select the website you voted on from the drop-down menu to get +30 energy.')],
@@ -71,18 +65,32 @@ export const command: SlashCommand = {
 						.setDisabled(!interaction.inGuild()),
 					),
 			],
-			fetchReply: interaction.inGuild() ? true : false,
 		});
-
-		if (interaction.inGuild()) { saveCommandDisablingInfo(userToServer!, interaction, interaction.channelId, botReply.id); }
 	},
-	async sendMessageComponentResponse(interaction, { user, quid, quidToServer }) {
+	async sendMessageComponentResponse(interaction, { user, quid, quidToServer, userToServer }) {
 
 		if (!interaction.isStringSelectMenu()) { return; }
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
 		if (!user) { throw new TypeError('user is undefined'); }
 		if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
+		if (!userToServer) { throw new TypeError('userToServer is undefined'); }
+
+		if (quidToServer.energy >= quidToServer.maxEnergy) {
+
+			// This is an update to the message with the component
+			await respond(interaction, {
+				embeds: [new EmbedBuilder()
+					.setColor(quid.color)
+					.setTitle('You are fully rested. You should claim your reward once you have used some energy.')],
+				components: [],
+			}, 'update', interaction.message.id);
+			return;
+		}
+
+		let restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
+		if (restEmbed === false) { return; }
+		restEmbed = restEmbed.length <= 0 && interaction.message.embeds.length > 1 ? [EmbedBuilder.from(interaction.message.embeds[0]!)] : [];
 
 		const twelveHoursInS = 43_200;
 
@@ -130,7 +138,7 @@ export const command: SlashCommand = {
 
 			// This is always a reply
 			await respond(interaction, {
-				embeds: [new EmbedBuilder()
+				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(default_color)
 					.setTitle('Thank you for voting ☺️')
 					.setFooter({ text: `+${energyPoints} energy (${quidToServer.energy}/${quidToServer.maxEnergy})` })],

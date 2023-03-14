@@ -6,10 +6,8 @@ import UserToServer from '../../models/userToServer';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
-import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
 import getInventoryElements from '../../utils/getInventoryElements';
 import { getArrayElement, respond } from '../../utils/helperFunctions';
-import { missingPermissions } from '../../utils/permissionHandler';
 import { remindOfAttack } from '../gameplay_primary/attack';
 import { sendEatMessage } from './eat';
 const { default_color } = require('../../../config.json');
@@ -91,10 +89,6 @@ export async function showInventoryMessage(
 	subPage?: number,
 ) {
 
-	if (await missingPermissions(interaction, [
-		'ViewChannel', // Needed because of createCommandComponentDisabler
-	]) === true) { return; }
-
 	const messageContent = remindOfAttack(interaction.guildId);
 
 	const inventorySelectMenu = new ActionRowBuilder<StringSelectMenuBuilder>()
@@ -121,7 +115,7 @@ export async function showInventoryMessage(
 	}
 
 	// This is an update to the message with the component (either being "View Inventory" from travel-regions command or selecting a different page), and a reply when doing the inventory command or the eat command without selecting food
-	const botReply = await respond(interaction, {
+	await respond(interaction, {
 		content: messageContent,
 		embeds: [new EmbedBuilder()
 			.setColor(default_color)
@@ -138,8 +132,5 @@ export async function showInventoryMessage(
 						.setOptions(foodSelectMenuOptions))]
 				: [],
 		],
-		fetchReply: true,
 	}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
-
-	saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, botReply.id);
 }

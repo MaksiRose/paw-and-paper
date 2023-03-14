@@ -19,7 +19,9 @@ interface UserToServerAttributes {
 	lastInteraction_channelId: string | null;
 	resting_messageId: string | null;
 	resting_channelId: string | null;
+	/** @deprecated */
 	componentDisabling_channelId: string | null;
+	/** @deprecated */
 	componentDisabling_messageId: string | null;
 	hasCooldown: boolean;
 }
@@ -81,9 +83,11 @@ export default class UserToServer extends Model<UserToServerAttributes, UserToSe
 	declare resting_channelId: string | null;
 
 	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
+	/** @deprecated */
 	declare componentDisabling_channelId: string | null;
 
 	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
+	/** @deprecated */
 	declare componentDisabling_messageId: string | null;
 
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })

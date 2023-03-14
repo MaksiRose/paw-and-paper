@@ -68,7 +68,7 @@ export async function isPassedOut(
  * Checks if the user is on a cooldown. If yes, then send a message and return true, as well as decrease their level if it's new. Else, return false.
  */
 export async function hasCooldown(
-	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'>,
+	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'> | AnySelectMenuInteraction<'cached' | 'raw'>,
 	user: User,
 	userToServer: UserToServer | undefined,
 	quid: Quid,
@@ -147,7 +147,7 @@ export async function checkResting(
  * Checks if the user is passed out, on a cooldown or resting, sends or attaches the appropriate message/embed, and returns a boolean of the result.
  */
 export async function isInvalid(
-	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	user: User,
 	userToServer: UserToServer,
 	quid: Quid,

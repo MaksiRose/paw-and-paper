@@ -19,11 +19,11 @@ import { changeCondition, infectWithChance } from '../../utils/changeCondition';
 import { updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo, componentDisablingInteractions } from '../../utils/componentDisabling';
+import { disableAllComponents } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import getInventoryElements from '../../utils/getInventoryElements';
 import { getDisplayname, getDisplayspecies, pronoun, pronounAndPlural } from '../../utils/getQuidInfo';
-import { capitalize, getArrayElement, keyInObject, respond } from '../../utils/helperFunctions';
+import { capitalize, getArrayElement, keyInObject, respond, sendErrorMessage } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -267,8 +267,7 @@ export async function getHealResponse(
 ): Promise<void> {
 
 	if (await missingPermissions(interaction, [
-		'ViewChannel', // Needed because of createCommandComponentDisabler
-		/* 'ViewChannel',*/ interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints
+		'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints
 	]) === true) { return; }
 
 	const quidsToHeal = await (async function(
@@ -304,7 +303,7 @@ export async function getHealResponse(
 	if (!hasNameAndSpecies(quid2) || !quidToServer2 || !user2 || !discordUser2) {
 
 		// If this is a ChatInputCommand, this is a reply, else this is an update to the message with the component
-		const botReply = await respond(interaction, {
+		await respond(interaction, {
 			content: messageContent,
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quid.color)
@@ -315,10 +314,7 @@ export async function getHealResponse(
 				.setDescription(`*${quid.name} sits in front of the medicine den, looking if anyone needs help with injuries or illnesses.*`)
 				.setFooter({ text: 'Tip: Healing yourself has a lower chance of being successful than healing others. Healers and Elderlies are more often successful than Apprentices and Hunters.' })],
 			components: quidsToHeal.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
-			fetchReply: true,
 		}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
-
-		saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, botReply.id);
 		return;
 	}
 
@@ -351,7 +347,7 @@ export async function getHealResponse(
 		if (healUserConditionText === '') {
 
 			// If this is a ChatInputCommand, this is a reply, else this is an update to the message with the component
-			const botReply = await respond(interaction, {
+			await respond(interaction, {
 				content: messageContent,
 				embeds: [...embedArray, new EmbedBuilder()
 					.setColor(quid.color)
@@ -361,10 +357,7 @@ export async function getHealResponse(
 					})
 					.setDescription(`*${quid.name} approaches ${quid2.name}, desperately searching for someone to help.*\n"Do you have any injuries or illnesses you know of?" *the ${getDisplayspecies(quid)} asks.\n${quid2.name} shakes ${pronoun(quid2, 2)} head.* "Not that I know of, no."\n*Disappointed, ${quid.name} goes back to the medicine den.*`)],
 				components: quidsToHeal.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
-				fetchReply: true,
 			}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
-
-			saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, botReply.id);
 			return;
 		}
 
@@ -399,14 +392,11 @@ export async function getHealResponse(
 				.setOptions(selectMenuOptions));
 
 		// If this is a ChatInputCommand, this is a reply, else this is an update to the message with the component
-		const botReply = await respond(interaction, {
+		await respond(interaction, {
 			content: messageContent,
 			embeds: [...embedArray, quidConditionEmbed, inventoryEmbed],
 			components: [quidsSelectMenu, pagesButtons, ...(selectMenuOptions.length > 0 ? [inventorySelectMenu] : [])],
-			fetchReply: true,
 		}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
-
-		saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, botReply.id);
 		return;
 	}
 
@@ -415,16 +405,13 @@ export async function getHealResponse(
 	if (!quidsToHeal.some(q => q.id === quid2.id)) {
 
 		// If this is a ChatInputCommand, this is a reply, else this is an update to the message with the component
-		const botReply = await respond(interaction, {
+		await respond(interaction, {
 			content: messageContent,
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quid.color)
 				.setTitle(`${quid2.name} doesn't need to be healed anymore. Please select another quid to heal if available.`)],
 			components: quidsToHeal.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
-			fetchReply: true,
 		}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
-
-		saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, botReply.id);
 		return;
 	}
 
@@ -518,15 +505,12 @@ export async function getHealResponse(
 	if (isSuccessful === false && userHasChangedCondition === true) {
 
 		// If this is a ChatInputCommand, this is a reply, else this is an update to the message with the component
-		const botReply = await respond(interaction, {
+		await respond(interaction, {
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quid.color)
 				.setTitle(`${quid2.name}'s condition changed before you healed them. Please try again.`)],
 			components: quidsToHeal.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
-			fetchReply: true,
 		}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
-
-		saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, botReply.id);
 		return;
 	}
 
@@ -604,7 +588,22 @@ export async function getHealResponse(
 
 	const content = (user.id !== user2.id && isSuccessful === true ? `<@${discordUser2}>\n` : '') + messageContent;
 
-	// This is always a reply
+	/* If the interaction is a message component, delete the message it comes from. Tries to delete it by getting the componentDisablingInteraction and calling the webhook.deleteMessage function, which saves an API call. As a backup, it will try to delete it by getting the message directly. */
+	if (interaction.isMessageComponent()) {
+
+		try {
+			await interaction.deferUpdate();
+			await interaction.deleteReply();
+		}
+		catch (error1) {
+			sendErrorMessage(interaction, error1, userToServer).catch(() => null);
+			await interaction.message.delete().catch((error2) => {
+				sendErrorMessage(interaction, error2, userToServer).catch(() => null);
+			});
+		}
+	}
+
+	// This is a reply if it's a ChatInputCommand, else it is a followUp
 	const botReply = await respond(interaction, {
 		content: content,
 		embeds: [
@@ -623,24 +622,6 @@ export async function getHealResponse(
 		],
 		components: interaction.isMessageComponent() ? disableAllComponents(interaction.message.components) : [],
 	});
-
-	/* If the interaction is a message component, delete the message it comes from. Tries to delete it by getting the componentDisablingInteraction and calling the webhook.deleteMessage function, which saves an API call. As a backup, it will try to delete it by getting the message directly. */
-	if (interaction.isMessageComponent()) {
-
-		const disablingInteraction = componentDisablingInteractions.get(user.id + interaction.guildId);
-		const fifteenMinutesInMs = 900_000;
-		if (disablingInteraction !== undefined && userToServer.componentDisabling_messageId != null && disablingInteraction.createdTimestamp > Date.now() - fifteenMinutesInMs) {
-
-			await disablingInteraction.webhook.deleteMessage(userToServer.componentDisabling_messageId)
-				.catch(async error => {
-					await interaction.message.delete();
-					console.error(error);
-				});
-		}
-		else { await interaction.message.delete(); }
-
-		deleteCommandDisablingInfo(userToServer);
-	}
 
 	await isPassedOut(interaction, user, userToServer, quid, quidToServer, true);
 

@@ -4,7 +4,7 @@ import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
+import { disableAllComponents } from '../../utils/componentDisabling';
 import { addFriendshipPoints, checkOldMentions, getFriendshipHearts, getFriendshipPoints } from '../../utils/friendshipHandling';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -44,8 +44,7 @@ export const command: SlashCommand = {
 	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
 
 		if (await missingPermissions(interaction, [
-			'ViewChannel', // Needed because of createCommandComponentDisabler
-			/* 'ViewChannel',*/ interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints
+			'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints
 		]) === true) { return; }
 
 		/* This ensures that the user is in a guild and has a completed account. */
@@ -121,7 +120,7 @@ export const command: SlashCommand = {
 		}
 
 		// This is always a reply
-		const botReply = await respond(interaction, {
+		await respond(interaction, {
 			content: `${mentionedUser.toString()}\n${messageContent}`,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(quid.color)
@@ -137,12 +136,7 @@ export const command: SlashCommand = {
 					.setLabel('Start adventure')
 					.setEmoji('🧭')
 					.setStyle(ButtonStyle.Success))],
-			fetchReply: true,
 		});
-
-		/* Register the command to be disabled when another command is executed, for both players */
-		saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, botReply.id);
-		saveCommandDisablingInfo(userToServer2, interaction, interaction.channelId, botReply.id);
 	},
 	async sendMessageComponentResponse(interaction, { server }) {
 
@@ -155,40 +149,6 @@ export const command: SlashCommand = {
 		if (server === undefined) { throw new Error('server is undefined'); }
 		if (!isInGuild(interaction)) { return; }
 		if (interaction.channel === null) { throw new Error('Interaction channel is null'); }
-
-		/* Define the empty field emoji and the emoji options for the cards */
-		const coveredField = '⬛';
-		const allMemoryCardOptions = ['🌱', '🌿', '☘️', '🍀', '🍃', '💐', '🌷', '🌹', '🥀', '🌺', '🌸', '🌼', '🌻', '🍇', '🍊', '🫒', '🌰', '🏕️', '🌲', '🌳', '🍂', '🍁', '🍄', '🐝', '🪱', '🐛', '🦋', '🐌', '🐞', '🐁', '🦔', '🌵', '🦂', '🏜️', '🎍', '🪴', '🎋', '🪨', '🌾', '🐍', '🦎', '🐫', '🐙', '🦑', '🦀', '🐡', '🐠', '🐟', '🌊', '🐚', '🪵', '🌴'];
-
-		/* Get an array of 10 emojis from the memory card options, each emoji added twice. */
-		const chosenMemoryCardOptions: string[] = [];
-		for (let i = 0; i < 10; i++) {
-
-			const randomMemoryCardOption = getArrayElement(allMemoryCardOptions.splice(getRandomNumber(allMemoryCardOptions.length), 1), 0);
-			chosenMemoryCardOptions.push(randomMemoryCardOption, randomMemoryCardOption);
-		}
-
-		/* Get an array of the clickable components, as well as an array of the emojis that would be in their places if they were revealed. */
-		const componentArray: ActionRowBuilder<ButtonBuilder>[] = [];
-		const emojisInComponentArray: string[][] = [];
-		for (let column = 0; column < 4; column++) {
-
-			componentArray.push(new ActionRowBuilder<ButtonBuilder>().addComponents([]));
-			emojisInComponentArray.push([]);
-			for (let row = 0; row < 5; row++) {
-
-				componentArray[column]?.addComponents(new ButtonBuilder()
-					.setCustomId(`board_${column}_${row}`)
-					.setEmoji(coveredField)
-					.setDisabled(false)
-					.setStyle(ButtonStyle.Secondary),
-				);
-
-				const randomMemoryCardOption = getArrayElement(chosenMemoryCardOptions.splice(getRandomNumber(chosenMemoryCardOptions.length), 1), 0);
-				emojisInComponentArray[column]?.push(randomMemoryCardOption);
-			}
-		}
-
 
 		/* Gets the current active quid and the server profile from the account */
 		const userId1 = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
@@ -224,13 +184,58 @@ export const command: SlashCommand = {
 			return;
 		}
 
+		/* Checks if the profile is resting, on a cooldown or passed out. */
+		const restEmbed1 = await isInvalid(interaction, user, userToServer, quid, quidToServer);
+		const restEmbed2 = await isInvalid(interaction, user2, userToServer2, quid2, quidToServer2);
+		if (restEmbed1 === false || restEmbed2 === false) { return; }
+
 		/* For both users, set cooldowns to true, but unregister the command from being disabled, and get the condition change */
 		await setCooldown(userToServer, true);
 		await setCooldown(userToServer2, true);
-		deleteCommandDisablingInfo(userToServer);
-		deleteCommandDisablingInfo(userToServer2);
 		const decreasedStatsData1 = await changeCondition(quidToServer, quid, quidToServer.rank === RankType.Youngling ? 0 : getRandomNumber(5, quidToServer.levels + 8), undefined, true);
 		const decreasedStatsData2 = await changeCondition(quidToServer2, quid2, quidToServer2.rank === RankType.Youngling ? 0 : getRandomNumber(5, quidToServer2.levels + 8), undefined, true);
+
+		let user1IsPlaying = getRandomNumber(2) === 0 ? true : false;
+		let currentData = user1IsPlaying
+			? { user, quid, userToServer, quidToServer, discordUsers }
+			: { user: user2, quid: quid2, userToServer: userToServer2, quidToServer: quidToServer2, discordUsers: discordUsers2 };
+
+		/* Define the empty field emoji and the emoji options for the cards */
+		const coveredField = '⬛';
+		const allMemoryCardOptions = ['🌱', '🌿', '☘️', '🍀', '🍃', '💐', '🌷', '🌹', '🥀', '🌺', '🌸', '🌼', '🌻', '🍇', '🍊', '🫒', '🌰', '🏕️', '🌲', '🌳', '🍂', '🍁', '🍄', '🐝', '🪱', '🐛', '🦋', '🐌', '🐞', '🐁', '🦔', '🌵', '🦂', '🏜️', '🎍', '🪴', '🎋', '🪨', '🌾', '🐍', '🦎', '🐫', '🐙', '🦑', '🦀', '🐡', '🐠', '🐟', '🌊', '🐚', '🪵', '🌴'];
+
+		/* Get an array of 10 emojis from the memory card options, each emoji added twice. */
+		const chosenMemoryCardOptions: string[] = [];
+		for (let i = 0; i < 10; i++) {
+
+			const randomMemoryCardOption = getArrayElement(allMemoryCardOptions.splice(getRandomNumber(allMemoryCardOptions.length), 1), 0);
+			chosenMemoryCardOptions.push(randomMemoryCardOption, randomMemoryCardOption);
+		}
+
+		/* Get an array of the clickable components, as well as an array of the emojis that would be in their places if they were revealed. */
+		const componentArray: ActionRowBuilder<ButtonBuilder>[] = [];
+		const emojisInComponentArray: string[][] = [];
+		for (let column = 0; column < 4; column++) {
+
+			componentArray.push(new ActionRowBuilder<ButtonBuilder>().addComponents([]));
+			emojisInComponentArray.push([]);
+			for (let row = 0; row < 5; row++) {
+
+				componentArray[column]?.addComponents(new ButtonBuilder()
+					.setCustomId(`board_${column}_${row}`)
+					.setEmoji(coveredField)
+					.setDisabled(false)
+					.setStyle(ButtonStyle.Secondary),
+				);
+
+				const randomMemoryCardOption = getArrayElement(chosenMemoryCardOptions.splice(getRandomNumber(chosenMemoryCardOptions.length), 1), 0);
+				emojisInComponentArray[column]?.push(randomMemoryCardOption);
+			}
+		}
+
+		// This is always a reply
+		let lastMessageId = await sendNextRoundMessage(interaction, user1IsPlaying ? userId1 : userId2, quid, quid2, { serverId: interaction.guildId, userToServer, quidToServer, user }, componentArray, interaction.replied);
+		let lastInteraction = interaction;
 
 		/* Define number of rounds, and the uncovered card amount for both users. */
 		let finishedRounds = 0;
@@ -238,15 +243,6 @@ export const command: SlashCommand = {
 		let chosenCardPositions: { first: CardPositions, second: CardPositions, current: 'first' | 'second'; } = { first: { column: null, row: null }, second: { column: null, row: null }, current: 'first' };
 		let uncoveredCardsUser1 = 0;
 		let uncoveredCardsUser2 = 0;
-
-		let user1IsPlaying = getRandomNumber(2) === 0 ? true : false;
-		let currentData = user1IsPlaying
-			? { user, quid, userToServer, quidToServer, discordUsers }
-			: { user: user2, quid: quid2, userToServer: userToServer2, quidToServer: quidToServer2, discordUsers: discordUsers2 };
-
-		// This is always a reply
-		let lastMessageId = await sendNextRoundMessage(interaction, user1IsPlaying ? userId1 : userId2, quid, quid2, { serverId: interaction.guildId, userToServer, quidToServer, user }, componentArray, interaction.replied);
-		let lastInteraction = interaction;
 
 		const collector = interaction.channel.createMessageComponentCollector({
 			componentType: ComponentType.Button,

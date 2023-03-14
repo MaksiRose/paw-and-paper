@@ -8,10 +8,9 @@ import { CommonPlantNames, MaterialNames, RarePlantNames, SpecialPlantNames, Spe
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
-import { saveCommandDisablingInfo, disableAllComponents } from '../../utils/componentDisabling';
+import { disableAllComponents } from '../../utils/componentDisabling';
 import { getDisplayname, pronoun, pronounAndPlural } from '../../utils/getQuidInfo';
 import { getArrayElement, capitalize, respond, deepCopy } from '../../utils/helperFunctions';
-import { missingPermissions } from '../../utils/permissionHandler';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
 export const command: SlashCommand = {
@@ -61,6 +60,18 @@ export const command: SlashCommand = {
 				const chosenFood = getArrayElement(interaction.values, 0) as CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | SpeciesNames | MaterialNames;
 				const maximumAmount = quidToServer.inventory.filter(i => i === chosenFood).length;
 
+				if (maximumAmount <= 0) {
+
+					// This is an update to the message with the component
+					await respond(interaction, {
+						embeds: [new EmbedBuilder()
+							.setColor(quid.color)
+							.setTitle(`There is none of ${chosenFood} in your inventory anymore. Please select another item to store away if available.`)],
+						components: [],
+					}, 'update', interaction.message.id);
+					return;
+				}
+
 				const amountSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [];
 
 				for (let i = 1; i <= maximumAmount; i++) {
@@ -88,6 +99,18 @@ export const command: SlashCommand = {
 				const chosenFood = getArrayElement(getArrayElement(interaction.values, 0).split('_'), 0) as CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | SpeciesNames | MaterialNames;
 				const chosenAmount = Number(getArrayElement(getArrayElement(interaction.values, 0).split('_'), 1));
 				if (isNaN(chosenAmount)) { throw new TypeError('chosenAmount is NaN'); }
+
+				if (chosenAmount > quidToServer.inventory.filter(i => i === chosenFood).length) {
+
+					// This is an update to the message with the component
+					await respond(interaction, {
+						embeds: [new EmbedBuilder()
+							.setColor(quid.color)
+							.setTitle(`There is no ${chosenAmount} of ${chosenFood} in your inventory anymore. Please select less of this or another item to store away if available.`)],
+						components: [],
+					}, 'update', interaction.message.id);
+					return;
+				}
 
 				let foundCount = 0;
 				const serverInv = deepCopy(server.inventory);
@@ -137,10 +160,6 @@ export async function sendStoreMessage(
 	restEmbed: EmbedBuilder[],
 ): Promise<void> {
 
-	if (await missingPermissions(interaction, [
-		'ViewChannel', // Needed because of createCommandComponentDisabler
-	]) === true) { return; }
-
 	const messageContent = remindOfAttack(interaction.guildId);
 
 	if (quidToServer.inventory.length === 0) {
@@ -170,14 +189,11 @@ export async function sendStoreMessage(
 	const { itemSelectMenu, storeAllButton } = getOriginalComponents(user, quidToServer);
 
 	// This is a reply if the interaction is a ChatInputCommand, and an update to the message with the button if the interaction is a button
-	const botReply = await respond(interaction, {
+	await respond(interaction, {
 		content: messageContent,
 		embeds: [...restEmbed, await getOriginalEmbed(quid, { serverId: interaction.guildId, userToServer, quidToServer, user })],
 		components: [itemSelectMenu, storeAllButton],
-		fetchReply: true,
 	}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
-
-	saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, botReply.id);
 }
 
 async function getOriginalEmbed(

@@ -1,7 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
 import { respond } from '../../utils/helperFunctions';
-import { saveCommandDisablingInfo, disableAllComponents } from '../../utils/componentDisabling';
-import { missingPermissions } from '../../utils/permissionHandler';
+import { disableAllComponents } from '../../utils/componentDisabling';
 import { SlashCommand } from '../../typings/handle';
 import { constructCustomId, constructSelectOptions, deconstructCustomId, deconstructSelectOptions } from '../../utils/customId';
 import DiscordUserToServer from '../../models/discordUserToServer';
@@ -18,6 +17,7 @@ import Friendship from '../../models/friendship';
 import GroupToQuid from '../../models/groupToQuid';
 import QuidToServerToShopRole from '../../models/quidToServerToShopRole';
 import TemporaryStatIncrease from '../../models/temporaryStatIncrease';
+import { hasCooldown } from '../../utils/checkValidity';
 const { error_color } = require('../../../config.json');
 
 type CustomIdArgs = ['individual' | 'server' | 'all' | 'cancel'] | ['individual' | 'server', 'options'] | ['confirm', 'individual' | 'server', string] | ['confirm', 'all'];
@@ -32,11 +32,7 @@ export const command: SlashCommand = {
 	position: 11,
 	disablePreviousCommand: true,
 	modifiesServerProfile: false,
-	sendCommand: async (interaction, { user, userToServer }) => {
-
-		if (await missingPermissions(interaction, [
-			'ViewChannel', // Needed because of createCommandComponentDisabler
-		]) === true) { return; }
+	sendCommand: async (interaction, { user }) => {
 
 		/* Checking if the user has an account. If they do not, it will send a message saying they haave no account. */
 		if (!user) {
@@ -72,18 +68,18 @@ export const command: SlashCommand = {
 		const hasQuids = quids.length > 0;
 		const hasServerInfo = quidsToServers.length > 0 || (!!usersToServers && usersToServers.length > 0) || (!!discordUsersToServers && discordUsersToServers.length > 0) || (!!groupsToServers && groupsToServers.length > 0);
 
-
 		// This is always a reply
-		const { id: messageId } = await respond(interaction, { ...sendOriginalMessage(user, hasQuids, hasServerInfo), fetchReply: true });
-
-		if (userToServer) { saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, messageId); }
+		await respond(interaction, { ...sendOriginalMessage(user, hasQuids, hasServerInfo) });
 		return;
 	},
-	async sendMessageComponentResponse(interaction, { user }) {
+	async sendMessageComponentResponse(interaction, { user, userToServer, quid, quidToServer }) {
 
 		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
 		if (!customId) { throw new Error('customId is undefined'); }
 		if (user === undefined) { throw new Error('userData is undefined'); }
+
+		/* Checks if the profile is resting, on a cooldown or passed out. */
+		if (quid && interaction.inGuild() && await hasCooldown(interaction, user, userToServer, quid, quidToServer)) { return; }
 
 
 		/* Creating a new message asking the user if they are sure that they want to delete all their data. */

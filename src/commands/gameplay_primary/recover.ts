@@ -11,11 +11,10 @@ import { changeCondition, DecreasedStatsData } from '../../utils/changeCondition
 import { updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
+import { disableAllComponents } from '../../utils/componentDisabling';
 import { getDisplayname, getDisplayspecies, pronoun, pronounAndPlural } from '../../utils/getQuidInfo';
 import { getArrayElement, getMessageId, keyInObject, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
-import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from './attack';
 
@@ -33,10 +32,6 @@ export const command: SlashCommand = {
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
-
-		if (await missingPermissions(interaction, [
-			'ViewChannel', // Needed because of createCommandComponentDisabler
-		]) === true) { return; }
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (server === undefined) { throw new Error('serverData is null'); }
@@ -70,7 +65,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		let components = [new ActionRowBuilder<ButtonBuilder>()
+		const components = [new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
 				.setCustomId('recover_wounds')
 				.setLabel('Wound')
@@ -100,7 +95,7 @@ export const command: SlashCommand = {
 		];
 
 		// This is always a reply
-		let botReply: Message | InteractionResponse = await respond(interaction, {
+		await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(quid.color)
@@ -111,40 +106,54 @@ export const command: SlashCommand = {
 				.setDescription(`*${quid.name} walks towards the entrance of the grotto, where an elderly is already waiting for ${pronoun(quid, 1)}.*\n"Do you already know about this place? It has everything needed to heal any injury or illness. This makes it very precious, and so it should only be used in emergencies. So only go here if you can't find anything in the medicine den that can cure you!"\n*The ${getDisplayspecies(quid)} must decide which of their injuries ${pronounAndPlural(quid, 0, 'want')} to heal here.*`)
 				.setFooter({ text: 'You can only select an injury when the pack has no herbs that can heal that injury.' })],
 			components: components,
-			fetchReply: true,
 		});
+	},
+	sendMessageComponentResponse: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
 
-		saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, botReply.id);
+		/* This ensures that the user is in a guild and has a completed account. */
+		if (!interaction.isButton()) { return; }
+		if (server === undefined) { throw new Error('serverData is null'); }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
+		if (!user) { throw new TypeError('user is undefined'); }
+		if (!userToServer) { throw new TypeError('userToServer is undefined'); }
+		if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
-		const buttonInteraction = await (botReply as Message<true> | InteractionResponse<true>)
-			.awaitMessageComponent({
-				componentType: ComponentType.Button,
-				filter: i => i.user.id === interaction.user.id,
-				time: 120_000,
-			})
-			.catch(() => { return undefined; });
+		/* Checks if the profile is resting, on a cooldown or passed out. */
+		let restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
+		if (restEmbed === false) { return; }
+		restEmbed = restEmbed.length <= 0 && interaction.message.embeds.length > 1 ? [EmbedBuilder.from(interaction.message.embeds[0]!)] : [];
 
-		if (buttonInteraction === undefined) {
+		const messageContent = remindOfAttack(interaction.guildId);
 
-			// This is always an editReply
-			botReply = await respond(interaction, {
+		const healKind = interaction.customId.replace('recover_', '');
+
+		if ((healKind === 'wounds' && (
+			quidToServer.injuries_wounds <= 0 || inventoryHasHealingItem(server.inventory, 'healsWounds')
+		))
+			|| (healKind === 'infections' && (
+				quidToServer.injuries_infections <= 0 || inventoryHasHealingItem(server.inventory, 'healsInfections')
+			))
+			|| (healKind === 'cold' && (
+				quidToServer.injuries_cold === false || inventoryHasHealingItem(server.inventory, 'healsColds')
+			))
+			|| (healKind === 'sprains' && (
+				quidToServer.injuries_sprains <= 0 || inventoryHasHealingItem(server.inventory, 'healsSprains')
+			))
+			|| (healKind === 'poison' && (
+				quidToServer.injuries_poison === false || inventoryHasHealingItem(server.inventory, 'healsPoison')
+			))) {
+
+			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(quid.color)
-					.setAuthor({
-						name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
-						iconURL: quid.avatarURL,
-					})
-					.setDescription(`*After careful consideration, ${quid.name} decides that none of ${pronoun(quid, 2)} injuries are urgent enough to use the grotto to regenerate. The ${getDisplayspecies(quid)} might inspect the medicine den for useful plants instead.*`)],
-				components: disableAllComponents(components),
-			}, 'reply', getMessageId(botReply));
+					.setTitle(`${quid.name}'s condition or the server's inventory changed. Please try again.`)],
+			}, 'update', interaction.message.id);
 			return;
 		}
 
 		await setCooldown(userToServer, true);
-		deleteCommandDisablingInfo(userToServer);
 
-		const healKind = buttonInteraction.customId.replace('recover_', '');
 		const recoverFieldOptions = ['🌱', '🌿', '☘️', '🍀', '🍃', '💐', '🌷', '🌹', '🥀', '🌺', '🌸', '🌼', '🌻', '🍇', '🍊', '🫒', '🌰', '🏕️', '🌲', '🌳', '🍂', '🍁', '🍄', '🐝', '🪱', '🐛', '🦋', '🐌', '🐞', '🐁', '🦔', '🌵', '🦂', '🏜️', '🎍', '🪴', '🎋', '🪨', '🌾', '🐍', '🦎', '🐫', '🐙', '🦑', '🦀', '🐡', '🐠', '🐟', '🌊', '🐚', '🪵', '🌴'];
 
 		const componentArray: ActionRowBuilder<ButtonBuilder>[] = [];
@@ -167,13 +176,13 @@ export const command: SlashCommand = {
 		}
 
 		// This is always an update to the message with the button
-		components = disableAllComponents(componentArray);
-		botReply = await respond(buttonInteraction, {
+		const components = disableAllComponents(componentArray);
+		let botReply = await respond(interaction, {
 			content: messageContent,
 			components: components,
-		}, 'update', buttonInteraction.message.id);
+		}, 'update', interaction.message.id);
 
-		startNewRound(buttonInteraction, user, userToServer, quid, quidToServer, []);
+		startNewRound(interaction, user, userToServer, quid, quidToServer, []);
 
 
 		/**

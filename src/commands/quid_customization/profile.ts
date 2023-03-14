@@ -2,8 +2,6 @@ import { ActionRowBuilder, EmbedBuilder, InteractionReplyOptions, RestOrArray, S
 import { capitalize, deepCopy, respond } from '../../utils/helperFunctions';
 import { hasName, hasNameAndSpecies } from '../../utils/checkUserState';
 import { hasCooldown, checkResting } from '../../utils/checkValidity';
-import { disableCommandComponent } from '../../utils/componentDisabling';
-import { missingPermissions } from '../../utils/permissionHandler';
 import { client } from '../..';
 import { SlashCommand } from '../../typings/handle';
 import { constructCustomId, constructSelectOptions, deconstructCustomId, deconstructSelectOptions } from '../../utils/customId';
@@ -92,10 +90,6 @@ export const command: SlashCommand = {
 	},
 	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer, discordUser, server }) {
 
-		if (await missingPermissions(interaction, [
-			'ViewChannel', // Needed because of disableCommandComponent
-		]) === true) { return; }
-
 		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
 		if (!customId) { return; }
 
@@ -179,9 +173,6 @@ export const command: SlashCommand = {
 				}, 'update', interaction.message.id);
 				return;
 			}
-
-			/* It's disabling all components of the previous message. */
-			if (userToServer) { await disableCommandComponent(userToServer); }
 
 			/* Checking if the user is resting, and if they are, it will stop the resting. */
 			if (interaction.inCachedGuild() && hasNameAndSpecies(quid) && userToServer && quidToServer) {

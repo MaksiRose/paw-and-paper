@@ -12,7 +12,7 @@ import { changeCondition } from '../../utils/changeCondition';
 import { updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
+import { disableAllComponents } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { getDisplayname, getDisplayspecies, pronoun, pronounAndPlural } from '../../utils/getQuidInfo';
 import { capitalize, getArrayElement, getMessageId, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
@@ -46,8 +46,7 @@ export const command: SlashCommand = {
 	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
 
 		if (await missingPermissions(interaction, [
-			'ViewChannel', // Needed because of createCommandComponentDisabler
-			/* 'ViewChannel',*/ interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints
+			'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints
 		]) === true) { return; }
 
 		/* This ensures that the user is in a guild and has a completed account. */
@@ -100,7 +99,7 @@ export const command: SlashCommand = {
 
 		/* Sending a message asking the other player if they want to play, with a button to start the adventure. */
 		// This is always a reply
-		const botReply = await respond(interaction, {
+		await respond(interaction, {
 			content: `${mentionedUser.toString()}\n${messageContent}`,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(quid.color)
@@ -116,12 +115,7 @@ export const command: SlashCommand = {
 					.setLabel('Accept challenge')
 					.setEmoji('🎭')
 					.setStyle(ButtonStyle.Success))],
-			fetchReply: true,
 		});
-
-		/* Register the command to be disabled when another command is executed, for both players */
-		saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, botReply.id);
-		saveCommandDisablingInfo(userToServer2, interaction, interaction.channelId, botReply.id);
 	},
 	async sendMessageComponentResponse(interaction, { server }) {
 
@@ -166,11 +160,14 @@ export const command: SlashCommand = {
 			return;
 		}
 
+		/* Checks if the profile is resting, on a cooldown or passed out. */
+		const restEmbed1 = await isInvalid(interaction, user, userToServer, quid, quidToServer);
+		const restEmbed2 = await isInvalid(interaction, user2, userToServer2, quid2, quidToServer2);
+		if (restEmbed1 === false || restEmbed2 === false) { return; }
+
 		/* For both users, set cooldowns to true, but unregister the command from being disabled, and get the condition change */
 		await setCooldown(userToServer, true);
 		await setCooldown(userToServer2, true);
-		deleteCommandDisablingInfo(userToServer);
-		deleteCommandDisablingInfo(userToServer2);
 		const decreasedStatsData1 = await changeCondition(quidToServer, quid, 0, CurrentRegionType.Prairie, true);
 		const decreasedStatsData2 = await changeCondition(quidToServer2, quid2, 0, CurrentRegionType.Prairie, true);
 

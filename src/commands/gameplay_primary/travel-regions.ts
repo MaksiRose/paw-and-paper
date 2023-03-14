@@ -1,5 +1,5 @@
 import { generateId } from 'crystalid';
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, StringSelectMenuBuilder, SlashCommandBuilder, Snowflake, StringSelectMenuInteraction, Collection } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, StringSelectMenuBuilder, SlashCommandBuilder, StringSelectMenuInteraction, Collection } from 'discord.js';
 import { Op } from 'sequelize';
 import DiscordUser from '../../models/discordUser';
 import DiscordUserToServer from '../../models/discordUserToServer';
@@ -10,11 +10,9 @@ import UserToServer from '../../models/userToServer';
 import { CurrentRegionType, RankType } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
-import { isInvalid } from '../../utils/checkValidity';
-import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
+import { hasCooldown, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { getDisplayname, getDisplayspecies, pronoun, pronounAndPlural } from '../../utils/getQuidInfo';
 import { now, respond, valueInObject } from '../../utils/helperFunctions';
-import { missingPermissions } from '../../utils/permissionHandler';
 import { sendDrinkMessage } from '../gameplay_maintenance/drink';
 import { getHealResponse } from '../gameplay_maintenance/heal';
 import { showInventoryMessage } from '../gameplay_maintenance/inventory';
@@ -51,10 +49,6 @@ export const command: SlashCommand = {
 	modifiesServerProfile: false, // This is technically true, but it's set to false because it does not necessarily reflect your actual activity
 	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
 
-		if (await missingPermissions(interaction, [
-			'ViewChannel', // Needed because of createCommandComponentDisabler in sendQuestMessage
-		]) === true) { return; }
-
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (server === undefined) { throw new Error('server is null'); }
 		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
@@ -69,8 +63,7 @@ export const command: SlashCommand = {
 		const messageContent = remindOfAttack(interaction.guildId);
 		const chosenRegion = interaction.options.getString('region');
 
-		const id = await sendTravelMessage(interaction, user, quid, userToServer, quidToServer, messageContent, restEmbed, chosenRegion);
-		saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, id);
+		await sendTravelMessage(interaction, user, quid, userToServer, quidToServer, messageContent, restEmbed, chosenRegion);
 	},
 	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer, server, discordUser }) {
 
@@ -82,7 +75,13 @@ export const command: SlashCommand = {
 		if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
 
 		const messageContent = interaction.message.content;
-		const restEmbed = interaction.message.embeds.slice(0, -1).map(c => new EmbedBuilder(c.toJSON()));
+		let restEmbed = interaction.isButton() && interaction.customId.includes('rest')
+			? (
+				(await isPassedOut(interaction, user, userToServer, quid, quidToServer, false) && await hasCooldown(interaction, user, userToServer, quid, quidToServer)) === true ? [] : false
+			)
+			: await isInvalid(interaction, user, userToServer, quid, quidToServer);
+		if (restEmbed === false) { return; }
+		restEmbed = restEmbed.length <= 0 && interaction.message.embeds.length > 1 ? [EmbedBuilder.from(interaction.message.embeds[0]!)] : [];
 
 		if (interaction.isButton()) {
 
@@ -130,7 +129,7 @@ async function sendTravelMessage(
 	messageContent: string,
 	restEmbed: EmbedBuilder[],
 	chosenRegion: string | null,
-): Promise<Snowflake> {
+): Promise<void> {
 
 	const embed = new EmbedBuilder()
 		.setColor(quid.color)
@@ -161,7 +160,7 @@ async function sendTravelMessage(
 
 		embed.setDescription(`*${quid.name} slowly trots to the sleeping dens, tired from all the hard work ${pronoun(quid, 0)} did. For a moment, the ${getDisplayspecies(quid)} thinks about if ${pronounAndPlural(quid, 0, 'want')} to rest or just a break.*`);
 
-		return (await respond(interaction, {
+		await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
@@ -169,7 +168,8 @@ async function sendTravelMessage(
 					.setCustomId(`travel-regions_rest_@${user.id}`)
 					.setLabel('Rest')
 					.setStyle(ButtonStyle.Primary))],
-		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original')).id;
+		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original');
+		return;
 	}
 	else if (chosenRegion === CurrentRegionType.FoodDen) {
 
@@ -226,7 +226,7 @@ async function sendTravelMessage(
 
 		if (foodDenDiscordUsersList.length > 0) { embed.addFields({ name: 'Packmates at the food den:', value: foodDenDiscordUsersList }); }
 
-		return (await respond(interaction, {
+		await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
@@ -240,7 +240,8 @@ async function sendTravelMessage(
 						.setLabel('Store items away')
 						.setStyle(ButtonStyle.Primary),
 				])],
-		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original')).id;
+		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original');
+		return;
 	}
 	else if (chosenRegion === CurrentRegionType.MedicineDen) {
 
@@ -348,7 +349,7 @@ async function sendTravelMessage(
 
 		if (healerDiscordUsersList.length > 0) { embed.addFields({ name: 'Packmates that can heal:', value: healerDiscordUsersList }); }
 
-		return (await respond(interaction, {
+		await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [
@@ -359,7 +360,8 @@ async function sendTravelMessage(
 						.setLabel('Heal')
 						.setStyle(ButtonStyle.Primary))]),
 			],
-		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original')).id;
+		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original');
+		return;
 	}
 	else if (chosenRegion === CurrentRegionType.Ruins) {
 
@@ -416,17 +418,18 @@ async function sendTravelMessage(
 
 		if (ruinsDiscordUsersList.length > 0) { embed.addFields({ name: 'Packmates at the ruins:', value: ruinsDiscordUsersList }); }
 
-		return (await respond(interaction, {
+		await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [travelComponent],
-		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original')).id;
+		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original');
+		return;
 	}
 	else if (chosenRegion === CurrentRegionType.Lake) {
 
 		embed.setDescription(`*${quid.name} looks at ${pronoun(quid, 2)} reflection as ${pronounAndPlural(quid, 0, 'passes', 'pass')} the lake. Suddenly the ${getDisplayspecies(quid)} remembers how long ${pronounAndPlural(quid, 0, 'has', 'have')}n't drunk anything.*`);
 
-		return (await respond(interaction, {
+		await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
@@ -434,7 +437,8 @@ async function sendTravelMessage(
 					.setCustomId(`travel-regions_drink_@${user.id}`)
 					.setLabel('Drink')
 					.setStyle(ButtonStyle.Primary))],
-		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original')).id;
+		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original');
+		return;
 	}
 	else if (chosenRegion === CurrentRegionType.Prairie) {
 
@@ -491,7 +495,7 @@ async function sendTravelMessage(
 
 		if (prairieDiscordUsersList.length > 0) { embed.addFields({ name: 'Packmates at the prairie:', value: prairieDiscordUsersList }); }
 
-		return (await respond(interaction, {
+		await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
@@ -499,7 +503,8 @@ async function sendTravelMessage(
 					.setCustomId(`travel-regions_play_@${user.id}`)
 					.setLabel('Play')
 					.setStyle(ButtonStyle.Primary))],
-		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original')).id;
+		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original');
+		return;
 	}
 	else {
 
@@ -513,10 +518,11 @@ async function sendTravelMessage(
 			{ name: '🌼 prairie', value: 'This is where the Younglings go to play! Everyone else can also come here and play with them.' },
 		]);
 
-		return (await respond(interaction, {
+		await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [travelComponent],
-		}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined)).id;
+		}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
+		return;
 	}
 }
