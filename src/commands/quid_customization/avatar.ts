@@ -29,7 +29,8 @@ export const command: SlashCommand = {
 		const botReply = await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
-				.setDescription('Please upload an image to this channel within the next 60 seconds to set as your quids avatar!')],
+				.setDescription('Please **upload an image** to this channel within the next **60 seconds** to set as your quids avatar!')
+				.setFooter({ text: '⚠️ If your upload-message gets deleted, the image will disappear! It\'s safest to use this command in DM\'s.' })],
 		});
 
 		const discordUserIds = (await DiscordUser.findAll({ where: { userId: user.id } })).map(du => du.id);

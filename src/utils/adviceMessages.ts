@@ -75,7 +75,7 @@ export async function eatAdvice(
 }
 
 export async function coloredButtonsAdvice(
-	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	user: User,
 ): Promise<void> {
 

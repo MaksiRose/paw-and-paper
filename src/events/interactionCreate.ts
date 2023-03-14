@@ -1,11 +1,10 @@
 import { EmbedBuilder, Interaction, RepliableInteraction } from 'discord.js';
 import { createNewTicket } from '../commands/miscellaneous/ticket';
 import { DiscordEvent } from '../typings/main';
-import { disableCommandComponent, disableAllComponents } from '../utils/componentDisabling';
+import { disableAllComponents } from '../utils/componentDisabling';
 import { addCommasAndAnd, getFirstLine, keyInObject, now, respond } from '../utils/helperFunctions';
 import { createGuild } from '../utils/updateGuild';
 import { sendErrorMessage } from '../utils/helperFunctions';
-import { missingPermissions } from '../utils/permissionHandler';
 import { client, handle } from '../index';
 import { deconstructCustomId } from '../utils/customId';
 import DiscordUser from '../models/discordUser';
@@ -117,16 +116,6 @@ export const event: DiscordEvent = {
 				/* Getting the command from the client and checking if the command is undefined. If it is, it will error. */
 				const command = handle.slashCommands.get(interaction.commandName);
 				if (command === undefined || !keyInObject(command, 'sendCommand')) { return await sendErrorMessage(interaction, new Error('Unknown command')); }
-
-				/* It's disabling all components if userToServer exists and the command is set to disable a previous command. */
-				if (userToServer && command.disablePreviousCommand) {
-
-					if (await missingPermissions(interaction, [
-						'ViewChannel',
-					]) === true) { return; }
-
-					await disableCommandComponent(userToServer);
-				}
 
 				/* This sends the command and error message if an error occurs. */
 				{ console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully executed \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`); }

@@ -12,7 +12,6 @@ import { changeCondition } from '../../utils/changeCondition';
 import { updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { disableCommandComponent } from '../../utils/componentDisabling';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { createFightGame } from '../../utils/gameBuilder';
 import { getDisplayname, pronounAndPlural, pronoun, getDisplayspecies } from '../../utils/getQuidInfo';
@@ -71,9 +70,6 @@ async function executeAttacking(
 	if (!user) { throw new TypeError('user is undefined'); }
 	if (!userToServer) { throw new TypeError('userToServer is undefined'); }
 	if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
-
-	/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-	if (command.disablePreviousCommand) { await disableCommandComponent(userToServer); }
 
 	/* Checks if the profile is resting, on a cooldown or passed out. */
 	const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
@@ -238,8 +234,9 @@ async function executeAttacking(
 
 			if (winLoseRatio < 1) {
 
-				minusItemText += removeByHighestItem(server, interaction.guild.name);
-				await server.update({ inventory: [...server.inventory] });
+				const newServer = { inventory: [...server.inventory] };
+				minusItemText += removeByHighestItem(newServer, interaction.guild.name);
+				await server.update({ inventory: newServer.inventory });
 			}
 
 			embed.setDescription(`*The battle between the human and ${quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${getDisplayspecies(quid)} tries to jump at them, but the human manages to dodge. ${winLoseRatio < 1 ? `Quickly they run in the direction of the food den. They escaped from ${pronoun(quid, 1)}!*` : 'Quickly they back off from the tricky situation.*'}`);
@@ -380,12 +377,13 @@ export async function startAttack(
 					const server = await Server.findByPk(interaction.guildId, { rejectOnEmpty: true });
 
 					let footerText = '';
+					const newServer = { inventory: [...server.inventory] };
 					for (let i = 0; i < serverAttackInfo.idleHumans; i++) {
 
-						footerText += removeByHighestItem(server, interaction.guild.name);
+						footerText += removeByHighestItem(newServer, interaction.guild.name);
 					}
 					if (footerText.length > 0) { embed.setFooter({ text: footerText }); }
-					await server.update({ inventory: [...server.inventory] });
+					await server.update({ inventory: newServer.inventory });
 
 					try {
 
@@ -472,14 +470,15 @@ async function remainingHumans(
 	const server = await Server.findByPk(interaction.guildId, { rejectOnEmpty: true });
 
 	let footerText = '';
+	const newServer = { inventory: [...server.inventory] };
 	while (serverAttackInfo.idleHumans > 0) {
 
-		footerText += removeByHighestItem(server, interaction.guild.name);
+		footerText += removeByHighestItem(newServer, interaction.guild.name);
 		serverAttackInfo.idleHumans -= 1;
 	}
 	if (footerText.length > 0) { embed.setFooter({ text: footerText }); }
 
-	await server.update({ inventory: [...server.inventory], nextPossibleAttackTimestamp: now() + 86_400 /* 24 hours */ });
+	await server.update({ inventory: newServer.inventory, nextPossibleAttackTimestamp: now() + 86_400 /* 24 hours */ });
 
 	serverMap.delete(interaction.guild.id);
 
@@ -502,7 +501,7 @@ async function remainingHumans(
  * Finds whichever item there is most of, and returns its type and name.
  */
 function removeByHighestItem(
-	server: {inventory: string[]},
+	server: { inventory: string[]; },
 	name: string,
 ): string {
 
@@ -526,7 +525,7 @@ function removeByHighestItem(
 	const minusAmount = Math.ceil(maxVal / 10);
 	let foundCount = 0;
 	server.inventory = server.inventory.filter((item) => {
-		if (item === maxStr && foundCount < maxVal) {
+		if (item === maxStr && foundCount < minusAmount) {
 			foundCount++;
 			return false;
 		}

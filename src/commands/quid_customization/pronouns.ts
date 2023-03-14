@@ -1,8 +1,6 @@
 import { ActionRowBuilder, EmbedBuilder, ModalBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { addCommasAndAnd, deepCopy, respond } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
-import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
-import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
 import { constructCustomId, constructSelectOptions, deconstructCustomId, deconstructSelectOptions } from '../../utils/customId';
 import { getDisplayname } from '../../utils/getQuidInfo';
@@ -26,15 +24,11 @@ export const command: SlashCommand = {
 	modifiesServerProfile: false,
 	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
 
-		if (await missingPermissions(interaction, [
-			'ViewChannel', // Needed because of createCommandComponentDisabler
-		]) === true) { return; }
-
 		if (!hasName(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
 		if (!user) { throw new TypeError('user is undefined'); }
 
 		// This should always be a reply
-		const { id: messageId } = await respond(interaction, {
+		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
 				.setAuthor({
@@ -44,10 +38,7 @@ export const command: SlashCommand = {
 				.setTitle(`What pronouns does ${quid.name} have?`)
 				.setDescription('To change your quids pronouns, select an existing one from the drop-down menu below to edit it, or select "Add another pronoun" to add another one. A pop-up with a text box will open.\n\nTo set the pronouns to they/them for example, type `they/them/their/theirs/themselves/plural`.\nThe 6th spot should be either `singular` ("he/she __is__") or `plural` ("they __are__").\nTo set the pronouns to your own name, you can type `none`.\nTo delete the pronouns, leave the text box empty.\n\nThis is how it would look during roleplay:\n> **They** and the friend that came with **them** laid in **their** den. It was **theirs** because they built it **themselves**. \nYou can use this as reference when thinking about how to add your own (neo-)pronouns.')],
 			components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([getPronounsMenu(quid)])],
-			fetchReply: true,
 		});
-
-		if (userToServer) { saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, messageId); }
 		return;
 	},
 	async sendMessageComponentResponse(interaction, { quid }) {

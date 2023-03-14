@@ -40,11 +40,11 @@ export const command: SlashCommand = {
 	position: 3,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
-	sendAutocomplete: async (interaction, { quidToServer }) => {
+	sendAutocomplete: async (interaction, { server }) => {
 
-		if (!quidToServer) { return; }
+		if (!server) { return; }
 		const focusedValue = interaction.options.getFocused();
-		let choices: string[] = [...new Set(quidToServer.inventory)].filter(i => !keyInObject(materialsInfo, i));
+		let choices: string[] = [...new Set(server.inventory)].filter(i => !keyInObject(materialsInfo, i));
 
 		if (focusedValue.length > 0) { choices = new Fuse(choices).search(focusedValue).map(value => value.item); }
 

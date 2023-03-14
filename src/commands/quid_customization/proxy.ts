@@ -1,8 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Collection, EmbedBuilder, ModalBuilder, NonThreadGuildBasedChannel, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { deepCopy, respond } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
-import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
-import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
 import { constructCustomId, constructSelectOptions, deconstructCustomId, deconstructSelectOptions } from '../../utils/customId';
 import { getDisplayname } from '../../utils/getQuidInfo';
@@ -26,10 +24,6 @@ export const command: SlashCommand = {
 	modifiesServerProfile: false,
 	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
 
-		if (await missingPermissions(interaction, [
-			'ViewChannel', // Needed because of createCommandComponentDisabler
-		]) === true) { return; }
-
 		/* If the user does not have a quid selected, return. */
 		if (user === undefined) {
 
@@ -38,7 +32,7 @@ export const command: SlashCommand = {
 		}
 
 		// This is always a reply
-		const { id: messageId } = await respond(interaction, {
+		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(quid?.color ?? default_color)
 				.setAuthor(hasName(quid) ? {
@@ -67,10 +61,7 @@ export const command: SlashCommand = {
 						.setLabel('Auto?')
 						.setStyle(ButtonStyle.Success)] : []),
 				])],
-			fetchReply: true,
 		});
-
-		if (userToServer) { saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, messageId); }
 	},
 	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer }) {
 

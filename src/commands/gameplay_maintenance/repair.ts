@@ -12,12 +12,11 @@ import { changeCondition } from '../../utils/changeCondition';
 import { updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { saveCommandDisablingInfo, disableAllComponents } from '../../utils/componentDisabling';
+import { disableAllComponents } from '../../utils/componentDisabling';
 import getInventoryElements from '../../utils/getInventoryElements';
 import { getDisplayname, getDisplayspecies, pronoun } from '../../utils/getQuidInfo';
 import { getArrayElement, keyInObject, respond } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
-import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
@@ -37,10 +36,6 @@ export const command: SlashCommand = {
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
-
-		if (await missingPermissions(interaction, [
-			'ViewChannel', // Needed because of createCommandComponentDisabler
-		]) === true) { return; }
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (server === undefined) { throw new Error('serverData is null'); }
@@ -91,7 +86,7 @@ export const command: SlashCommand = {
 		const chosenDen = interaction.options.getString('den');
 
 		// This is always a reply
-		const botReply = await respond(interaction, (chosenDen !== 'sleepingDenId' && chosenDen !== 'medicineDenId' && chosenDen !== 'foodDenId') ? {
+		await respond(interaction, (chosenDen !== 'sleepingDenId' && chosenDen !== 'medicineDenId' && chosenDen !== 'foodDenId') ? {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(quid.color)
@@ -103,8 +98,6 @@ export const command: SlashCommand = {
 			components: [getDenButtons(user.id)],
 			fetchReply: true,
 		} : await getMaterials(interaction, quid, server, chosenDen, { serverId: interaction.guildId, userToServer, quidToServer, user }, restEmbed, messageContent));
-
-		saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, botReply.id);
 	},
 	async sendMessageComponentResponse(interaction, { user, quid, userToServer, quidToServer, server }) {
 
@@ -136,6 +129,18 @@ export const command: SlashCommand = {
 			if (repairKind === undefined) { throw new TypeError('repairKind is undefined'); }
 
 			const chosenDen = await Den.findByPk(server[chosenDenId], { rejectOnEmpty: true });
+
+			if (chosenDen[repairKind] === 100) {
+
+				// This is an update to the message with the component
+				await respond(interaction, {
+					embeds: [new EmbedBuilder()
+						.setColor(quid.color)
+						.setTitle(`The ${repairKind} of ${chosenDenId.replace('Id', '')} doesn't need to be upgraded anymore. Please select another den or item to repair with if available.`)],
+					components: [],
+				}, 'update', interaction.message.id);
+				return;
+			}
 			const repairAmount = Math.min(addMaterialPoints(), 100 - chosenDen[repairKind]);
 
 			/** True when the repairAmount is bigger than zero. If the user isn't of  rank Hunter or Elderly, a weighted table decided whether they are successful. */

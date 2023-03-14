@@ -15,7 +15,6 @@ import { userFindsQuest, changeCondition, infectWithChance, addExperience } from
 import { updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { disableCommandComponent } from '../../utils/componentDisabling';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { accessiblePlantEmojis, createFightGame, createPlantGame, plantEmojis } from '../../utils/gameBuilder';
@@ -69,8 +68,7 @@ export async function executePlaying(
 ): Promise<void> {
 
 	if (await missingPermissions(interaction, [
-		'ViewChannel', // Needed because of createCommandComponentDisabler in sendQuestMessage
-		/* 'ViewChannel',*/ interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints
+		'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints
 	]) === true) { return; }
 
 	/* This ensures that the user is in a guild and has a completed account. */
@@ -80,9 +78,6 @@ export async function executePlaying(
 	if (!user) { throw new TypeError('user is undefined'); }
 	if (!userToServer) { throw new TypeError('userToServer is undefined'); }
 	if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
-
-	/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-	if (command.disablePreviousCommand) { await disableCommandComponent(userToServer); }
 
 	/* Checks if the profile is resting, on a cooldown or passed out. */
 	const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);

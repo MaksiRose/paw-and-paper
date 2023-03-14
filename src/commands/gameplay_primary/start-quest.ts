@@ -9,10 +9,8 @@ import { SlashCommand } from '../../typings/handle';
 import { SpeciesHabitatType } from '../../typings/main';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
-import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
 import { getDisplayname, pronoun, pronounAndPlural, getDisplayspecies } from '../../utils/getQuidInfo';
-import { capitalize, getMessageId, respond, setCooldown } from '../../utils/helperFunctions';
-import { missingPermissions } from '../../utils/permissionHandler';
+import { capitalize, respond, setCooldown } from '../../utils/helperFunctions';
 import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from './attack';
 const { error_color } = require('../../../config.json');
@@ -27,14 +25,9 @@ export const command: SlashCommand = {
 	position: 7,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
-	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
-
-		if (await missingPermissions(interaction, [
-			'ViewChannel', // Needed because of createCommandComponentDisabler in sendQuestMessage
-		]) === true) { return; }
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
 
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (server === undefined) { throw new Error('serverData is null'); }
 		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
 		if (!user) { throw new TypeError('user is undefined'); }
 		if (!userToServer) { throw new TypeError('userToServer is undefined'); }
@@ -63,6 +56,41 @@ export const command: SlashCommand = {
 		}
 
 		await sendQuestMessage(interaction, 'reply', user, quid, userToServer, quidToServer, messageContent, restEmbed);
+	},
+	sendMessageComponentResponse: async (interaction, { user, quid, userToServer, quidToServer }) => {
+
+		/* This ensures that the user is in a guild and has a completed account. */
+		if (!interaction.isButton()) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
+		if (!user) { throw new TypeError('user is undefined'); }
+		if (!userToServer) { throw new TypeError('userToServer is undefined'); }
+		if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
+
+		/* Checks if the profile is resting, on a cooldown or passed out. */
+		let restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);
+		if (restEmbed === false) { return; }
+		restEmbed = restEmbed.length <= 0 && interaction.message.embeds[0]?.description?.includes('blinking at the bright sun') ? [EmbedBuilder.from(interaction.message.embeds[0]!)] : [];
+		const afterEmbedArray = interaction.message.embeds.slice(interaction.message.embeds[0]?.description?.includes('blinking at the bright sun') ? 2 : 1).map(e => EmbedBuilder.from(e));
+
+		const messageContent = remindOfAttack(interaction.guildId);
+
+		if (!quidToServer.hasQuest) {
+
+			// This is always a reply
+			await respond(interaction, {
+				content: messageContent,
+				embeds: [
+					...restEmbed,
+					new EmbedBuilder()
+						.setColor(error_color)
+						.setTitle('You have no open quests at the moment :(')
+						.setFooter({ text: `Go ${quidToServer.rank === RankType.Youngling ? 'playing' : 'exploring'} for a chance to get a quest!` }),
+				],
+			});
+			return;
+		}
+
+		await startQuest(interaction, user, quid, userToServer, quidToServer, messageContent, restEmbed, afterEmbedArray);
 	},
 };
 
@@ -145,38 +173,17 @@ export async function sendQuestMessage(
 
 	const components = [new ActionRowBuilder<ButtonBuilder>()
 		.setComponents(new ButtonBuilder()
-			.setCustomId('quest_start')
+			.setCustomId('start-quest_start')
 			.setLabel('Start quest')
 			.setEmoji('⭐')
 			.setStyle(ButtonStyle.Success))];
 
 	// This can be a reply, an update or an editReply depending on where this function was called from.
-	const botReply = await respond(interaction, {
+	return await respond(interaction, {
 		content: `<@${interaction.user.id}>\n${messageContent}`,
 		embeds: [...restEmbed, embed, ...afterEmbedArray],
 		components: components,
-		fetchReply: true,
 	}, respondType, respondType === 'reply' ? undefined : interaction.isMessageComponent() ? interaction.message.id : alternativeEditId);
-
-	/* The View Channels permissions that are needed for this function to work properly should be checked in all places that reference sendQuestMessage. It can't be checked for in here directly because a botReply must be returned. */
-	saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, botReply.id);
-
-	return await (botReply as Message<true> | InteractionResponse<true>)
-		.awaitMessageComponent({
-			filter: (i) => i.user.id === interaction.user.id,
-			componentType: ComponentType.Button,
-			time: 300_000 })
-		.then(async (int) => {
-
-			await setCooldown(userToServer, true);
-			deleteCommandDisablingInfo(userToServer);
-			return await startQuest(int, user, quid, userToServer, quidToServer, messageContent, restEmbed, afterEmbedArray);
-		})
-		.catch(async () => {
-
-			// This is always an editReply
-			return await respond(interaction, { components: disableAllComponents(components) }, respondType, getMessageId(botReply));
-		});
 }
 
 async function startQuest(

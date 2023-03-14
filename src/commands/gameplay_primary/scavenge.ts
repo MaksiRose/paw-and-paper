@@ -13,7 +13,7 @@ import { addExperience, changeCondition } from '../../utils/changeCondition';
 import { updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
+import { disableAllComponents } from '../../utils/componentDisabling';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { getDisplayname, pronoun, getDisplayspecies, pronounAndPlural } from '../../utils/getQuidInfo';
 import { capitalize, deepCopy, getArrayElement, getMessageId, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
@@ -63,9 +63,6 @@ async function executeScavenging(
 	if (!user) { throw new TypeError('user is undefined'); }
 	if (!userToServer) { throw new TypeError('userToServer is undefined'); }
 	if (!quidToServer) { throw new TypeError('quidToServer is undefined'); }
-
-	/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-	if (command.disablePreviousCommand) { await disableCommandComponent(userToServer); }
 
 	/* Checks if the profile is resting, on a cooldown or passed out. */
 	const restEmbed = await isInvalid(interaction, user, userToServer, quid, quidToServer);

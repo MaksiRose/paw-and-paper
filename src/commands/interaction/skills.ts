@@ -1,8 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, GuildMember, ModalBuilder, PermissionFlagsBits, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { capitalize, deepCopy, getArrayElement, respond } from '../../utils/helperFunctions';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
-import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
-import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
 import DiscordUser from '../../models/discordUser';
 import User from '../../models/user';
@@ -26,10 +24,6 @@ export const command: SlashCommand = {
 	disablePreviousCommand: true,
 	modifiesServerProfile: false,
 	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
-
-		if (await missingPermissions(interaction, [
-			'ViewChannel', // Needed because of createCommandComponentDisabler
-		]) === true) { return; }
 
 		if (!isInGuild(interaction) || !server) { return; } // This is always a reply
 
@@ -65,12 +59,10 @@ export const command: SlashCommand = {
 		}
 
 		// This is always a reply
-		const botReply = await respond(interaction, {
+		await respond(interaction, {
 			content: getSkillList(quidToServer),
 			components: isYourself ? [getOriginalComponents(quidToServer, server, interaction.member)] : [],
-			fetchReply: userToServer !== undefined ? true : false,
 		});
-		if (userToServer !== undefined) { saveCommandDisablingInfo(userToServer, interaction, interaction.channelId, botReply.id); }
 	},
 	async sendMessageComponentResponse(interaction, { user, quidToServer, server }) {
 
