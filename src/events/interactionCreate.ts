@@ -243,7 +243,7 @@ export const event: DiscordEvent = {
 							return;
 						}
 
-						await createNewTicket(interaction, `${getFirstLine(description)} (${errorId})`, description, 'bug', null, errorId);
+						await createNewTicket(interaction, `${getFirstLine(errorInfo.stack)} (${errorId})`, description, 'bug', null, errorId);
 						await errorInfo.update({ isReported: true });
 						return;
 					}
