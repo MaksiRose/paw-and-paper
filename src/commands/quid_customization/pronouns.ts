@@ -195,7 +195,7 @@ export const command: SlashCommand = {
 
 /** Creating a drop - down menu with all the pronouns the quid has. */
 function getPronounsMenu(
-	quid: Quid,
+	quid: Quid<true> | Quid<false>,
 ): StringSelectMenuBuilder {
 
 	/* Getting the remaining length for the pronoun field in the profile command. */

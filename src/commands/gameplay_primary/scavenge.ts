@@ -51,7 +51,7 @@ export const command: SlashCommand = {
 async function executeScavenging(
 	interaction: ChatInputCommandInteraction | ButtonInteraction,
 	user: User | undefined,
-	quid: Quid | undefined,
+	quid: Quid<true> | Quid<false> | undefined,
 	userToServer: UserToServer | undefined,
 	quidToServer: QuidToServer | undefined,
 	server: Server | undefined,
@@ -342,7 +342,7 @@ async function executeScavenging(
 	async function sendFinalMessage(
 		int: ButtonInteraction<'cached'> | ChatInputCommandInteraction<'cached'>,
 		user: User,
-		quid: Quid,
+		quid: Quid<true>,
 		userToServer: UserToServer,
 		quidToServer: QuidToServer,
 	) {
@@ -382,7 +382,7 @@ async function executeScavenging(
 	 */
 	async function changeComponents(
 		int: ButtonInteraction<'cached'> | ChatInputCommandInteraction<'cached'>,
-		quid: Quid,
+		quid: Quid<true>,
 		displaynameOptions: Parameters<typeof getDisplayname>[1],
 	) {
 

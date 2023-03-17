@@ -348,7 +348,7 @@ export const command: SlashCommand = {
 function getAutoproxyComponents(
 	allChannels: Collection<string, NonThreadGuildBasedChannel> | null,
 	user: User,
-	quid: Quid | undefined,
+	quid: Quid<true> | Quid<false> | undefined,
 	userToServer: UserToServer | undefined,
 	page: number,
 ): (ActionRowBuilder<ButtonBuilder> | ActionRowBuilder<StringSelectMenuBuilder>)[] {

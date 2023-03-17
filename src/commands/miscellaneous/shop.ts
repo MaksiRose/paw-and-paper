@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { respond } from '../../utils/helperFunctions';
 import { checkRoleCatchBlock, updateAndGetMembers } from '../../utils/checkRoleRequirements';
-import { hasName, hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
+import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
@@ -62,7 +62,7 @@ export const command: SlashCommand = {
 
 		if (selectOptionId[0] === 'nextpage') {
 
-			if (!hasName(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
+			if (!hasNameAndSpecies(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; } // This is always a reply
 			if (!user) { throw new TypeError('user is undefined'); }
 
 			const shopKindPage = Number(selectOptionId[1]);
@@ -202,7 +202,7 @@ export const command: SlashCommand = {
 
 async function getShopResponse(
 	interaction: ChatInputCommandInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
-	quid: Quid,
+	quid: Quid<true>,
 	shopKindPage: number,
 	nestedPage: number,
 	shopInfo: ReturnType<typeof getShopInfo>,

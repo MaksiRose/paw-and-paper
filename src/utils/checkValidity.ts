@@ -14,7 +14,7 @@ export async function isPassedOut(
 	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'> | AnySelectMenuInteraction<'cached' | 'raw'>,
 	user: User,
 	userToServer: UserToServer | undefined,
-	quid: Quid,
+	quid: Quid<true>,
 	quidToServer: QuidToServer,
 	isNew: boolean,
 ): Promise<boolean> {
@@ -71,7 +71,7 @@ export async function hasCooldown(
 	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'> | AnySelectMenuInteraction<'cached' | 'raw'>,
 	user: User,
 	userToServer: UserToServer | undefined,
-	quid: Quid,
+	quid: Quid<true>,
 	quidToServer: QuidToServer | undefined,
 ): Promise<boolean> {
 
@@ -121,7 +121,7 @@ export async function checkResting(
 	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'> | AnySelectMenuInteraction<'cached'>,
 	user: User,
 	userToServer: UserToServer,
-	quid: Quid,
+	quid: Quid<true>,
 	quidToServer: QuidToServer,
 ): Promise<EmbedBuilder[]> {
 
@@ -150,7 +150,7 @@ export async function isInvalid(
 	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	user: User,
 	userToServer: UserToServer,
-	quid: Quid,
+	quid: Quid<true>,
 	quidToServer: QuidToServer,
 ): Promise<EmbedBuilder[] | false> {
 
@@ -183,7 +183,7 @@ export async function hasFullInventory(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 	user: User | undefined,
 	userToServer: UserToServer | undefined,
-	quid: Quid,
+	quid: Quid<true> | Quid<false>,
 	quidToServer: QuidToServer,
 	restEmbed: EmbedBuilder[],
 	messageContent: string,
@@ -219,7 +219,7 @@ export async function hasFullInventory(
 
 export function isInteractable(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
-	quid: Quid | undefined,
+	quid: Quid<true> | Quid<false> | undefined,
 	quidToServer: QuidToServer | undefined,
 	user: User | undefined,
 	userToServer: UserToServer | undefined,

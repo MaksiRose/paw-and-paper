@@ -251,7 +251,7 @@ export const command: SlashCommand = {
  */
 export async function getProfileMessageOptions(
 	userId: string,
-	quid: Quid | undefined,
+	quid: Quid<true> | Quid<false> | undefined,
 	isYourself: boolean,
 	displaynameOptions: Parameters<typeof getDisplayname>[1],
 	embedArray: Array<EmbedBuilder> = [],

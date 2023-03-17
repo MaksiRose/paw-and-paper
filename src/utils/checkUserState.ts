@@ -7,9 +7,9 @@ const { default_color } = require('../../config.json');
  * Checks if there is an account and if the account has a name, returns false if they do, and if not, sends a message telling the user to create an account and return true.
  */
 export function hasName(
-	quid: Quid | null | undefined,
+	quid: Quid<true> | Quid<false> | null | undefined,
 	options?: {interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction, hasQuids: boolean},
-): quid is Quid {
+): quid is Quid<true> | Quid<false> {
 
 	if (quid === null || quid === undefined || quid.name === '') {
 
@@ -33,7 +33,7 @@ export function hasName(
  * Checks if the account has a species, returns false if they do, and if not, sends a message telling the user to create an account and returns true.
  */
 export function hasNameAndSpecies(
-	quid: Quid | null | undefined,
+	quid: Quid<true> | Quid<false> | null | undefined,
 	options?: {interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction, hasQuids: boolean},
 ): quid is Quid<true> {
 

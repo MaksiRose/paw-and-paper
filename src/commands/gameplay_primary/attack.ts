@@ -54,7 +54,7 @@ export const command: SlashCommand = {
 async function executeAttacking(
 	interaction: ChatInputCommandInteraction | ButtonInteraction,
 	user: User | undefined,
-	quid: Quid | undefined,
+	quid: Quid<true> | Quid<false> | undefined,
 	userToServer: UserToServer | undefined,
 	quidToServer: QuidToServer | undefined,
 	server: Server | undefined,
@@ -135,7 +135,7 @@ async function executeAttacking(
 	async function interactionCollector(
 		interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 		user: User,
-		quid: Quid,
+		quid: Quid<true>,
 		userToServer: UserToServer,
 		quidToServer: QuidToServer,
 		server: Server,

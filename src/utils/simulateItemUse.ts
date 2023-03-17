@@ -11,6 +11,7 @@ import { CommonPlantNames, MaterialNames, RarePlantNames, SpecialPlantNames, Spe
 import { RankType } from '../typings/data/user';
 import { PlantEdibilityType, PlantInfo, SpeciesDietType } from '../typings/main';
 import { changeCondition } from './changeCondition';
+import { hasNameAndSpecies } from './checkUserState';
 import { getArrayElement, keyInObject, now } from './helperFunctions';
 import { getRandomNumber } from './randomizers';
 import { wearDownAmount } from './wearDownDen';
@@ -155,7 +156,7 @@ function getNeededMedicineItems(
 		if (healerArray1.length > 1) { healerArray1 = healerArray1.filter(u => u.id !== quidToServer.id); }
 		const healerArray2 = healerArray1.filter(u => !quidNeedsHealing(u));
 		const healer = healerArray2.length > 0 ? getArrayElement(healerArray2, getRandomNumber(healerArray2.length)) : healerArray1.length > 0 ? getArrayElement(healerArray1, getRandomNumber(healerArray1.length)) : undefined;
-		if (healer === undefined) { break; }
+		if (healer === undefined || !hasNameAndSpecies(healer.quid)) { break; }
 
 		while (quidNeedsHealing(quidToServer, checkOnlyFor)) {
 
@@ -370,7 +371,7 @@ function getNeededMaterialItems(
 			});
 			const repairerArray2 = repairerArray1.filter(qts => !quidNeedsHealing(qts));
 			const repairer = repairerArray2.length > 0 ? getArrayElement(repairerArray2, getRandomNumber(repairerArray2.length)) : repairerArray1.length > 0 ? getArrayElement(repairerArray1, getRandomNumber(repairerArray1.length)) : undefined;
-			if (repairer === undefined) { break; }
+			if (repairer === undefined || !hasNameAndSpecies(repairer.quid)) { break; }
 
 			const isUnlucky = repairingIsUnlucky(repairer);
 			if (!isUnlucky) {

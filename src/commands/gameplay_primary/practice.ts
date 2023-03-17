@@ -141,7 +141,7 @@ export const command: SlashCommand = {
 			interaction: ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 			user: User,
 			userToServer: UserToServer,
-			quid: Quid,
+			quid: Quid<true>,
 			quidToServer: QuidToServer,
 			messageContent: string,
 			restEmbed: EmbedBuilder[],

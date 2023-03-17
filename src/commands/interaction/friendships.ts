@@ -66,7 +66,7 @@ export const command: SlashCommand = {
  * @returns An array of strings.
  */
 async function getFriendshipTexts(
-	quid: Quid,
+	quid: Quid<true>,
 	guild: Guild | null,
 ): Promise<string[]> {
 
@@ -112,7 +112,7 @@ async function getFriendshipTexts(
  */
 async function getFriendshipMessage(
 	user: User,
-	quid: Quid,
+	quid: Quid<true>,
 	userToServer: UserToServer | undefined,
 	quidToServer: QuidToServer | undefined,
 	guild: Guild | null,

@@ -85,7 +85,7 @@ export const command: SlashCommand = {
 export async function sendMessage(
 	channel: GuildTextBasedChannel,
 	text: string,
-	quid: Quid,
+	quid: Quid<true> | Quid<false>,
 	discordUserId: string,
 	attachments?: Array<Attachment>,
 	reference?: MessageReference,

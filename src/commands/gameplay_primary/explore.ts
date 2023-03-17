@@ -78,7 +78,7 @@ export const command: SlashCommand = {
 async function executeExploring(
 	interaction: ChatInputCommandInteraction | ButtonInteraction,
 	user: User | undefined,
-	quid: Quid | undefined,
+	quid: Quid<true> | Quid<false> | undefined,
 	userToServer: UserToServer | undefined,
 	quidToServer: QuidToServer | undefined,
 	server: Server | undefined,
@@ -952,7 +952,7 @@ async function executeExploring(
 async function getWaitingMessageObject(
 	messageContent: string,
 	restEmbed: EmbedBuilder[],
-	quid: Quid,
+	quid: Quid<true>,
 	displaynameOptions: Parameters<typeof getDisplayname>[1],
 	waitingString: string,
 	waitingGameField: string[][],

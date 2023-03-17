@@ -153,7 +153,7 @@ export const command: SlashCommand = {
 export async function sendStoreMessage(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 	user: User,
-	quid: Quid,
+	quid: Quid<true>,
 	userToServer: UserToServer,
 	quidToServer: QuidToServer,
 	server: Server,
@@ -197,7 +197,7 @@ export async function sendStoreMessage(
 }
 
 async function getOriginalEmbed(
-	quid: Quid,
+	quid: Quid<true>,
 	displaynameOptions: Parameters<typeof getDisplayname>[1],
 ): Promise<EmbedBuilder> {
 

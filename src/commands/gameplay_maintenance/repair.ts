@@ -210,7 +210,7 @@ function getDenButtons(
  */
 async function getMaterials(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
-	quid: Quid,
+	quid: Quid<true>,
 	server: Server,
 	chosenDenType: 'sleepingDenId' | 'medicineDenId' | 'foodDenId',
 	displaynameOptions: Parameters<typeof getDisplayname>[1],

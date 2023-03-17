@@ -11,7 +11,7 @@ import UserToServer from './userToServer';
 import Webhook from './webhook';
 const { default_color } = require('../../config.json');
 
-interface QuidAttributes<Completed extends boolean = boolean> {
+interface QuidAttributes<Completed extends boolean = false> {
 	id: string;
 	userId: string;
 	mainGroupId: string | null;
@@ -28,10 +28,10 @@ interface QuidAttributes<Completed extends boolean = boolean> {
 	color: `#${string}`;
 }
 
-type QuidCreationAttributes<Completed extends boolean = boolean> = Optional<QuidAttributes<Completed>, 'mainGroupId' | 'nickname' | 'species' | 'displayedSpecies' | 'description' | 'avatarURL' | 'pronouns_en' | 'noPronouns_en' | 'proxy_startsWith' | 'proxy_endsWith' | 'color'>
+type QuidCreationAttributes<Completed extends boolean = false> = Optional<QuidAttributes<Completed>, 'mainGroupId' | 'nickname' | 'species' | 'displayedSpecies' | 'description' | 'avatarURL' | 'pronouns_en' | 'noPronouns_en' | 'proxy_startsWith' | 'proxy_endsWith' | 'color'>
 
 @Table
-export default class Quid<Completed extends boolean = boolean> extends Model<QuidAttributes<Completed>, QuidCreationAttributes<Completed>> {
+export default class Quid<Completed extends boolean = false> extends Model<QuidAttributes<Completed>, QuidCreationAttributes<Completed>> {
 	@Column({ type: DataType.STRING, primaryKey: true })
 	declare id: string;
 

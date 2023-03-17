@@ -15,8 +15,8 @@ const requiredPoints = [1, 3, 6, 9, 15, 24, 39, 63, 99, 162] as const;
 export async function addFriendshipPoints(
 	message: { createdTimestamp: number, channel: TextBasedChannel
 },
-	quid1: Quid,
-	quid2: Quid,
+	quid1: Quid<true> | Quid<false>,
+	quid2: Quid<true> | Quid<false>,
 	displaynameOptions: Parameters<typeof getDisplayname>[1],
 ): Promise<void> {
 

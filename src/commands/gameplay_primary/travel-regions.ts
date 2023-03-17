@@ -123,7 +123,7 @@ export const command: SlashCommand = {
 async function sendTravelMessage(
 	interaction: ChatInputCommandInteraction<'cached'> | StringSelectMenuInteraction<'cached'>,
 	user: User,
-	quid: Quid,
+	quid: Quid<true>,
 	userToServer: UserToServer,
 	quidToServer: QuidToServer,
 	messageContent: string,

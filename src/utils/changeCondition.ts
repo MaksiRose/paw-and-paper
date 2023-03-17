@@ -60,7 +60,7 @@ function calculateThirstDecrease(
 
 function decreaseHealth(
 	quidToServer: QuidToServer,
-	quid: Quid,
+	quid: Quid<true>,
 ): {
 	injuryUpdateEmbed: EmbedBuilder[],
 	totalHealthDecrease: number,
@@ -214,7 +214,7 @@ export async function addExperience(
 
 export async function changeCondition(
 	quidToServer: QuidToServer,
-	quid: Quid,
+	quid: Quid<true>,
 	experienceIncrease: number,
 	currentRegion?: CurrentRegionType,
 	secondPlayer = false,
@@ -270,9 +270,9 @@ export async function changeCondition(
 
 export async function infectWithChance(
 	quidToServer1: QuidToServer,
-	quid1: Quid,
+	quid1: Quid<true> | Quid<false>,
 	quidToServer2: QuidToServer,
-	quid2: Quid,
+	quid2: Quid<true> | Quid<false>,
 ): Promise<EmbedBuilder[]> {
 
 	if (quidToServer2.injuries_cold === true && quidToServer1.injuries_cold === false && pullFromWeightedTable({ 0: 3, 1: 7 }) === 0) {

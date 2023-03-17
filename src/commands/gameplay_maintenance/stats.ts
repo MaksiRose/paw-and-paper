@@ -104,6 +104,7 @@ export const command: SlashCommand = {
 
 			quid = await Quid.findByPk(quidId, { rejectOnEmpty: true });
 			const isYourself = (quid.userId === creatorUserId);
+			if (!hasNameAndSpecies(quid)) { throw new TypeError('quid.species might be null or undefined'); }
 
 			quidToServer = await QuidToServer.findOne({
 				where: { quidId: quid.id, serverId: interaction.guildId },
@@ -132,7 +133,7 @@ export const command: SlashCommand = {
 
 async function sendStatsMessage(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
-	quid: Quid,
+	quid: Quid<true>,
 	quidToServer: QuidToServer,
 	creatorUserId: string,
 	isYourself: boolean,
