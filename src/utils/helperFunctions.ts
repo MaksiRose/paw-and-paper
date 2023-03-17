@@ -189,7 +189,7 @@ export async function sendErrorMessage(
 			component_type: interaction.isMessageComponent() ? interaction.componentType : undefined,
 			custom_id: interaction.customId,
 			values: interaction.isAnySelectMenu() ? interaction.values : undefined,
-			fields: interaction.isModalSubmit() ? interaction.fields.fields.values() : undefined,
+			fields: interaction.isModalSubmit() ? [...interaction.fields.fields.values()] : undefined,
 			components: interaction.isModalSubmit() ? interaction.components : undefined,
 		},
 		guild_id: interaction.guildId ?? undefined,
@@ -245,7 +245,7 @@ export async function sendErrorMessage(
 			else {
 
 				errorId = generateId();
-				await ErrorInfo.create({ id: errorId, stack, interactionInfo, version });
+				await ErrorInfo.create({ id: errorId, stack, interactionInfo: JSON.stringify(interactionInfo, null, 2), version });
 			}
 		}
 		catch (e) {

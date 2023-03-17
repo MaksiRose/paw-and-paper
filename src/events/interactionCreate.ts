@@ -219,7 +219,7 @@ export const event: DiscordEvent = {
 
 						const errorId = interaction.customId.split('_')[2];
 						const errorInfo = await ErrorInfo.findByPk(errorId);
-						const description = errorInfo ? `Stack:\n\`\`\`\n${errorInfo.stack}\n\`\`\`\nInteraction info:\n\`\`\`json\n${JSON.stringify(errorInfo.interactionInfo, null, 2)}\n\`\`\``.substring(0, 4096) : null;
+						const description = errorInfo ? `Stack:\n\`\`\`\n${errorInfo.stack}\n\`\`\`\nInteraction info:\n\`\`\`json\n${errorInfo.interactionInfo}\n\`\`\``.substring(0, 4096) : null;
 
 						if (!errorId || !errorInfo || !description) {
 

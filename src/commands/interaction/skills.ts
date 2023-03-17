@@ -54,8 +54,9 @@ export const command: SlashCommand = {
 		if (hasNameAndSpecies(quid) && quidToServer) {
 
 			const newGlobalSkills: { [x: string]: number; } = {};
-			for (const skill of server.skills) { newGlobalSkills[skill] = quidToServer.skills_global[skill] ?? 0; }
-			await quidToServer.update({ skills_global: { ...newGlobalSkills } });
+			const qtsSkillsGlobal = JSON.parse(quidToServer.skills_global) as { [x: string]: number; };
+			for (const skill of server.skills) { newGlobalSkills[skill] = qtsSkillsGlobal[skill] ?? 0; }
+			await quidToServer.update({ skills_global: JSON.stringify(newGlobalSkills) });
 		}
 
 		// This is always a reply
@@ -217,6 +218,8 @@ export const command: SlashCommand = {
 			const cat = `skills_${category}` as 'skills_personal' | 'skills_global';
 			const skillName = getArrayElement(selectOptionId.split('_'), 3);
 
+			const qtsSkills = JSON.parse(quidToServer?.[cat] ?? '{}') as { [x: string]: number; };
+
 			await interaction.showModal(new ModalBuilder()
 				.setCustomId(`skills_${type}_${category}_${skillName}`)
 				.setTitle(`${capitalize(type)} ${category} skill "${skillName}"`)
@@ -228,7 +231,7 @@ export const command: SlashCommand = {
 							.setStyle(TextInputStyle.Short)
 							.setMaxLength(25)
 							.setRequired(true)
-							.setValue(type === 'modify' ? `${quidToServer?.[cat][skillName] || 0}` : skillName),
+							.setValue(type === 'modify' ? `${qtsSkills[skillName] || 0}` : skillName),
 						),
 				),
 			);
@@ -242,8 +245,9 @@ export const command: SlashCommand = {
 
 			if (category === 'personal' && quidToServer) {
 
-				delete quidToServer.skills_personal[skillName];
-				await quidToServer.update({ skills_personal: { ...quidToServer.skills_personal } });
+				const qtsSkillsPersonal = JSON.parse(quidToServer.skills_personal) as { [x: string]: number; };
+				delete qtsSkillsPersonal[skillName];
+				await quidToServer.update({ skills_personal: JSON.stringify(qtsSkillsPersonal) });
 			}
 			else {
 
@@ -251,8 +255,9 @@ export const command: SlashCommand = {
 
 				for (const qts of quidsToServer) {
 
-					delete qts.skills_global[skillName];
-					qts.update({ skills_global: { ...qts.skills_global } });
+					const qtsSkillsGlobal = JSON.parse(qts.skills_global) as { [x: string]: number; };
+					delete qtsSkillsGlobal[skillName];
+					qts.update({ skills_global: JSON.stringify(qtsSkillsGlobal) });
 				}
 
 				await server.update({ skills: server.skills.filter(n => n !== skillName) });
@@ -297,8 +302,9 @@ export const command: SlashCommand = {
 					return;
 				}
 
-				quidToServer.skills_personal[newName] = 0;
-				await quidToServer.update({ skills_personal: { ...quidToServer.skills_personal } });
+				const qtsSkillsPersonal = JSON.parse(quidToServer.skills_personal) as { [x: string]: number; };
+				qtsSkillsPersonal[newName] = 0;
+				await quidToServer.update({ skills_personal: JSON.stringify(qtsSkillsPersonal) });
 			}
 			else {
 
@@ -318,8 +324,9 @@ export const command: SlashCommand = {
 
 				for (const qts of quidsToServer) {
 
-					qts.skills_global[newName] = 0;
-					qts.update({ skills_global: { ...qts.skills_global } });
+					const qtsSkillsGlobal = JSON.parse(qts.skills_global) as { [x: string]: number; };
+					qtsSkillsGlobal[newName] = 0;
+					qts.update({ skills_global: JSON.stringify(qtsSkillsGlobal) });
 				}
 
 				const newSkills = deepCopy(server.skills);
@@ -355,9 +362,10 @@ export const command: SlashCommand = {
 					return;
 				}
 
-				quidToServer.skills_personal[newName] = quidToServer.skills_personal[skillName] ?? 0;
-				delete quidToServer.skills_personal[skillName];
-				await quidToServer.update({ skills_personal: { ...quidToServer.skills_personal } });
+				const qtsSkillsPersonal = JSON.parse(quidToServer.skills_personal) as { [x: string]: number; };
+				qtsSkillsPersonal[newName] = qtsSkillsPersonal[skillName] ?? 0;
+				delete qtsSkillsPersonal[skillName];
+				await quidToServer.update({ skills_personal: JSON.stringify(qtsSkillsPersonal) });
 			}
 			else {
 
@@ -377,9 +385,10 @@ export const command: SlashCommand = {
 
 				for (const qts of quidsToServer) {
 
-					qts.skills_global[newName] = qts.skills_global[skillName] ?? 0;
-					delete qts.skills_global[skillName];
-					qts.update({ skills_global: qts.skills_global });
+					const qtsSkillsGlobal = JSON.parse(qts.skills_global) as { [x: string]: number; };
+					qtsSkillsGlobal[newName] = qtsSkillsGlobal[skillName] ?? 0;
+					delete qtsSkillsGlobal[skillName];
+					qts.update({ skills_global: JSON.stringify(qtsSkillsGlobal) });
 				}
 
 				const newSkills = deepCopy(server.skills);
@@ -402,11 +411,12 @@ export const command: SlashCommand = {
 		else if (type === 'modify' && quidToServer) {
 
 			const cat = 'skills_' + category as 'skills_personal' | 'skills_global';
+			const qtsSkills = JSON.parse(quidToServer[cat]) as { [x: string]: number; };
 
 			if (skillName === undefined) { throw new TypeError('skillName is undefined'); }
 			const plusOrMinus = interaction.fields.getTextInputValue('skills_modify_textinput').startsWith('+') ? '+' : interaction.fields.getTextInputValue('skills_modify_textinput').startsWith('-') ? '-' : '';
 			const newValue = Number(interaction.fields.getTextInputValue('skills_modify_textinput').replace(plusOrMinus, '').replace(/\s/g, ''));
-			const oldValue = quidToServer[cat][skillName] ?? 0;
+			const oldValue = qtsSkills[skillName] ?? 0;
 
 			if (isNaN(newValue)) {
 
@@ -418,11 +428,11 @@ export const command: SlashCommand = {
 				return;
 			}
 
-			if (plusOrMinus === '+') { quidToServer[cat][skillName] += newValue; }
-			else if (plusOrMinus === '-') { quidToServer[cat][skillName] -= newValue; }
-			else { quidToServer[cat][skillName] = newValue; }
+			if (plusOrMinus === '+') { qtsSkills[skillName] += newValue; }
+			else if (plusOrMinus === '-') { qtsSkills[skillName] -= newValue; }
+			else { qtsSkills[skillName] = newValue; }
 
-			await quidToServer.update({ [cat]: { ...quidToServer[cat] } });
+			await quidToServer.update({ [cat]: JSON.stringify(qtsSkills) });
 
 			// This is always an update to the message the modal comes from
 			await respond(interaction, {
@@ -432,7 +442,7 @@ export const command: SlashCommand = {
 
 			// This is always a followUp
 			await respond(interaction, {
-				content: `You changed the value of the ${category} skill \`${skillName}\` from \`${oldValue}\` to \`${quidToServer[cat][skillName]}\`!`,
+				content: `You changed the value of the ${category} skill \`${skillName}\` from \`${oldValue}\` to \`${qtsSkills[skillName]}\`!`,
 			});
 		}
 	},
@@ -494,7 +504,9 @@ function getSkillList(
 
 	let skillList = '';
 
-	for (const skillCategory of Object.values({ ...(quidToServer?.skills_global || {}), ...(quidToServer?.skills_personal || {}) })) {
+	const qtsSkillsGlobal = JSON.parse(quidToServer?.skills_global || '{}') as { [x: string]: number; };
+	const qtsSkillsPersonal = JSON.parse(quidToServer?.skills_personal || '{}') as { [x: string]: number; };
+	for (const skillCategory of Object.values({ ...qtsSkillsGlobal, ...qtsSkillsPersonal })) {
 
 		for (const [skillName, skillAmount] of Object.entries(skillCategory)) { skillList += `\n${skillName}: \`${skillAmount}\``; }
 	}
