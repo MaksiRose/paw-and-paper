@@ -593,10 +593,10 @@ function getEditMenu(
 	page: number,
 ): ActionRowBuilder<StringSelectMenuBuilder> {
 
-	const qtsSkillsGlobal = typeof quidToServer?.skills_global === 'string'
-		? JSON.parse(quidToServer.skills_global) as { [x: string]: number; }
-		: quidToServer?.skills_global ?? {};
-	let editMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (category === 'global' ? server.skills : Object.keys(qtsSkillsGlobal)).map(skillName => ({ label: skillName, value: `skills_edit_${category}_${skillName}` }));
+	const qtsSkillsPersonal = typeof quidToServer?.skills_personal === 'string'
+		? JSON.parse(quidToServer.skills_personal) as { [x: string]: number; }
+		: quidToServer?.skills_personal ?? {};
+	let editMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (category === 'global' ? server.skills : Object.keys(qtsSkillsPersonal)).map(skillName => ({ label: skillName, value: `skills_edit_${category}_${skillName}` }));
 
 	if (editMenuOptions.length > 25) {
 
@@ -627,10 +627,10 @@ function getRemoveMenu(
 	page: number,
 ): ActionRowBuilder<StringSelectMenuBuilder> {
 
-	const qtsSkillsGlobal = typeof quidToServer?.skills_global === 'string'
-		? JSON.parse(quidToServer.skills_global) as { [x: string]: number; }
-		: quidToServer?.skills_global ?? {};
-	let removeMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (category === 'global' ? server.skills : Object.keys(qtsSkillsGlobal)).map(skillName => ({ label: skillName, value: `skills_remove_${category}_${skillName}` }));
+	const qtsSkillsPersonal = typeof quidToServer?.skills_personal === 'string'
+		? JSON.parse(quidToServer.skills_personal) as { [x: string]: number; }
+		: quidToServer?.skills_personal ?? {};
+	let removeMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (category === 'global' ? server.skills : Object.keys(qtsSkillsPersonal)).map(skillName => ({ label: skillName, value: `skills_remove_${category}_${skillName}` }));
 
 	if (removeMenuOptions.length > 25) {
 
