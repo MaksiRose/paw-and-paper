@@ -213,7 +213,8 @@ export const command: SlashCommand = {
 		else if (interaction.isStringSelectMenu() && selectOptionId && interaction.customId.includes('modal')) {
 
 			const type = getArrayElement(selectOptionId.split('_'), 1) as 'modify' | 'edit';
-			const category = 'skills_' + getArrayElement(selectOptionId.split('_'), 2) as 'skills_personal' | 'skills_global';
+			const category = getArrayElement(selectOptionId.split('_'), 2) as 'personal' | 'global';
+			const cat = `skills_${category}` as 'skills_personal' | 'skills_global';
 			const skillName = getArrayElement(selectOptionId.split('_'), 3);
 
 			await interaction.showModal(new ModalBuilder()
@@ -227,7 +228,7 @@ export const command: SlashCommand = {
 							.setStyle(TextInputStyle.Short)
 							.setMaxLength(25)
 							.setRequired(true)
-							.setValue(type === 'modify' ? `${quidToServer?.[category][skillName] || 0}` : skillName),
+							.setValue(type === 'modify' ? `${quidToServer?.[cat][skillName] || 0}` : skillName),
 						),
 				),
 			);
