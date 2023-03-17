@@ -1,4 +1,4 @@
-import { Attachment, EmbedBuilder, GuildTextBasedChannel, MessageReference, SlashCommandBuilder } from 'discord.js';
+import { Attachment, EmbedBuilder, GuildTextBasedChannel, Message, MessageReference, SlashCommandBuilder } from 'discord.js';
 import { respond } from '../../utils/helperFunctions';
 import { hasName, isInGuild } from '../../utils/checkUserState';
 import { canManageWebhooks, getMissingPermissionContent, hasPermission, missingPermissions, permissionDisplay } from '../../utils/permissionHandler';
@@ -63,10 +63,10 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		const isSuccessful = await sendMessage(interaction.channel, text, quid, interaction.user.id, attachment ? [attachment] : undefined);
+		const botMessage = await sendMessage(interaction.channel, text, quid, interaction.user.id, attachment ? [attachment] : undefined);
 
 		await interaction.deferReply({ ephemeral: true });
-		if (!isSuccessful) { return; }
+		if (!botMessage) { return; }
 		await interaction.deleteReply();
 	},
 };
@@ -89,9 +89,9 @@ export async function sendMessage(
 	discordUserId: string,
 	attachments?: Array<Attachment>,
 	reference?: MessageReference,
-): Promise<boolean> {
+): Promise<Message | null> {
 
-	if (await canManageWebhooks(channel) === false) { return false; }
+	if (await canManageWebhooks(channel) === false) { return null; }
 
 	const webhookChannel = channel.isThread() ? channel.parent : channel;
 	if (webhookChannel === null) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
@@ -112,7 +112,7 @@ export async function sendMessage(
 
 				await channel.send(getMissingPermissionContent(permissionDisplay.ReadMessageHistory));
 			}
-			return false;
+			return null;
 		}
 
 		const referencedMessage = await channel?.messages.fetch(reference.messageId);
@@ -141,6 +141,5 @@ export async function sendMessage(
 		});
 
 	await Webhook.create({ discordUserId: discordUserId, id: botMessage.id, quidId: quid.id });
-
-	return true;
+	return botMessage;
 }

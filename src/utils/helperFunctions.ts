@@ -308,7 +308,7 @@ export function objectHasKey<T, K extends PropertyKey>(
 	key: K,
 ): obj is T & Record<K, any> { return typeof obj === 'object' && obj !== null && Object.hasOwn(obj, key); }
 
-function isObject(val: any): val is Record<string | number | symbol, unknown> { return typeof val === 'object' && val !== null; }
+export function isObject(val: any): val is Record<string | number | symbol, unknown> { return typeof val === 'object' && val !== null; }
 
 export function deepCopy<T>(arr: T[]): T[] { return JSON.parse(JSON.stringify(arr)) as T[]; }
 
