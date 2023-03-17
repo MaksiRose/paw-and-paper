@@ -41,8 +41,8 @@ interface QuidToServerAttributes {
 	injuries_sprains: number;
 	injuries_poison: boolean;
 	inventory: string[];
-	skills_global: string;
-	skills_personal: string;
+	skills_global: string | { [x: string]: number; };
+	skills_personal: string | { [x: string]: number; };
 	lastActiveTimestamp: number;
 	passedOutTimestamp: number;
 }
@@ -161,10 +161,10 @@ export default class QuidToServer extends Model<QuidToServerAttributes, QuidToSe
 	declare inventory: string[];
 
 	@Column({ type: DataType.JSON, defaultValue: '{}' })
-	declare skills_global: string;
+	declare skills_global: string | { [x: string]: number; };
 
 	@Column({ type: DataType.JSON, defaultValue: '{}' })
-	declare skills_personal: string;
+	declare skills_personal: string | { [x: string]: number; };
 
 	@Column({ type: DataType.INTEGER, defaultValue: 0 })
 	declare lastActiveTimestamp: number;

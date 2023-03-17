@@ -4,7 +4,7 @@ import { Column, DataType, Model, Table } from 'sequelize-typescript';
 interface ErrorInfoAttributes {
 	id: string;
 	stack: string;
-	interactionInfo: string;
+	interactionInfo: string | { [x: string]: number; };
 	isReported: boolean;
 	version: string;
 }
@@ -20,7 +20,7 @@ export default class ErrorInfo extends Model<ErrorInfoAttributes, ErrorInfoOptio
 	declare stack: string;
 
 	@Column({ type: DataType.JSON })
-	declare interactionInfo: string;
+	declare interactionInfo: string | { [x: string]: number; };
 
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })
 	declare isReported: boolean;

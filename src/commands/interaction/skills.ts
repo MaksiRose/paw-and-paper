@@ -54,7 +54,9 @@ export const command: SlashCommand = {
 		if (hasNameAndSpecies(quid) && quidToServer) {
 
 			const newGlobalSkills: { [x: string]: number; } = {};
-			const qtsSkillsGlobal = JSON.parse(quidToServer.skills_global) as { [x: string]: number; };
+			const qtsSkillsGlobal = typeof quidToServer.skills_global === 'string'
+				? JSON.parse(quidToServer.skills_global) as { [x: string]: number; }
+				: { ...quidToServer.skills_global };
 			for (const skill of server.skills) { newGlobalSkills[skill] = qtsSkillsGlobal[skill] ?? 0; }
 			await quidToServer.update({ skills_global: JSON.stringify(newGlobalSkills) });
 		}
@@ -218,7 +220,10 @@ export const command: SlashCommand = {
 			const cat = `skills_${category}` as 'skills_personal' | 'skills_global';
 			const skillName = getArrayElement(selectOptionId.split('_'), 3);
 
-			const qtsSkills = JSON.parse(quidToServer?.[cat] ?? '{}') as { [x: string]: number; };
+			const qtsSkillsPrep = quidToServer?.[cat] ?? '{}';
+			const qtsSkills = typeof qtsSkillsPrep === 'string'
+				? JSON.parse(qtsSkillsPrep) as { [x: string]: number; }
+				: qtsSkillsPrep;
 
 			await interaction.showModal(new ModalBuilder()
 				.setCustomId(`skills_${type}_${category}_${skillName}`)
@@ -245,7 +250,9 @@ export const command: SlashCommand = {
 
 			if (category === 'personal' && quidToServer) {
 
-				const qtsSkillsPersonal = JSON.parse(quidToServer.skills_personal) as { [x: string]: number; };
+				const qtsSkillsPersonal = typeof quidToServer.skills_personal === 'string'
+					? JSON.parse(quidToServer.skills_personal) as { [x: string]: number; }
+					: quidToServer.skills_personal;
 				delete qtsSkillsPersonal[skillName];
 				await quidToServer.update({ skills_personal: JSON.stringify(qtsSkillsPersonal) });
 			}
@@ -255,7 +262,9 @@ export const command: SlashCommand = {
 
 				for (const qts of quidsToServer) {
 
-					const qtsSkillsGlobal = JSON.parse(qts.skills_global) as { [x: string]: number; };
+					const qtsSkillsGlobal = typeof qts.skills_global === 'string'
+						? JSON.parse(qts.skills_global) as { [x: string]: number; }
+						: qts.skills_global;
 					delete qtsSkillsGlobal[skillName];
 					qts.update({ skills_global: JSON.stringify(qtsSkillsGlobal) });
 				}
@@ -302,7 +311,9 @@ export const command: SlashCommand = {
 					return;
 				}
 
-				const qtsSkillsPersonal = JSON.parse(quidToServer.skills_personal) as { [x: string]: number; };
+				const qtsSkillsPersonal = typeof quidToServer.skills_personal === 'string'
+					? JSON.parse(quidToServer.skills_personal) as { [x: string]: number; }
+					: quidToServer.skills_personal;
 				qtsSkillsPersonal[newName] = 0;
 				await quidToServer.update({ skills_personal: JSON.stringify(qtsSkillsPersonal) });
 			}
@@ -324,7 +335,9 @@ export const command: SlashCommand = {
 
 				for (const qts of quidsToServer) {
 
-					const qtsSkillsGlobal = JSON.parse(qts.skills_global) as { [x: string]: number; };
+					const qtsSkillsGlobal = typeof qts.skills_global === 'string'
+						? JSON.parse(qts.skills_global) as { [x: string]: number; }
+						: qts.skills_global;
 					qtsSkillsGlobal[newName] = 0;
 					qts.update({ skills_global: JSON.stringify(qtsSkillsGlobal) });
 				}
@@ -362,7 +375,9 @@ export const command: SlashCommand = {
 					return;
 				}
 
-				const qtsSkillsPersonal = JSON.parse(quidToServer.skills_personal) as { [x: string]: number; };
+				const qtsSkillsPersonal = typeof quidToServer.skills_personal === 'string'
+					? JSON.parse(quidToServer.skills_personal) as { [x: string]: number; }
+					: quidToServer.skills_personal;
 				qtsSkillsPersonal[newName] = qtsSkillsPersonal[skillName] ?? 0;
 				delete qtsSkillsPersonal[skillName];
 				await quidToServer.update({ skills_personal: JSON.stringify(qtsSkillsPersonal) });
@@ -385,7 +400,9 @@ export const command: SlashCommand = {
 
 				for (const qts of quidsToServer) {
 
-					const qtsSkillsGlobal = JSON.parse(qts.skills_global) as { [x: string]: number; };
+					const qtsSkillsGlobal = typeof qts.skills_global === 'string'
+						? JSON.parse(qts.skills_global) as { [x: string]: number; }
+						: qts.skills_global;
 					qtsSkillsGlobal[newName] = qtsSkillsGlobal[skillName] ?? 0;
 					delete qtsSkillsGlobal[skillName];
 					qts.update({ skills_global: JSON.stringify(qtsSkillsGlobal) });
@@ -411,7 +428,10 @@ export const command: SlashCommand = {
 		else if (type === 'modify' && quidToServer) {
 
 			const cat = 'skills_' + category as 'skills_personal' | 'skills_global';
-			const qtsSkills = JSON.parse(quidToServer[cat]) as { [x: string]: number; };
+			const qtsSkillsPrep = quidToServer[cat];
+			const qtsSkills = typeof qtsSkillsPrep === 'string'
+				? JSON.parse(qtsSkillsPrep) as { [x: string]: number; }
+				: qtsSkillsPrep;
 
 			if (skillName === undefined) { throw new TypeError('skillName is undefined'); }
 			const plusOrMinus = interaction.fields.getTextInputValue('skills_modify_textinput').startsWith('+') ? '+' : interaction.fields.getTextInputValue('skills_modify_textinput').startsWith('-') ? '-' : '';
@@ -504,8 +524,12 @@ function getSkillList(
 
 	let skillList = '';
 
-	const qtsSkillsGlobal = JSON.parse(quidToServer?.skills_global || '{}') as { [x: string]: number; };
-	const qtsSkillsPersonal = JSON.parse(quidToServer?.skills_personal || '{}') as { [x: string]: number; };
+	const qtsSkillsGlobal = typeof quidToServer?.skills_global === 'string'
+		? JSON.parse(quidToServer.skills_global) as { [x: string]: number; }
+		: quidToServer?.skills_global ?? {};
+	const qtsSkillsPersonal = typeof quidToServer?.skills_personal === 'string'
+		? JSON.parse(quidToServer.skills_personal) as { [x: string]: number; }
+		: quidToServer?.skills_personal ?? {};
 	for (const skillCategory of Object.values({ ...qtsSkillsGlobal, ...qtsSkillsPersonal })) {
 
 		for (const [skillName, skillAmount] of Object.entries(skillCategory)) { skillList += `\n${skillName}: \`${skillAmount}\``; }
