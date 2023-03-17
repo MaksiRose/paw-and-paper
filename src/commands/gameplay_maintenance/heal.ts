@@ -251,7 +251,7 @@ function stringIsAvailableItem(
 export async function getHealResponse(
 	interaction: ChatInputCommandInteraction<'cached'> | AnySelectMenuInteraction<'cached'> | ButtonInteraction<'cached'>,
 	user: User,
-	quid: Quid,
+	quid: Quid<true>,
 	userToServer: UserToServer,
 	quidToServer: QuidToServer,
 	server: Server,
@@ -259,7 +259,7 @@ export async function getHealResponse(
 	embedArray: EmbedBuilder[],
 	quidPage = 0,
 	user2?: User,
-	quid2?: Quid,
+	quid2?: Quid<true>,
 	discordUser2?: string,
 	quidToServer2?: QuidToServer,
 	inventoryPage: 1 | 2 = 1,

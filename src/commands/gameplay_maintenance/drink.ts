@@ -46,7 +46,7 @@ export async function sendDrinkMessage(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 	user: User,
 	userToServer: UserToServer,
-	quid: Quid,
+	quid: Quid<true>,
 	quidToServer: QuidToServer,
 	messageContent: string,
 	restEmbed: EmbedBuilder[],

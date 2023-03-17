@@ -403,7 +403,7 @@ export const command: SlashCommand = {
 					const maxHP = getRandomNumber(5, 3);
 
 					const pickLoss = async function(
-						losingQuid: Quid,
+						losingQuid: Quid<true>,
 						losingQuidToServer: QuidToServer,
 					): Promise<{ extraFooter: string, outcome: string | 1 | 2; }> {
 
@@ -671,8 +671,8 @@ export const command: SlashCommand = {
 async function sendNextRoundMessage(
 	interaction: ButtonInteraction<'cached'>,
 	userId: string,
-	quid: Quid,
-	quid2: Quid,
+	quid: Quid<true>,
+	quid2: Quid<true>,
 	displaynameOptions: Parameters<typeof getDisplayname>[1],
 	componentArray: ActionRowBuilder<ButtonBuilder>[],
 	isReplied: boolean,
@@ -708,10 +708,10 @@ async function sendNextRoundMessage(
 async function checkLevelUps(
 	interaction: ButtonInteraction<'cached'>,
 	user: User,
-	quid: Quid,
+	quid: Quid<true>,
 	quidToServer: QuidToServer,
 	user2: User,
-	quid2: Quid,
+	quid2: Quid<true>,
 	quidToServer2: QuidToServer,
 ): Promise<{
 	levelUpEmbed1: EmbedBuilder[],
@@ -732,11 +732,11 @@ async function checkLevelUps(
 async function checkAfterGameChanges(
 	interaction: ButtonInteraction<'cached'>,
 	user: User,
-	quid: Quid,
+	quid: Quid<true>,
 	userToServer: UserToServer,
 	quidToServer: QuidToServer,
 	user2: User,
-	quid2: Quid,
+	quid2: Quid<true>,
 	userToServer2: UserToServer,
 	quidToServer2: QuidToServer,
 ): Promise<void> {

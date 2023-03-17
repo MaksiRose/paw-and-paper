@@ -193,7 +193,7 @@ export const command: SlashCommand = {
 			interaction: ButtonInteraction<'cached'>,
 			user: User,
 			userToServer: UserToServer,
-			quid: Quid,
+			quid: Quid<true>,
 			quidToServer: QuidToServer,
 			emojisToClick: string[],
 		): Promise<void> {
@@ -210,13 +210,13 @@ export const command: SlashCommand = {
 				interaction: ButtonInteraction<'cached'>,
 				user: User,
 				userToServer: UserToServer,
-				quid: Quid,
+				quid: Quid<true>,
 				quidToServer: QuidToServer,
 				callback: (
 					interaction: ButtonInteraction<'cached'>,
 					user: User,
 					userToServer: UserToServer,
-					quid: Quid,
+					quid: Quid<true>,
 					quidToServer: QuidToServer,
 				) => Promise<void>,
 			) {
@@ -258,7 +258,7 @@ export const command: SlashCommand = {
 				interaction: ButtonInteraction<'cached'>,
 				user: User,
 				userToServer: UserToServer,
-				quid: Quid,
+				quid: Quid<true>,
 				quidToServer: QuidToServer,
 			) {
 

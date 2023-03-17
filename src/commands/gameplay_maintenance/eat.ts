@@ -273,7 +273,7 @@ export async function sendEatMessage(
 
 async function sendNoItemMessage(
 	embed: EmbedBuilder,
-	quid: Quid,
+	quid: Quid<true> | Quid<false>,
 	chosenFood: string,
 	interaction: ChatInputCommandInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	messageContent: string,

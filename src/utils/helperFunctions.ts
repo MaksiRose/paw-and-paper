@@ -189,7 +189,7 @@ export async function sendErrorMessage(
 			component_type: interaction.isMessageComponent() ? interaction.componentType : undefined,
 			custom_id: interaction.customId,
 			values: interaction.isAnySelectMenu() ? interaction.values : undefined,
-			fields: interaction.isModalSubmit() ? interaction.fields.fields.values() : undefined,
+			fields: interaction.isModalSubmit() ? [...interaction.fields.fields.values()] : undefined,
 			components: interaction.isModalSubmit() ? interaction.components : undefined,
 		},
 		guild_id: interaction.guildId ?? undefined,
@@ -245,7 +245,7 @@ export async function sendErrorMessage(
 			else {
 
 				errorId = generateId();
-				await ErrorInfo.create({ id: errorId, stack, interactionInfo, version });
+				await ErrorInfo.create({ id: errorId, stack, interactionInfo: JSON.stringify(interactionInfo, null, 2), version });
 			}
 		}
 		catch (e) {
@@ -287,8 +287,7 @@ export async function sendErrorMessage(
 
 	function filterStacktrace(stack: string) {
 		const lines = stack.split('\n');
-		const filteredLines = lines.filter(line => line.includes('/dist/'));
-		return [filteredLines[0], ...filteredLines.slice(1).filter(line => !line.includes('/dist/') && !line.includes('/src/'))].join('\n');
+		return [lines[0], ...lines.slice(1).filter(line => line.includes('/dist/') || line.includes('/src/') || !line.includes('at'))].join('\n');
 	}
 }
 
@@ -309,7 +308,7 @@ export function objectHasKey<T, K extends PropertyKey>(
 	key: K,
 ): obj is T & Record<K, any> { return typeof obj === 'object' && obj !== null && Object.hasOwn(obj, key); }
 
-function isObject(val: any): val is Record<string | number | symbol, unknown> { return typeof val === 'object' && val !== null; }
+export function isObject(val: any): val is Record<string | number | symbol, unknown> { return typeof val === 'object' && val !== null; }
 
 export function deepCopy<T>(arr: T[]): T[] { return JSON.parse(JSON.stringify(arr)) as T[]; }
 

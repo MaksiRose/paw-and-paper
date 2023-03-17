@@ -51,7 +51,7 @@ export async function executeResting(
 	interaction: RepliableInteraction<'cached'>,
 	discordUserId: string,
 	user: User,
-	quid: Quid,
+	quid: Quid<true>,
 	userToServer: UserToServer,
 	quidToServer: QuidToServer,
 	server: Server,
@@ -105,7 +105,7 @@ export async function startResting(
 	interaction: RepliableInteraction<'cached'> | undefined,
 	discordUserId: string,
 	user: User,
-	quid: Quid,
+	quid: Quid<true>,
 	userToServer: UserToServer,
 	quidToServer: QuidToServer,
 	server: Server,
@@ -230,7 +230,7 @@ export async function startResting(
  * @returns A function that returns an embed builder
  */
 async function getRestingEmbed(
-	quid: Quid,
+	quid: Quid<true>,
 	quidToServer: QuidToServer,
 	displaynameOptions: Parameters<typeof getDisplayname>[1],
 	energyPoints: number,

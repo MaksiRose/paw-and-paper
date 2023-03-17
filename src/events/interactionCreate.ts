@@ -219,7 +219,7 @@ export const event: DiscordEvent = {
 
 						const errorId = interaction.customId.split('_')[2];
 						const errorInfo = await ErrorInfo.findByPk(errorId);
-						const description = errorInfo ? `Stack:\n\`\`\`\n${errorInfo.stack}\n\`\`\`\nInteraction info:\n\`\`\`json\n${JSON.stringify(errorInfo.interactionInfo, null, 2)}\n\`\`\``.substring(0, 4096) : null;
+						const description = errorInfo ? `Stack:\n\`\`\`\n${errorInfo.stack}\n\`\`\`\nInteraction info:\n\`\`\`json\n${typeof errorInfo.interactionInfo === 'string' ? errorInfo.interactionInfo : JSON.stringify(errorInfo.interactionInfo, null, 2)}\n\`\`\``.substring(0, 4096) : null;
 
 						if (!errorId || !errorInfo || !description) {
 
@@ -243,7 +243,7 @@ export const event: DiscordEvent = {
 							return;
 						}
 
-						await createNewTicket(interaction, `${getFirstLine(description)} (${errorId})`, description, 'bug', null, errorId);
+						await createNewTicket(interaction, `${getFirstLine(errorInfo.stack)} (${errorId})`, description, 'bug', null, errorId);
 						await errorInfo.update({ isReported: true });
 						return;
 					}

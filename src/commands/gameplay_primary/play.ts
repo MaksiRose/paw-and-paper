@@ -62,7 +62,7 @@ export const command: SlashCommand = {
 
 export async function executePlaying(
 	interaction: ChatInputCommandInteraction | ButtonInteraction,
-	{ user, quid, userToServer, quidToServer, discordUser }: { user?: User, quid?: Quid, userToServer?: UserToServer, quidToServer?: QuidToServer, discordUser?: DiscordUser; },
+	{ user, quid, userToServer, quidToServer, discordUser }: { user?: User, quid?: Quid<true> | Quid<false>, userToServer?: UserToServer, quidToServer?: QuidToServer, discordUser?: DiscordUser; },
 	server: Server | undefined,
 	{ forceEdit = false } = {},
 ): Promise<void> {

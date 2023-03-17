@@ -16,7 +16,7 @@ const { default_color } = require('../../config.json');
  */
 export async function checkLevelUp(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
-	quid: Quid,
+	quid: Quid<true>,
 	quidToServer: QuidToServer,
 	members: GuildMember[],
 ): Promise<EmbedBuilder[]> {

@@ -18,6 +18,7 @@ import GroupToQuid from '../../models/groupToQuid';
 import QuidToServerToShopRole from '../../models/quidToServerToShopRole';
 import TemporaryStatIncrease from '../../models/temporaryStatIncrease';
 import { hasCooldown } from '../../utils/checkValidity';
+import { hasNameAndSpecies } from '../../utils/checkUserState';
 const { error_color } = require('../../../config.json');
 
 type CustomIdArgs = ['individual' | 'server' | 'all' | 'cancel'] | ['individual' | 'server', 'options'] | ['confirm', 'individual' | 'server', string] | ['confirm', 'all'];
@@ -79,7 +80,7 @@ export const command: SlashCommand = {
 		if (user === undefined) { throw new Error('userData is undefined'); }
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
-		if (quid && interaction.inGuild() && await hasCooldown(interaction, user, userToServer, quid, quidToServer)) { return; }
+		if (hasNameAndSpecies(quid) && interaction.inGuild() && await hasCooldown(interaction, user, userToServer, quid, quidToServer)) { return; }
 
 
 		/* Creating a new message asking the user if they are sure that they want to delete all their data. */
