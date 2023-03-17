@@ -287,7 +287,7 @@ export async function sendErrorMessage(
 
 	function filterStacktrace(stack: string) {
 		const lines = stack.split('\n');
-		return [lines[0], ...lines.slice(1).filter(line => line.includes('/dist/') || line.includes('/src/'))].join('\n');
+		return [lines[0], ...lines.slice(1).filter(line => line.includes('/dist/') || line.includes('/src/') || !line.includes('at'))].join('\n');
 	}
 }
 
