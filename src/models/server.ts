@@ -11,6 +11,7 @@ import DiscordUserToServer from './discordUserToServer';
 import ShopRole from './shopRole';
 import User from './user';
 import UserToServer from './userToServer';
+import Channel from './channel';
 
 interface ServerAttributes {
 	id: string;
@@ -104,6 +105,9 @@ export default class Server extends Model<ServerAttributes, ServerCreationAttrib
 
 	@HasMany(() => ShopRole, { foreignKey: 'serverId' })
 	declare shopRoles: ShopRole[];
+
+	@HasMany(() => Channel, { foreignKey: 'serverId' })
+	declare channels: Channel[];
 
 	@BelongsToMany(() => Group, () => GroupToServer)
 	declare groups: Group[];

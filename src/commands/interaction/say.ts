@@ -1,4 +1,4 @@
-import { Attachment, EmbedBuilder, GuildTextBasedChannel, Message, MessageReference, SlashCommandBuilder } from 'discord.js';
+import { APIMessage, Attachment, EmbedBuilder, GuildTextBasedChannel, Message, MessageReference, SlashCommandBuilder, WebhookClient, Webhook as DiscordWebhook } from 'discord.js';
 import { respond } from '../../utils/helperFunctions';
 import { hasName, isInGuild } from '../../utils/checkUserState';
 import { canManageWebhooks, getMissingPermissionContent, hasPermission, missingPermissions, permissionDisplay } from '../../utils/permissionHandler';
@@ -8,6 +8,9 @@ import QuidToServer from '../../models/quidToServer';
 import Quid from '../../models/quid';
 import { getDisplayname } from '../../utils/getQuidInfo';
 import Webhook from '../../models/webhook';
+import User from '../../models/user';
+import UserToServer from '../../models/userToServer';
+import Channel from '../../models/channel';
 const { error_color } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -26,7 +29,7 @@ export const command: SlashCommand = {
 	position: 3,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (interaction, { user, quid }) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
 
 		if (await missingPermissions(interaction, [
 			'ManageWebhooks', // Needed for webhook interaction
@@ -63,7 +66,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		const botMessage = await sendMessage(interaction.channel, text, quid, interaction.user.id, attachment ? [attachment] : undefined);
+		const botMessage = await sendMessage(interaction.channel, text, quid, interaction.user.id, attachment ? [attachment] : undefined, undefined, user, userToServer, quidToServer);
 
 		await interaction.deferReply({ ephemeral: true });
 		if (!botMessage) { return; }
@@ -89,14 +92,25 @@ export async function sendMessage(
 	discordUserId: string,
 	attachments?: Array<Attachment>,
 	reference?: MessageReference,
-): Promise<Message | null> {
+	user?: User | undefined,
+	userToServer?: UserToServer | undefined,
+	quidToServer?: QuidToServer | undefined,
+): Promise<Message | APIMessage | null> {
 
+	console.time(quid.id);
 	if (await canManageWebhooks(channel) === false) { return null; }
 
 	const webhookChannel = channel.isThread() ? channel.parent : channel;
 	if (webhookChannel === null) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
-	const webhook = (await webhookChannel.fetchWebhooks()).find(webhook => webhook.name === 'PnP Profile Webhook')
+
+	const channelData = await Channel.findByPk(webhookChannel.id);
+	const webhook = channelData
+		? new WebhookClient({ url: channelData.webhookUrl })
+		: (await webhookChannel.fetchWebhooks()).find(webhook => webhook.name === 'PnP Profile Webhook')
 		|| await webhookChannel.createWebhook({ name: 'PnP Profile Webhook' });
+
+	if (webhook instanceof DiscordWebhook) { Channel.create({ id: webhookChannel.id, serverId: webhookChannel.guildId, webhookUrl: webhook.url }); }
+	console.timeLog(quid.id);
 
 	QuidToServer.update({ currentRegion: CurrentRegionType.Ruins }, { where: { quidId: quid.id, serverId: webhookChannel.guildId } });
 
@@ -129,17 +143,27 @@ export async function sendMessage(
 			.setAuthor({ name: member?.displayName || user.username, iconURL: member?.displayAvatarURL() || user.avatarURL() || undefined })
 			.setDescription(`[Reply to:](${referencedMessage.url}) ${referencedMessageContent}`));
 	}
+	console.timeLog(quid.id);
 
 	const botMessage = await webhook
 		.send({
-			username: await getDisplayname(quid, { serverId: webhookChannel.guildId }),
+			username: await getDisplayname(quid, { serverId: webhookChannel.guildId, user, userToServer, quidToServer }),
 			avatarURL: quid.avatarURL,
 			content: text || undefined,
 			files: attachments,
 			embeds: embeds,
 			threadId: channel.isThread() ? channel.id : undefined,
+		})
+		.catch(async err => {
+			if (err.message && err.message.includes('Unknown Webhook') && channelData) {
+
+				await channelData.destroy();
+				return await sendMessage(channel, text, quid, discordUserId, attachments, reference, user, userToServer, quidToServer);
+			}
+			throw err;
 		});
 
-	Webhook.create({ discordUserId: discordUserId, id: botMessage.id, quidId: quid.id });
+	if (botMessage) { Webhook.create({ discordUserId: discordUserId, id: botMessage.id, quidId: quid.id }); }
+	console.timeEnd(quid.id);
 	return botMessage;
 }

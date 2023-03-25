@@ -26,11 +26,11 @@ export const event: DiscordEvent = {
 
 		if (user === undefined || server === null) { return; }
 
-		const { replaceMessage, quid } = await checkForProxy(message, user, server);
+		const { replaceMessage, quid, userToServer } = await checkForProxy(message, user, server);
 
 		if (replaceMessage && hasName(quid) && (message.content.length > 0 || message.attachments.size > 0)) {
 
-			const botMessage = await sendMessage(message.channel, message.content, quid, message.author.id, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined)
+			const botMessage = await sendMessage(message.channel, message.content, quid, message.author.id, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined, user, userToServer ?? undefined)
 				.catch(error => {
 					console.error(error);
 					return null;
@@ -43,7 +43,7 @@ export const event: DiscordEvent = {
 
 				await message
 					.delete()
-					.catch(async e => { if (isObject(e) && e.code === 10008) { await botMessage.delete(); } }); // If the message is unknown, its webhooked message is probbaly not supposed to exist too, so we delete it
+					.catch(async e => { if (isObject(e) && e.code === 10008) { await message.channel.messages.delete(botMessage.id); } }); // If the message is unknown, its webhooked message is probbaly not supposed to exist too, so we delete it
 			}
 			else if (await hasPermission(message.guild.members.me || message.client.user.id, message.channel, message.channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) {
 

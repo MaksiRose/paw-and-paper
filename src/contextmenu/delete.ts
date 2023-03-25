@@ -6,6 +6,8 @@ import Webhook from '../models/webhook';
 import Quid from '../models/quid';
 import User from '../models/user';
 import DiscordUser from '../models/discordUser';
+import Channel from '../models/channel';
+import { WebhookClient, Webhook as DiscordWebhook } from 'discord.js';
 
 export const command: ContextMenuCommand = {
 	data: {
@@ -49,14 +51,30 @@ export const command: ContextMenuCommand = {
 		channel is a DM, it will throw an error. If the channel is a guild channel, it will get the
 		webhook. If the webhook doesn't exist, it will create one. */
 		if (interaction.channel === null) { throw new Error('Interaction channel is null.'); }
+		if (await canManageWebhooks(interaction.channel) === false) { return; }
+
 		const webhookChannel = interaction.channel.isThread() ? interaction.channel.parent : interaction.channel;
 		if (webhookChannel === null) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
-		if (await canManageWebhooks(interaction.channel) === false) { return; }
-		const webhook = (await webhookChannel.fetchWebhooks()).find(webhook => webhook.name === 'PnP Profile Webhook')
+
+		const channelData = await Channel.findByPk(webhookChannel.id);
+		const webhook = channelData
+			? new WebhookClient({ url: channelData.webhookUrl })
+			: (await webhookChannel.fetchWebhooks()).find(webhook => webhook.name === 'PnP Profile Webhook')
 			|| await webhookChannel.createWebhook({ name: 'PnP Profile Webhook' });
 
+		if (webhook instanceof DiscordWebhook) { Channel.create({ id: webhookChannel.id, serverId: webhookChannel.guildId, webhookUrl: webhook.url }); }
+
 		/* Deleting the message. */
-		await webhook.deleteMessage(interaction.targetId, interaction.channel.isThread() ? interaction.channel.id : undefined);
+		await webhook
+			.deleteMessage(interaction.targetId, interaction.channel.isThread() ? interaction.channel.id : undefined)
+			.catch(async err => {
+				if (err.message && err.message.includes('Unknown Webhook') && channelData) {
+
+					await channelData.destroy();
+					return await command.sendCommand(interaction);
+				}
+				throw err;
+			});
 		await webhookData?.destroy();
 
 		// This is always a reply

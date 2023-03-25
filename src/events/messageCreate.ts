@@ -19,6 +19,8 @@ export const event: DiscordEvent = {
 	once: false,
 	async execute(message: Message) {
 
+		console.log(message.id, '| ' + (Date.now() - message.createdTimestamp) + 'ms');
+		console.time(message.id);
 		if (message.author.bot || !message.inGuild()) { return; }
 
 		if (message.content.toLowerCase().startsWith('rp ') && await hasPermission(message.guild.members.me || message.client.user.id, message.channel, message.channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) {
@@ -36,7 +38,9 @@ export const event: DiscordEvent = {
 
 		if (user === undefined || server === null) { return; }
 
-		let { replaceMessage, quid } = await checkForProxy(message, user, server);
+		console.timeLog(message.id);
+		let { replaceMessage, quid, userToServer } = await checkForProxy(message, user, server);
+		console.timeLog(message.id);
 
 		if (server.currentlyVisitingChannelId !== null && message.channel.id === server.visitChannelId) {
 
@@ -51,11 +55,13 @@ export const event: DiscordEvent = {
 
 		if (replaceMessage && hasName(quid) && (message.content.length > 0 || message.attachments.size > 0)) {
 
-			const botMessage = await sendMessage(message.channel, message.content, quid, message.author.id, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined)
+			console.timeLog(message.id);
+			const botMessage = await sendMessage(message.channel, message.content, quid, message.author.id, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined, user, userToServer ?? undefined)
 				.catch(error => {
 					console.error(error);
 					return null;
 				});
+			console.timeEnd(message.id);
 
 			if (!botMessage) { return; }
 			console.log(`\x1b[32m${message.author.tag} (${message.author.id})\x1b[0m successfully \x1b[31mproxied \x1b[0ma new message in \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
@@ -64,7 +70,7 @@ export const event: DiscordEvent = {
 
 				await message
 					.delete()
-					.catch(async e => { if (isObject(e) && e.code === 10008) { await botMessage.delete(); } }); // If the message is unknown, its webhooked message is probbaly not supposed to exist too, so we delete it
+					.catch(async e => { if (isObject(e) && e.code === 10008) { await message.channel.messages.delete(botMessage.id); } }); // If the message is unknown, its webhooked message is probbaly not supposed to exist too, so we delete it
 			}
 			else if (await hasPermission(message.guild.members.me || await message.channel.guild.members.fetchMe({ force: false }) || message.client.user.id, message.channel, message.channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) {
 
@@ -78,7 +84,7 @@ export async function checkForProxy(
 	message: Message<true> & Message<boolean>,
 	user: User,
 	server: Server,
-): Promise<{ replaceMessage: boolean, quid: Quid | null; }> {
+): Promise<{ replaceMessage: boolean, quid: Quid | null, userToServer: UserToServer | null; }> {
 
 	let channelLimits = await ProxyLimits.findByPk(server.proxy_channelLimitsId);
 	if (!channelLimits) {
@@ -87,7 +93,7 @@ export async function checkForProxy(
 	}
 
 	const proxyIsDisabled = channelLimits.setToWhitelist ? !channelLimits.whitelist.includes(message.channelId) : channelLimits.blacklist.includes(message.channelId);
-	if (proxyIsDisabled) { return { replaceMessage: false, quid: null }; }
+	if (proxyIsDisabled) { return { replaceMessage: false, quid: null, userToServer: null }; }
 
 	let replaceMessage = false;
 	let isAntiProxy = false;
@@ -166,5 +172,5 @@ export async function checkForProxy(
 		user.update({ proxy_lastGlobalProxiedQuidId: chosenQuidId });
 	}
 
-	return { replaceMessage, quid: chosenQuidId ? await Quid.findOne({ where: { id: chosenQuidId } }) : null };
+	return { replaceMessage, quid: chosenQuidId ? await Quid.findOne({ where: { id: chosenQuidId } }) : null, userToServer };
 }

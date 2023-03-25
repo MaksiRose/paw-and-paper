@@ -1,7 +1,10 @@
-import { ActionRowBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData } from 'discord.js';
+import { ActionRowBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, WebhookClient, ForumChannel, NewsChannel, StageChannel, StringSelectMenuInteraction, TextChannel, VoiceChannel, Message, APIMessage, Webhook as DiscordWebhook } from 'discord.js';
+import Channel from '../models/channel';
 import DiscordUser from '../models/discordUser';
 import Quid from '../models/quid';
+import QuidToServer from '../models/quidToServer';
 import User from '../models/user';
+import UserToServer from '../models/userToServer';
 import Webhook from '../models/webhook';
 import { ContextMenuCommand } from '../typings/handle';
 import { hasName, isInGuild } from '../utils/checkUserState';
@@ -92,30 +95,17 @@ export const command: ContextMenuCommand = {
 			const quid = await Quid.findByPk(quidId);
 			if (!hasName(quid)) { return; }
 
-			const channel = interaction.channel;
+			if (interaction.channel === null) { throw new Error('Interaction channel is null.'); }
+			if (await canManageWebhooks(interaction.channel) === false) { return; }
 
-			const webhookChannel = (channel && channel.isThread()) ? channel.parent : channel;
-			if (webhookChannel === null || channel === null) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
-			if (await canManageWebhooks(channel) === false) { return; }
-			const webhook = (await webhookChannel.fetchWebhooks()).find(webhook => webhook.name === 'PnP Profile Webhook')
-			|| await webhookChannel.createWebhook({ name: 'PnP Profile Webhook' });
+			const webhookChannel = interaction.channel.isThread() ? interaction.channel.parent : interaction.channel;
+			if (webhookChannel === null) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
 
-			const previousMessage = await channel.messages.fetch(targetMessageId);
-			if (previousMessage === undefined) { throw new TypeError('previousMessage is undefined'); }
-
-			const botMessage = await webhook
-				.send({
-					username: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
-					avatarURL: quid.avatarURL,
-					content: previousMessage.content || undefined,
-					files: previousMessage.attachments.toJSON(),
-					embeds: previousMessage.embeds,
-					threadId: channel.isThread() ? channel.id : undefined,
-				});
+			const { botMessage, webhook, previousMessage } = await replaceWebhookMessage(webhookChannel, interaction, targetMessageId, quid, userToServer, quidToServer, user, discordUser);
 			await Webhook.create({ id: botMessage.id, discordUserId: discordUser.id, quidId: quid.id });
 
 			/* Deleting the message. */
-			await webhook.deleteMessage(targetMessageId, channel.isThread() ? channel.id : undefined);
+			await webhook.deleteMessage(targetMessageId, interaction.channel.isThread() ? interaction.channel.id : undefined);
 			await Webhook.destroy({ where: { id: previousMessage.id } });
 
 			// This is always an update to the message with the select menu
@@ -126,6 +116,47 @@ export const command: ContextMenuCommand = {
 
 	},
 };
+
+async function replaceWebhookMessage(
+	webhookChannel: NewsChannel | StageChannel | TextChannel | VoiceChannel | ForumChannel,
+	interaction: StringSelectMenuInteraction<'cached'>,
+	targetMessageId: string,
+	quid: Quid<false> | Quid<true>,
+	userToServer: UserToServer | undefined,
+	quidToServer: QuidToServer | undefined,
+	user: User | undefined,
+	discordUser: DiscordUser | undefined,
+): Promise<{ botMessage: APIMessage | Message, webhook: WebhookClient | DiscordWebhook, previousMessage: Message }> {
+	const channelData = await Channel.findByPk(webhookChannel.id);
+	const webhook = channelData
+		? new WebhookClient({ url: channelData.webhookUrl })
+		: (await webhookChannel.fetchWebhooks()).find(webhook => webhook.name === 'PnP Profile Webhook')
+		|| await webhookChannel.createWebhook({ name: 'PnP Profile Webhook' });
+
+	if (webhook instanceof DiscordWebhook) { Channel.create({ id: webhookChannel.id, serverId: webhookChannel.guildId, webhookUrl: webhook.url }); }
+
+	const previousMessage = await interaction.channel!.messages.fetch(targetMessageId);
+	if (previousMessage === undefined) { throw new TypeError('previousMessage is undefined'); }
+
+	return await webhook
+		.send({
+			username: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
+			avatarURL: quid.avatarURL,
+			content: previousMessage.content || undefined,
+			files: previousMessage.attachments.toJSON(),
+			embeds: previousMessage.embeds,
+			threadId: interaction.channel?.isThread() ? interaction.channel.id : undefined,
+		})
+		.then(botMessage => ({ botMessage, webhook, previousMessage }))
+		.catch(async (err) => {
+			if (err.message && err.message.includes('Unknown Webhook') && channelData) {
+
+				await channelData.destroy();
+				return await replaceWebhookMessage(webhookChannel, interaction, targetMessageId, quid, userToServer, quidToServer, user, discordUser);
+			}
+			throw err;
+		});
+}
 
 function getQuidsPage(
 	quids: Quid[],
