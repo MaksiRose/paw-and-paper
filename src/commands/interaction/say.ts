@@ -98,7 +98,7 @@ export async function sendMessage(
 	const webhook = (await webhookChannel.fetchWebhooks()).find(webhook => webhook.name === 'PnP Profile Webhook')
 		|| await webhookChannel.createWebhook({ name: 'PnP Profile Webhook' });
 
-	await QuidToServer.update({ currentRegion: CurrentRegionType.Ruins }, { where: { quidId: quid.id, serverId: webhookChannel.guildId } });
+	QuidToServer.update({ currentRegion: CurrentRegionType.Ruins }, { where: { quidId: quid.id, serverId: webhookChannel.guildId } });
 
 	const embeds: Array<EmbedBuilder> = [];
 
@@ -140,6 +140,6 @@ export async function sendMessage(
 			threadId: channel.isThread() ? channel.id : undefined,
 		});
 
-	await Webhook.create({ discordUserId: discordUserId, id: botMessage.id, quidId: quid.id });
+	Webhook.create({ discordUserId: discordUserId, id: botMessage.id, quidId: quid.id });
 	return botMessage;
 }
