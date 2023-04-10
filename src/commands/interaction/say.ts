@@ -97,7 +97,6 @@ export async function sendMessage(
 	quidToServer?: QuidToServer | undefined,
 ): Promise<Message | APIMessage | null> {
 
-	console.time(quid.id);
 	if (await canManageWebhooks(channel) === false) { return null; }
 
 	const webhookChannel = channel.isThread() ? channel.parent : channel;
@@ -110,7 +109,6 @@ export async function sendMessage(
 		|| await webhookChannel.createWebhook({ name: 'PnP Profile Webhook' });
 
 	if (webhook instanceof DiscordWebhook) { Channel.create({ id: webhookChannel.id, serverId: webhookChannel.guildId, webhookUrl: webhook.url }); }
-	console.timeLog(quid.id);
 
 	QuidToServer.update({ currentRegion: CurrentRegionType.Ruins }, { where: { quidId: quid.id, serverId: webhookChannel.guildId } });
 
@@ -143,7 +141,6 @@ export async function sendMessage(
 			.setAuthor({ name: member?.displayName || user.username, iconURL: member?.displayAvatarURL() || user.avatarURL() || undefined })
 			.setDescription(`[Reply to:](${referencedMessage.url}) ${referencedMessageContent}`));
 	}
-	console.timeLog(quid.id);
 
 	const botMessage = await webhook
 		.send({
@@ -164,6 +161,5 @@ export async function sendMessage(
 		});
 
 	if (botMessage) { Webhook.create({ discordUserId: discordUserId, id: botMessage.id, quidId: quid.id }); }
-	console.timeEnd(quid.id);
 	return botMessage;
 }

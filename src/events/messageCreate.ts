@@ -131,9 +131,6 @@ export async function checkForProxy(
 
 		for (const quid of (await Quid.findAll({ where: { userId: user.id }, attributes: ['id', 'proxy_startsWith', 'proxy_endsWith'] }))) {
 
-			if (!finalQuid && quid.id === finalQuidId) { finalQuid = quid; }
-
-
 			const hasProxy = quid.proxy_startsWith !== ''
 				|| quid.proxy_endsWith !== '';
 
@@ -153,7 +150,7 @@ export async function checkForProxy(
 			user.update({ proxy_lastGlobalProxiedQuidId: finalQuid?.id });
 		}
 
-		return { replaceMessage, quid: finalQuid, userToServer };
+		return { replaceMessage, quid: await Quid.findByPk(finalQuid?.id ?? finalQuidId ?? ''), userToServer };
 	}
 	else {
 
@@ -173,9 +170,6 @@ export async function checkForProxy(
 
 		for (const quid of (await Quid.findAll({ where: { userId: user.id }, attributes: ['id', 'proxy_startsWith', 'proxy_endsWith'] }))) {
 
-			if (!finalQuid && quid.id === finalQuidId) { finalQuid = quid; }
-
-
 			const hasProxy = quid.proxy_startsWith !== ''
 				|| quid.proxy_endsWith !== '';
 
@@ -191,6 +185,6 @@ export async function checkForProxy(
 
 		if (replaceMessage) { userToServer.update({ lastProxiedQuidId: finalQuid?.id }); }
 
-		return { replaceMessage, quid: finalQuid, userToServer };
+		return { replaceMessage, quid: await Quid.findByPk(finalQuid?.id ?? finalQuidId ?? ''), userToServer };
 	}
 }
