@@ -19,8 +19,7 @@ module.exports = {
 				WHEN "stickymode_setTo" = TRUE THEN 2
 				ELSE 1
 			END,
-			"autoproxy_setToWhitelist" = FALSE
-			WHERE "autoproxy_setToWhitelist" IS NULL;
+			"autoproxy_setToWhitelist" = ("autoproxy_setToWhitelist" = TRUE);
     	`);
 
 		// Change autoproxy_setToWhitelist to not allow null
