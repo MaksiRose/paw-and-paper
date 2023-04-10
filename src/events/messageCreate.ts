@@ -5,22 +5,21 @@ import ProxyLimits from '../models/proxyLimits';
 import Quid from '../models/quid';
 import Server from '../models/server';
 import DiscordUserToServer from '../models/discordUserToServer';
-import User from '../models/user';
-import UserToServer from '../models/userToServer';
+import User, { ProxySetTo } from '../models/user';
+import UserToServer, { AutoproxySetTo } from '../models/userToServer';
 // import { sendVisitMessage } from '../commands/interaction/requestvisit';
 import { DiscordEvent } from '../typings/main';
 import { hasName } from '../utils/checkUserState';
 import { getMissingPermissionContent, hasPermission, permissionDisplay } from '../utils/permissionHandler';
 import { createGuild } from '../utils/updateGuild';
 import { isObject, now } from '../utils/helperFunctions';
+import { generateId } from 'crystalid';
 
 export const event: DiscordEvent = {
 	name: 'messageCreate',
 	once: false,
 	async execute(message: Message) {
 
-		console.log(message.id, '| ' + (Date.now() - message.createdTimestamp) + 'ms');
-		console.time(message.id);
 		if (message.author.bot || !message.inGuild()) { return; }
 
 		if (message.content.toLowerCase().startsWith('rp ') && await hasPermission(message.guild.members.me || message.client.user.id, message.channel, message.channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) {
@@ -38,9 +37,7 @@ export const event: DiscordEvent = {
 
 		if (user === undefined || server === null) { return; }
 
-		console.timeLog(message.id);
 		let { replaceMessage, quid, userToServer } = await checkForProxy(message, user, server);
-		console.timeLog(message.id);
 
 		if (server.currentlyVisitingChannelId !== null && message.channel.id === server.visitChannelId) {
 
@@ -55,13 +52,11 @@ export const event: DiscordEvent = {
 
 		if (replaceMessage && hasName(quid) && (message.content.length > 0 || message.attachments.size > 0)) {
 
-			console.timeLog(message.id);
 			const botMessage = await sendMessage(message.channel, message.content, quid, message.author.id, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined, user, userToServer ?? undefined)
 				.catch(error => {
 					console.error(error);
 					return null;
 				});
-			console.timeEnd(message.id);
 
 			if (!botMessage) { return; }
 			console.log(`\x1b[32m${message.author.tag} (${message.author.id})\x1b[0m successfully \x1b[31mproxied \x1b[0ma new message in \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
@@ -86,69 +81,59 @@ export async function checkForProxy(
 	server: Server,
 ): Promise<{ replaceMessage: boolean, quid: Quid | null, userToServer: UserToServer | null; }> {
 
+	let replaceMessage = true;
+
+	DiscordUserToServer
+		.update({ isMember: true, lastUpdatedTimestamp: now() }, { where: { discordUserId: message.author.id, serverId: message.guildId } })
+		.then(([r]) => {
+			if (r === 0) { DiscordUserToServer.create({ id: generateId(), discordUserId: message.author.id, serverId: message.guildId, isMember: true, lastUpdatedTimestamp: now() }); }
+		});
+
 	let channelLimits = await ProxyLimits.findByPk(server.proxy_channelLimitsId);
 	if (!channelLimits) {
 		channelLimits = await ProxyLimits.create();
 		server.update({ proxy_channelLimitsId: channelLimits.id });
 	}
 
-	const proxyIsDisabled = channelLimits.setToWhitelist ? !channelLimits.whitelist.includes(message.channelId) : channelLimits.blacklist.includes(message.channelId);
-	if (proxyIsDisabled) { return { replaceMessage: false, quid: null, userToServer: null }; }
 
-	let replaceMessage = false;
-	let isAntiProxy = false;
+	const proxyIsDisabled = channelLimits.setToWhitelist ? !channelLimits.whitelist.includes(message.channelId) : channelLimits.blacklist.includes(message.channelId);
+	if (proxyIsDisabled) { replaceMessage = false; }
 
 	const userToServer = await UserToServer.findOne({
 		where: { serverId: message.guildId, userId: user.id },
 	});
-	let chosenQuidId = userToServer?.activeQuidId ?? null;
 
-	/* Checking if the user has autoproxy enabled in the current channel, and if so, it is adding the prefix to the message. */
-	const autoproxyIsToggled = userToServer
-		? userToServer.autoproxy_setToWhitelist === null
-			? user.proxy_globalAutoproxy === true
-			: userToServer.autoproxy_setToWhitelist === true
-				? userToServer.autoproxy_whitelist.includes(message.channelId)
-				: !userToServer.autoproxy_blacklist.includes(message.channelId)
-		: user.proxy_globalAutoproxy === true;
 
-	if (autoproxyIsToggled) {
-
-		replaceMessage = true;
-
-		/* Checking if the user has stickymode enabled eitehr locally or globally. If they do, the quid is changed to the quidId (which is null if the last proxied quid is "nothing") */
-		const quidId = userToServer?.stickymode_setTo === true
-			? userToServer.lastProxiedQuidId
-			: (
-				userToServer === null
-				|| userToServer.stickymode_setTo === null
-			) && user.proxy_globalStickymode === true
-				? user.proxy_lastGlobalProxiedQuidId
-				: false;
-		if (quidId !== false) { chosenQuidId = quidId; }
-		if (chosenQuidId === null) {
-
-			replaceMessage = false;
-			isAntiProxy = true;
-		}
-	}
-
-	/* Checking if the message starts with the quid's proxy start and ends with the quid's proxy end. If it does, it will set the current quid to the quid that the message is being sent from. */
 	const hasAntiProxy = user.antiproxy_startsWith !== ''
 		|| user.antiproxy_endsWith !== '';
 	const messageIncludesAntiProxy = message.content.startsWith(user.antiproxy_startsWith)
 		&& message.content.endsWith(user.antiproxy_endsWith);
-	if (hasAntiProxy && messageIncludesAntiProxy) {
 
-		chosenQuidId = null;
-		replaceMessage = false;
-		isAntiProxy = true;
-	}
-	else {
+
+	const followsGlobalSettings = userToServer === null || userToServer.autoproxy_setTo === AutoproxySetTo.followGlobal;
+
+	if (followsGlobalSettings) {
+
+		if (user.proxy_setTo === ProxySetTo.off) { replaceMessage = false; }
+		if (hasAntiProxy && messageIncludesAntiProxy) {
+
+			if (replaceMessage) {
+
+				userToServer?.update({ lastProxiedQuidId: null });
+				user.update({ proxy_lastGlobalProxiedQuidId: null });
+			}
+			replaceMessage = false;
+		}
+
+
+		const finalQuidId = user.proxy_setTo === ProxySetTo.onWithSelectMode ? user.lastGlobalActiveQuidId : user.proxy_lastGlobalProxiedQuidId;
+		let finalQuid: Quid | null = null;
 
 		for (const quid of (await Quid.findAll({ where: { userId: user.id }, attributes: ['id', 'proxy_startsWith', 'proxy_endsWith'] }))) {
 
-			/* Checking if the message includes the proxy. If it does, it will change the message content to the prefix + 'say ' + the message content without the proxy. */
+			if (!finalQuid && quid.id === finalQuidId) { finalQuid = quid; }
+
+
 			const hasProxy = quid.proxy_startsWith !== ''
 				|| quid.proxy_endsWith !== '';
 
@@ -157,20 +142,55 @@ export async function checkForProxy(
 
 			if (hasProxy && messageIncludesProxy) {
 
-				chosenQuidId = quid.id;
+				finalQuid = quid;
 				message.content = message.content.substring(quid.proxy_startsWith.length, message.content.length - quid.proxy_endsWith.length);
-				replaceMessage = true;
 			}
 		}
+
+		if (replaceMessage) {
+
+			userToServer?.update({ lastProxiedQuidId: finalQuid?.id });
+			user.update({ proxy_lastGlobalProxiedQuidId: finalQuid?.id });
+		}
+
+		return { replaceMessage, quid: finalQuid, userToServer };
 	}
+	else {
 
-	DiscordUserToServer.update({ isMember: true, lastUpdatedTimestamp: now() }, { where: { discordUserId: message.author.id, serverId: message.guildId } });
+		if (userToServer.autoproxy_setTo === AutoproxySetTo.off) { replaceMessage = false; }
+		if (hasAntiProxy && messageIncludesAntiProxy) {
 
-	if (replaceMessage || isAntiProxy) {
+			if (replaceMessage) { userToServer.update({ lastProxiedQuidId: null }); }
+			replaceMessage = false;
+		}
+		if (userToServer.autoproxy_setToWhitelist === true
+			? !userToServer.autoproxy_whitelist.includes(message.channelId)
+			: userToServer.autoproxy_blacklist.includes(message.channelId)) { replaceMessage = false; }
 
-		userToServer?.update({ lastProxiedQuidId: chosenQuidId });
-		user.update({ proxy_lastGlobalProxiedQuidId: chosenQuidId });
+
+		const finalQuidId = userToServer.autoproxy_setTo === AutoproxySetTo.onWithSelectMode ? userToServer.activeQuidId : userToServer.lastProxiedQuidId;
+		let finalQuid: Quid | null = null;
+
+		for (const quid of (await Quid.findAll({ where: { userId: user.id }, attributes: ['id', 'proxy_startsWith', 'proxy_endsWith'] }))) {
+
+			if (!finalQuid && quid.id === finalQuidId) { finalQuid = quid; }
+
+
+			const hasProxy = quid.proxy_startsWith !== ''
+				|| quid.proxy_endsWith !== '';
+
+			const messageIncludesProxy = message.content.startsWith(quid.proxy_startsWith)
+				&& message.content.endsWith(quid.proxy_endsWith);
+
+			if (hasProxy && messageIncludesProxy) {
+
+				finalQuid = quid;
+				message.content = message.content.substring(quid.proxy_startsWith.length, message.content.length - quid.proxy_endsWith.length);
+			}
+		}
+
+		if (replaceMessage) { userToServer.update({ lastProxiedQuidId: finalQuid?.id }); }
+
+		return { replaceMessage, quid: finalQuid, userToServer };
 	}
-
-	return { replaceMessage, quid: chosenQuidId ? await Quid.findOne({ where: { id: chosenQuidId } }) : null, userToServer };
 }
