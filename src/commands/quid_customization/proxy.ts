@@ -45,10 +45,10 @@ export const command: SlashCommand = {
 					{
 						name: 'set proxy',
 						value: 'This sets an indicator to the bot you want your message to be proxied. Only messages with those indicators will be proxied. Click the "Set?" button below to learn more.',
-					}, ...((hasName(quid) || !interaction.inGuild()) ? [{
+					}, {
 						name: 'auto proxy',
 						value: 'This will treat every message in a specific channel as if it was proxied, even if the proxy isn\'t included. Click the "Auto?" button below to learn more.',
-					}] : []),
+					},
 				])],
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([
@@ -56,10 +56,10 @@ export const command: SlashCommand = {
 						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, quid?.id ?? user.id, ['set', 'learnmore']))
 						.setLabel('Set?')
 						.setStyle(ButtonStyle.Success),
-					...((hasName(quid) || !interaction.inGuild()) ? [new ButtonBuilder()
+					new ButtonBuilder()
 						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, quid?.id ?? user.id, ['auto', 'learnmore']))
 						.setLabel('Auto?')
-						.setStyle(ButtonStyle.Success)] : []),
+						.setStyle(ButtonStyle.Success),
 				])],
 		});
 	},
