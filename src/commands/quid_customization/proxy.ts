@@ -260,7 +260,7 @@ export const command: SlashCommand = {
 							name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 							iconURL: quid.avatarURL,
 						} : null)
-						.setTitle(`${hasChannel ? 'Removed' : 'Added'} ${interaction.guild?.channels.cache.get(channelId)?.name ?? channelId} ${hasChannel ? 'from' : 'to'} the auto-proxy ${listType}!`)],
+						.setTitle(`${hasChannel ? 'Removed' : 'Added'} ${interaction.guild?.channels.cache.get(channelId)?.name ?? channelId} ${hasChannel ? 'from' : 'to'} the auto-proxy ${listType.split('_')[1]}!`)],
 					ephemeral: true,
 				});
 			}
