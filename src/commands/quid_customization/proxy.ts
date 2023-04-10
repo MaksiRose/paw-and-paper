@@ -163,7 +163,7 @@ export const command: SlashCommand = {
 		if (!interaction.inGuild()) { return; }
 		const allChannels = (await interaction.guild?.channels?.fetch() ?? new Collection()).filter((c): c is NonThreadGuildBasedChannel => c !== null && c.permissionsFor(interaction.client.user.id)?.has('ViewChannel') != false && c.permissionsFor(interaction.client.user.id)?.has('SendMessages') != false && c.permissionsFor(interaction.user.id)?.has('ViewChannel') != false && c.permissionsFor(interaction.user.id)?.has('SendMessages') != false);
 
-		if (interaction.isButton() && customId.args[0] === 'auto' && customId.args[1] === 'learnmore') {
+		if (interaction.isButton() && customId.args[0] === 'auto' && customId.args[1] === 'advanced') {
 
 			// This is always an update to the message with the button
 			await respond(interaction, {
@@ -172,15 +172,6 @@ export const command: SlashCommand = {
 					.setDescription('You can customize which channels auto-proxying applies in. When this is set to blacklist, auto-proxying is *only disabled* in the selected channels. When it is set to whitelist, auto-proxying is *only enabled* in the selected channels. Using the drop-down menu, you can select the channels for the black-/whitelist.\n\nBy default, this is set to blacklist with no channels selected, which means that it is not disabled in any channels.')
 					.setFields()
 					.setFooter(null)],
-				components: getAdvancedAutoproxyComponents(allChannels, user, quid, userToServer, 0),
-			}, 'update', interaction.message.id);
-			return;
-		}
-
-		if (interaction.isButton() && customId.args[0] === 'auto' && customId.args[1] === 'advanced') {
-
-			// This is always an update to the message with the select menu
-			await respond(interaction, {
 				components: getAdvancedAutoproxyComponents(allChannels, user, quid, userToServer, 0),
 			}, 'update', interaction.message.id);
 			return;
