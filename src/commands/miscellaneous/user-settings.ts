@@ -9,8 +9,8 @@ import { respond } from '../../utils/helperFunctions';
 import { sendReminder, stopReminder } from '../gameplay_maintenance/water-tree';
 const { default_color } = require('../../../config.json');
 
-type CustomIdArgs = ['options'] | ['mainpage'] | ['mentions'] | ['accessibility'] | ['reminders', 'resting' | 'water', 'on' | 'off']
-type SelectOptionArgs = ['mentions'] | ['accessibility'] | ['water' | 'resting'] | ['replaceEmojis']
+type CustomIdArgs = ['options'] | ['mainpage'] | ['mentions'] | ['accessibility'] | ['proxy'] | ['reminders', 'resting' | 'water', 'on' | 'off']
+type SelectOptionArgs = ['mentions'] | ['accessibility'] | ['proxy'] | ['water' | 'resting'] | ['replaceEmojis'] | ['editing' | 'keepInMessage']
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -141,6 +141,21 @@ export const command: SlashCommand = {
 				});
 			}
 		}
+
+		const isProxyChange = customId.args[0] === 'proxy' && interaction.isStringSelectMenu();
+		if (isProxyChange || (customId.args[0] === 'options' && selectOptionId?.[0]?.[0] === 'proxy')) {
+
+			if (isProxyChange) {
+
+				await user.update({
+					proxy_editing: selectOptionId?.flat().includes('editing') ?? false,
+					proxy_keepInMessage: selectOptionId?.flat().includes('keepInMessage') ?? false,
+				});
+			}
+
+			// This is always an update
+			await respond(interaction, getProxyMessage(interaction, user), 'update', interaction.message.id);
+		}
 	},
 };
 
@@ -159,6 +174,7 @@ function getOriginalMessage(
 				.setOptions(
 					{ value: constructSelectOptions<SelectOptionArgs>(['mentions']), label: 'Mentions', description: 'Manage what you get pinged for' },
 					{ value: constructSelectOptions<SelectOptionArgs>(['accessibility']), label: 'Accessibility', description: 'Configure accessibility options' },
+					{ value: constructSelectOptions<SelectOptionArgs>(['proxy']), label: 'Proxy', description: 'Configure proxy options' },
 				)])],
 	};
 }
@@ -214,6 +230,35 @@ function getAccessibilityMessage(
 		new ActionRowBuilder<StringSelectMenuBuilder>()
 			.setComponents([new StringSelectMenuBuilder()
 				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, interaction.user.id, ['accessibility']))
+				.setOptions(menuOptions)
+				.setMinValues(0)
+				.setMaxValues(menuOptions.length)])],
+	};
+}
+
+function getProxyMessage(
+	interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction,
+	user: User,
+): InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions {
+
+	const menuOptions: RestOrArray<SelectMenuComponentOptionData> = [
+		{ label: 'Replace message when proxy is edited in', value: constructSelectOptions<SelectOptionArgs>(['editing']), default: user.proxy_editing },
+		{ label: 'Keep the proxy in the message after it\'s been replaced', value: constructSelectOptions<SelectOptionArgs>(['keepInMessage']), default: user.proxy_keepInMessage },
+	];
+
+	return {
+		embeds: [new EmbedBuilder()
+			.setColor(default_color)
+			.setTitle('Settings ➜ Proxy')],
+		components: [new ActionRowBuilder<ButtonBuilder>()
+			.setComponents([new ButtonBuilder()
+				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, interaction.user.id, ['mainpage']))
+				.setLabel('Back')
+				.setEmoji('⬅️')
+				.setStyle(ButtonStyle.Secondary)]),
+		new ActionRowBuilder<StringSelectMenuBuilder>()
+			.setComponents([new StringSelectMenuBuilder()
+				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, interaction.user.id, ['mentions']))
 				.setOptions(menuOptions)
 				.setMinValues(0)
 				.setMaxValues(menuOptions.length)])],

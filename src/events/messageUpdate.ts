@@ -25,6 +25,7 @@ export const event: DiscordEvent = {
 		const server = (await Server.findByPk(message.guildId)) ?? await createGuild(message.guild);
 
 		if (user === undefined || server === null) { return; }
+		if (user.proxy_editing === false) { return; }
 
 		const { replaceMessage, quid, userToServer } = await checkForProxy(message, user, server);
 

@@ -278,7 +278,7 @@ export async function getProfileMessageOptions(
 			.setFields([
 				{ name: '**🏷️ Displayname**', value: await getDisplayname(quid, displaynameOptions) },
 				{ name: '**🦑 Species**', value: capitalize(getDisplayspecies(quid)) || '/', inline: true },
-				{ name: '**🔑 Proxy**', value: quid.proxies.map(p => `${p[0]}text${p[1]}`).join('\n') || 'No proxy set', inline: true },
+				{ name: '**🔑 Proxies**', value: quid.proxies.map(p => `${p[0]}text${p[1]}`).join('\n') || 'No proxy set', inline: true },
 				{ name: '**🍂 Pronouns**', value: pronouns.map(pronoun => pronoun.length === 1 ? pronoun[0]! : `${pronoun[0]}/${pronoun[1]} (${pronoun[2]}/${pronoun[3]}/${pronoun[4]})`).join('\n') || '/' },
 				{
 					name: '**🗂️ Groups**',
