@@ -23,12 +23,11 @@ interface QuidAttributes<Completed extends boolean = false> {
 	avatarURL: string;
 	pronouns_en: string[][];
 	noPronouns_en: boolean;
-	proxy_startsWith: string;
-	proxy_endsWith: string;
+	proxies: string[][]
 	color: `#${string}`;
 }
 
-type QuidCreationAttributes<Completed extends boolean = false> = Optional<QuidAttributes<Completed>, 'mainGroupId' | 'nickname' | 'species' | 'displayedSpecies' | 'description' | 'avatarURL' | 'pronouns_en' | 'noPronouns_en' | 'proxy_startsWith' | 'proxy_endsWith' | 'color'>
+type QuidCreationAttributes<Completed extends boolean = false> = Optional<QuidAttributes<Completed>, 'mainGroupId' | 'nickname' | 'species' | 'displayedSpecies' | 'description' | 'avatarURL' | 'pronouns_en' | 'noPronouns_en' | 'proxies' | 'color'>
 
 @Table
 export default class Quid<Completed extends boolean = false> extends Model<QuidAttributes<Completed>, QuidCreationAttributes<Completed>> {
@@ -73,11 +72,8 @@ export default class Quid<Completed extends boolean = false> extends Model<QuidA
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })
 	declare noPronouns_en: boolean;
 
-	@Column({ type: DataType.STRING, defaultValue: '' })
-	declare proxy_startsWith: string;
-
-	@Column({ type: DataType.STRING, defaultValue: '' })
-	declare proxy_endsWith: string;
+	@Column({ type: DataType.ARRAY(DataType.ARRAY(DataType.STRING)), defaultValue: [] })
+	declare proxies: string[][];
 
 	@Column({ type: DataType.STRING, defaultValue: default_color })
 	declare color: `#${string}`;

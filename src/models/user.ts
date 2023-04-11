@@ -28,8 +28,7 @@ interface UserAttributes {
 	accessibility_replaceEmojis: boolean;
 	tag: string;
 	lastPlayedVersion: string;
-	antiproxy_startsWith: string;
-	antiproxy_endsWith: string;
+	antiproxies: string[][]
 	lastRecordedTopVote: number;
 	nextRedeemableTopVote: number;
 	lastRecordedDiscordsVote: number;
@@ -38,7 +37,7 @@ interface UserAttributes {
 	nextRedeemableDblVote: number;
 }
 
-type UserCreationAttributes = Optional<UserAttributes, 'advice_resting' | 'advice_eating' | 'advice_drinking' | 'advice_passingOut' | 'advice_coloredButtons' | 'advice_sapling' | 'reminders_water' | 'reminders_resting' | 'proxy_setTo' | 'accessibility_replaceEmojis' | 'tag' | 'antiproxy_startsWith' | 'antiproxy_endsWith' | 'lastRecordedTopVote' | 'nextRedeemableTopVote' | 'lastRecordedDiscordsVote' | 'nextRedeemableDiscordsVote' | 'lastRecordedDblVote' | 'nextRedeemableDblVote'>;
+type UserCreationAttributes = Optional<UserAttributes, 'advice_resting' | 'advice_eating' | 'advice_drinking' | 'advice_passingOut' | 'advice_coloredButtons' | 'advice_sapling' | 'reminders_water' | 'reminders_resting' | 'proxy_setTo' | 'accessibility_replaceEmojis' | 'tag' | 'antiproxies' | 'lastRecordedTopVote' | 'nextRedeemableTopVote' | 'lastRecordedDiscordsVote' | 'nextRedeemableDiscordsVote' | 'lastRecordedDblVote' | 'nextRedeemableDblVote'>;
 
 @Table
 export default class User extends Model<UserAttributes, UserCreationAttributes> {
@@ -95,11 +94,8 @@ export default class User extends Model<UserAttributes, UserCreationAttributes> 
 	@Column({ type: DataType.STRING })
 	declare lastPlayedVersion: string;
 
-	@Column({ type: DataType.STRING, defaultValue: '' })
-	declare antiproxy_startsWith: string;
-
-	@Column({ type: DataType.STRING, defaultValue: '' })
-	declare antiproxy_endsWith: string;
+	@Column({ type: DataType.ARRAY(DataType.ARRAY(DataType.STRING)), defaultValue: [] })
+	declare antiproxies: string[][];
 
 	@Column({ type: DataType.INTEGER, defaultValue: 0 })
 	declare lastRecordedTopVote: number;
