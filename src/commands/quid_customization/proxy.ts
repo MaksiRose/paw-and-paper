@@ -11,7 +11,7 @@ import { generateId } from 'crystalid';
 import QuidToServer from '../../models/quidToServer';
 const { error_color, default_color } = require('../../../config.json');
 
-type CustomIdArgs = [] | ['set', 'learnmore' | 'modal'] | ['auto', 'learnmore' | 'setTo' | 'advanced' | 'channelListType' | 'channelListOptions'] | ['mainpage']
+type CustomIdArgs = [] | ['set', 'learnmore' | 'modal'] | ['auto', 'learnmore' | 'setTo' | 'advanced' | 'channelListType' | 'channelListOptions'] | ['mainpage'] | [string]
 type SelectOptionArgs = [string] | ['nextpage', `${number}`]
 
 export const command: SlashCommand = {
@@ -57,50 +57,59 @@ export const command: SlashCommand = {
 					.setDescription('Proxying is a way to speak as if your quid was saying it. The proxy is an indicator to the bot you want your message to be proxied. It consists of a prefix (indicator before the message) and a suffix (indicator after the message). You can either set both or one of them.\n\nExamples:\nprefix: `<`, suffix: `>`, example message: `<hello friends>`\nprefix: `P: `, no suffix, example message: `P: hello friends`\nno prefix, suffix: ` -p`, example message: `hello friends -p`\nThis is case-sensitive (meaning that upper and lowercase matters).')
 					.setFields()
 					.setFooter({ text: hasName(quid) ? 'Tip: Use this command while no quid is selected to configure an "anti-proxy". That anti-proxy can be used to escape auto-proxying. It also turns off auto-proxying permanently while sticky-mode is on, until you use another proxy again.' : 'Caution: Since you currently have no quid selected, you are configuring an anti-proxy. This can be used to escape auto-proxying. It also turns off auto-proxying permanently while sticky-mode is on, until you use another proxy again. Select a quid from the profile-command to configure a proxy for that quid.' })],
-				components: [new ActionRowBuilder<ButtonBuilder>()
-					.setComponents([new ButtonBuilder()
-						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, quid?.id ?? user.id, ['mainpage']))
-						.setLabel('Back')
-						.setEmoji('⬅️')
-						.setStyle(ButtonStyle.Secondary)]),
-				new ActionRowBuilder<ButtonBuilder>()
-					.setComponents([new ButtonBuilder()
-						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, quid?.id ?? user.id, ['set', 'modal']))
-						.setLabel('Set proxy')
-						.setStyle(ButtonStyle.Success)])],
+				components: getSetproxyMsg(user, quid, 0),
 			}, 'update', interaction.message.id);
 			return;
 		}
 
-		/* If the user pressed the button to set their proxy, open the modal. */
-		if (interaction.isButton() && customId.args[0] === 'set' && customId.args[1] === 'modal') {
+		/* If the user pressed the select menu to set their proxy, open the modal. */
+		if (interaction.isStringSelectMenu() && customId.args[0] === 'set' && customId.args[1] === 'modal') {
 
-			await interaction.showModal(new ModalBuilder()
-				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, quid?.id ?? user.id, []))
-				.setTitle('Set a proxy')
-				.addComponents(
-					new ActionRowBuilder<TextInputBuilder>({
-						components: [new TextInputBuilder()
-							.setCustomId('startsWith')
-							.setLabel('Prefix (indicator before the message)')
-							.setStyle(TextInputStyle.Short)
-							.setMaxLength(16)
-							.setRequired(false)
-							.setValue(quid?.proxy_startsWith ?? user.antiproxy_startsWith),
-						],
-					}),
-					new ActionRowBuilder<TextInputBuilder>({
-						components: [new TextInputBuilder()
-							.setCustomId('endsWith')
-							.setLabel('Suffix (indicator after the message)')
-							.setStyle(TextInputStyle.Short)
-							.setMaxLength(16)
-							.setRequired(false)
-							.setValue(quid?.proxy_endsWith ?? user.antiproxy_endsWith),
-						],
-					}),
-				),
-			);
+			let page = 0;
+			const selectOptionId = deconstructSelectOptions<SelectOptionArgs>(interaction)[0];
+			if (selectOptionId === undefined) { throw new TypeError('selectOptionId is undefined'); }
+
+			/* If the user clicked the next page option, increment the page. */
+			if (selectOptionId[0] === 'nextpage') {
+
+				page = Number(selectOptionId[1]) + 1;
+				if (page >= Math.ceil(((quid ? quid.proxies : user.antiproxies).length + 1) / 24)) { page = 0; }
+
+				// This is always an update to the message with the select menu
+				await respond(interaction, {
+					components: getSetproxyMsg(user, quid, page),
+				}, 'update', interaction.message.id);
+			}
+			/* If the user clicked add or an existing proxy, show a modal. */
+			else {
+
+				await interaction.showModal(new ModalBuilder()
+					.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, quid?.id ?? user.id, [selectOptionId[0]]))
+					.setTitle('Set a proxy')
+					.addComponents(
+						new ActionRowBuilder<TextInputBuilder>({
+							components: [new TextInputBuilder()
+								.setCustomId('startsWith')
+								.setLabel('Prefix (indicator before the message)')
+								.setStyle(TextInputStyle.Short)
+								.setMaxLength(16)
+								.setRequired(false)
+								.setValue(selectOptionId[0] === 'add' ? '' : ((quid ? quid.proxies[Number(selectOptionId[0])]?.[0] : user.antiproxies[Number(selectOptionId[0])]?.[0]) ?? '')),
+							],
+						}),
+						new ActionRowBuilder<TextInputBuilder>({
+							components: [new TextInputBuilder()
+								.setCustomId('endsWith')
+								.setLabel('Suffix (indicator after the message)')
+								.setStyle(TextInputStyle.Short)
+								.setMaxLength(16)
+								.setRequired(false)
+								.setValue(selectOptionId[0] === 'add' ? '' : ((quid ? quid.proxies[Number(selectOptionId[0])]?.[1] : user.antiproxies[Number(selectOptionId[0])]?.[1]) ?? '')),
+							],
+						}),
+					),
+				);
+			}
 			return;
 		}
 
@@ -270,70 +279,118 @@ export const command: SlashCommand = {
 	async sendModalResponse(interaction, { user, quid: activeQuid, userToServer, quidToServer }) {
 
 		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
-		if (user === undefined || !customId) { return; } // This is always a reply
+		if (user === undefined || !customId) { return; }
+		if (!interaction.isFromMessage()) { return; }
 
 		const chosenPrefix = interaction.fields.getTextInputValue('startsWith');
 		const chosenSuffix = interaction.fields.getTextInputValue('endsWith');
 
+		if (customId.args[0] === 'add' && chosenPrefix.length <= 0 && chosenSuffix.length <= 0) {
+
+			// This is always an update
+			await respond(interaction, {
+				components: getSetproxyMsg(user, activeQuid, Math.ceil(((activeQuid ? activeQuid.proxies : user.antiproxies).length + 1) / 24) - 1),
+			}, 'update', interaction.message.id);
+			return;
+		}
+
 		/* For each quid but the selected one, check if they already have the same prefix and suffix and send an error message if they do. */
-		const quids = await Quid.findAll({ where: { userId: user.id } });
-		for (const quid of quids) {
+		if (chosenPrefix.length > 0 || chosenSuffix.length > 0) {
 
-			if (quid.id === activeQuid?.id) { continue; }
+			const quids = await Quid.findAll({ where: { userId: user.id } });
+			for (const quid of quids) {
 
-			const isSamePrefix = quid.proxy_startsWith === chosenPrefix;
-			const isSameSuffix = quid.proxy_endsWith === chosenSuffix;
-			if (isSamePrefix && isSameSuffix) {
+				if (quid.id === activeQuid?.id) { continue; }
 
-				// This is always a reply
-				await respond(interaction, {
-					embeds: [new EmbedBuilder()
-						.setColor(error_color)
-						.setDescription(`The prefix \`${chosenPrefix || 'no prefix'}\` and the suffix \`${chosenSuffix || 'no suffix'}\` are already used for ${quid.name} and can't be used for ${activeQuid?.name ?? 'the anti-proxy'} as well.`)],
-					ephemeral: true,
-				});
-				return;
+				for (const proxy of quid.proxies) {
+
+					const isSamePrefix = proxy[0] === chosenPrefix;
+					const isSameSuffix = proxy[1] === chosenSuffix;
+					if (isSamePrefix && isSameSuffix) {
+
+						// This is always a reply
+						await respond(interaction, {
+							embeds: [new EmbedBuilder()
+								.setColor(error_color)
+								.setDescription(`The prefix \`${chosenPrefix || 'no prefix'}\` and the suffix \`${chosenSuffix || 'no suffix'}\` are already used for ${quid.name} and can't be used for ${activeQuid?.name ?? 'the anti-proxy'} as well.`)],
+							ephemeral: true,
+						});
+						return;
+					}
+				}
+			}
+
+			if (hasName(activeQuid)) {
+
+				for (const antiproxy of user.antiproxies) {
+
+					const isSamePrefix = antiproxy[0] === chosenPrefix;
+					const isSameSuffix = antiproxy[1] === chosenSuffix;
+					if (isSamePrefix && isSameSuffix) {
+
+						// This is always a reply
+						await respond(interaction, {
+							embeds: [new EmbedBuilder()
+								.setColor(error_color)
+								.setDescription(`The prefix \`${chosenPrefix || 'no prefix'}\` and the suffix \`${chosenSuffix || 'no suffix'}\` are already used for the anti-proxy and can't be used for ${activeQuid.name} as well.`)],
+							ephemeral: true,
+						});
+						return;
+					}
+				}
 			}
 		}
 
-		if (hasName(activeQuid)) {
+		const proxyNumber = Number(customId.args[0]);
+		const proxyOrAntiproxy = activeQuid ? 'proxy' : 'anti-proxy';
 
-			const isSamePrefix = user.antiproxy_startsWith === chosenPrefix;
-			const isSameSuffix = user.antiproxy_endsWith === chosenSuffix;
-			if (isSamePrefix && isSameSuffix) {
+		const prefixReply = chosenPrefix === '' ? 'no prefix' : `prefix: \`${chosenPrefix}\``;
+		const suffixReply = chosenSuffix === '' ? 'no suffix' : `suffix: \`${chosenSuffix}\``;
+		const proxyReply = `${prefixReply} and ${suffixReply}`;
 
-				// This is always a reply
-				await respond(interaction, {
-					embeds: [new EmbedBuilder()
-						.setColor(error_color)
-						.setDescription(`The prefix \`${chosenPrefix || 'no prefix'}\` and the suffix \`${chosenSuffix || 'no suffix'}\` are already used for the anti-proxy and can't be used for ${activeQuid.name} as well.`)],
-					ephemeral: true,
-				});
-				return;
-			}
-		}
+		const previousPrefix = activeQuid ? activeQuid.proxies[proxyNumber]?.[0] : user.antiproxies[proxyNumber]?.[0];
+		const previousSuffix = activeQuid ? activeQuid.proxies[proxyNumber]?.[1] : user.antiproxies[proxyNumber]?.[1];
+		const previousPrefixReply = previousPrefix === '' ? 'no prefix' : `prefix: \`${previousPrefix}\``;
+		const previousSuffixReply = previousSuffix === '' ? 'no suffix' : `suffix: \`${previousSuffix}\``;
+		const previousProxyReply = `${previousPrefixReply} and ${previousSuffixReply}`;
+
+		const addOrEdit = `${customId.args[0] === 'add'
+			? `added ${proxyOrAntiproxy}`
+			: `edited ${proxyOrAntiproxy} from ${previousProxyReply} to`} ${proxyReply}`;
+		const deleteOrAddOrEdit = (chosenPrefix.length <= 0 && chosenSuffix.length <= 0)
+			? `deleted ${proxyOrAntiproxy} ${previousProxyReply}`
+			: addOrEdit;
 
 		/* Update the database and send a success messsage. */
-		if (hasName(activeQuid)) {
+		if (activeQuid) {
 
-			await activeQuid.update({ proxy_startsWith: chosenPrefix, proxy_endsWith: chosenSuffix });
+			const proxies = deepCopy(activeQuid.proxies);
+			if (chosenPrefix.length <= 0 && chosenSuffix.length <= 0) { proxies.splice(proxyNumber, 1); }
+			else { proxies[isNaN(proxyNumber) ? proxies.length : proxyNumber] = [chosenPrefix, chosenSuffix]; }
+			await activeQuid.update({ proxies: proxies });
 		}
 		else {
 
-			await user.update({ antiproxy_startsWith: chosenPrefix, antiproxy_endsWith: chosenSuffix });
+			const antiproxies = deepCopy(user.antiproxies);
+			if (chosenPrefix.length <= 0 && chosenSuffix.length <= 0) { antiproxies.splice(proxyNumber, 1); }
+			else { antiproxies[isNaN(proxyNumber) ? antiproxies.length : proxyNumber] = [chosenPrefix, chosenSuffix]; }
+			await user.update({ antiproxies: antiproxies });
 		}
 
-		const prefixResponse = chosenPrefix === '' ? 'no prefix' : `prefix: \`${chosenPrefix}\``;
-		const suffixResponse = chosenSuffix === '' ? 'no suffix' : `suffix: \`${chosenSuffix}\``;
-		// This is always a reply
+		// This is always an update
+		await respond(interaction, {
+			components: getSetproxyMsg(user, activeQuid, Math.ceil(((activeQuid ? activeQuid.proxies : user.antiproxies).length + 1) / 24) - 1),
+		}, 'update', interaction.message.id);
+
+		// This is always a followUp
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(activeQuid?.color ?? default_color)
-				.setAuthor(hasName(activeQuid) ? {
+				.setAuthor(activeQuid ? {
 					name: await getDisplayname(activeQuid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 					iconURL: activeQuid.avatarURL,
 				} : null)
-				.setTitle(`${hasName(activeQuid) ? 'Proxy' : 'Anti-proxy'} set to ${prefixResponse} and ${suffixResponse}!`)],
+				.setTitle(`Successfully ${deleteOrAddOrEdit}!`)],
 		});
 		return;
 	},
@@ -469,5 +526,50 @@ function getAdvancedAutoproxyComponents(
 				.setPlaceholder(`Select channels to ${userToServer?.autoproxy_setToWhitelist ? 'enable' : 'disable'} auto-proxying in`)
 				.setOptions(selectMenuOptions)
 				.setDisabled(userToServer === undefined || userToServer.autoproxy_setToWhitelist === null)]),
+	];
+}
+
+function getSetproxyMsg(
+	user: User,
+	quid: Quid<true> | Quid<false> | undefined,
+	page: number,
+): (ActionRowBuilder<ButtonBuilder> | ActionRowBuilder<StringSelectMenuBuilder>)[] {
+
+	// If ChannelSelects ever allow for default values, then this could be implemented here. Right now, using default values clashes with the "Show more channels" feature
+	let selectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (quid ? quid.proxies : user.antiproxies).map((proxy, value) => ({
+		label: `${proxy[0]}text${proxy[1]}`,
+		value: constructSelectOptions<SelectOptionArgs>([`${value}`]),
+	}));
+
+	if (selectMenuOptions.length < 25) {
+
+		selectMenuOptions.push({
+			label: 'Add a proxy',
+			value: constructSelectOptions<SelectOptionArgs>(['add']),
+		});
+	}
+
+	if (selectMenuOptions.length > 25) {
+
+		selectMenuOptions = selectMenuOptions.splice(page * 24, 24);
+		selectMenuOptions.push({
+			label: 'Show more proxies',
+			value: constructSelectOptions<SelectOptionArgs>(['nextpage', `${page}`]),
+			description: `You are currently on page ${page + 1}`, emoji: '📋',
+		});
+	}
+
+	return [
+		new ActionRowBuilder<ButtonBuilder>()
+			.setComponents([new ButtonBuilder()
+				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, quid?.id ?? user.id, ['mainpage']))
+				.setLabel('Back')
+				.setEmoji('⬅️')
+				.setStyle(ButtonStyle.Secondary)]),
+		new ActionRowBuilder<StringSelectMenuBuilder>()
+			.setComponents([new StringSelectMenuBuilder()
+				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, quid?.id ?? user.id, ['set', 'modal']))
+				.setPlaceholder('Add or select a proxy to change')
+				.setOptions(selectMenuOptions)]),
 	];
 }

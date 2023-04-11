@@ -104,10 +104,8 @@ export async function checkForProxy(
 	});
 
 
-	const hasAntiProxy = user.antiproxy_startsWith !== ''
-		|| user.antiproxy_endsWith !== '';
-	const messageIncludesAntiProxy = message.content.startsWith(user.antiproxy_startsWith)
-		&& message.content.endsWith(user.antiproxy_endsWith);
+	const messageIncludesAntiProxy = user.antiproxies.some(ap => message.content.startsWith(ap[0] ?? '')
+		&& message.content.endsWith(ap[1] ?? ''));
 
 
 	const followsGlobalSettings = userToServer === null || userToServer.autoproxy_setTo === AutoproxySetTo.followGlobal;
@@ -115,7 +113,7 @@ export async function checkForProxy(
 	if (followsGlobalSettings) {
 
 		if (user.proxy_setTo === ProxySetTo.off) { replaceMessage = false; }
-		if (hasAntiProxy && messageIncludesAntiProxy) {
+		if (messageIncludesAntiProxy) {
 
 			if (replaceMessage) {
 
@@ -129,18 +127,16 @@ export async function checkForProxy(
 		const finalQuidId = user.proxy_setTo === ProxySetTo.onWithSelectMode ? user.lastGlobalActiveQuidId : user.proxy_lastGlobalProxiedQuidId;
 		let finalQuid: Quid | null = null;
 
-		for (const quid of (await Quid.findAll({ where: { userId: user.id }, attributes: ['id', 'proxy_startsWith', 'proxy_endsWith'] }))) {
+		for (const quid of (await Quid.findAll({ where: { userId: user.id }, attributes: ['id', 'proxies'] }))) {
 
-			const hasProxy = quid.proxy_startsWith !== ''
-				|| quid.proxy_endsWith !== '';
+			for (const p of quid.proxies) {
 
-			const messageIncludesProxy = message.content.startsWith(quid.proxy_startsWith)
-				&& message.content.endsWith(quid.proxy_endsWith);
+				if (message.content.startsWith(p[0] ?? '')
+					&& message.content.endsWith(p[1] ?? '')) {
 
-			if (hasProxy && messageIncludesProxy) {
-
-				finalQuid = quid;
-				message.content = message.content.substring(quid.proxy_startsWith.length, message.content.length - quid.proxy_endsWith.length);
+					finalQuid = quid;
+					message.content = message.content.substring(p[0]?.length ?? 0, message.content.length - (p[1]?.length ?? 0));
+				}
 			}
 		}
 
@@ -155,7 +151,7 @@ export async function checkForProxy(
 	else {
 
 		if (userToServer.autoproxy_setTo === AutoproxySetTo.off) { replaceMessage = false; }
-		if (hasAntiProxy && messageIncludesAntiProxy) {
+		if (messageIncludesAntiProxy) {
 
 			if (replaceMessage) { userToServer.update({ lastProxiedQuidId: null }); }
 			replaceMessage = false;
@@ -168,18 +164,16 @@ export async function checkForProxy(
 		const finalQuidId = userToServer.autoproxy_setTo === AutoproxySetTo.onWithSelectMode ? userToServer.activeQuidId : userToServer.lastProxiedQuidId;
 		let finalQuid: Quid | null = null;
 
-		for (const quid of (await Quid.findAll({ where: { userId: user.id }, attributes: ['id', 'proxy_startsWith', 'proxy_endsWith'] }))) {
+		for (const quid of (await Quid.findAll({ where: { userId: user.id }, attributes: ['id', 'proxies'] }))) {
 
-			const hasProxy = quid.proxy_startsWith !== ''
-				|| quid.proxy_endsWith !== '';
+			for (const p of quid.proxies) {
 
-			const messageIncludesProxy = message.content.startsWith(quid.proxy_startsWith)
-				&& message.content.endsWith(quid.proxy_endsWith);
+				if (message.content.startsWith(p[0] ?? '')
+					&& message.content.endsWith(p[1] ?? '')) {
 
-			if (hasProxy && messageIncludesProxy) {
-
-				finalQuid = quid;
-				message.content = message.content.substring(quid.proxy_startsWith.length, message.content.length - quid.proxy_endsWith.length);
+					finalQuid = quid;
+					message.content = message.content.substring(p[0]?.length ?? 0, message.content.length - (p[1]?.length ?? 0));
+				}
 			}
 		}
 
