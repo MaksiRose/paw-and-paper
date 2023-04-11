@@ -22,6 +22,8 @@ interface UserAttributes {
 	advice_sapling: boolean;
 	reminders_water: boolean;
 	reminders_resting: boolean;
+	proxy_editing: boolean;
+	proxy_keepInMessage: boolean;
 	proxy_setTo: ProxySetTo;
 	proxy_lastGlobalProxiedQuidId: string | null;
 	lastGlobalActiveQuidId: string | null;
@@ -37,7 +39,7 @@ interface UserAttributes {
 	nextRedeemableDblVote: number;
 }
 
-type UserCreationAttributes = Optional<UserAttributes, 'advice_resting' | 'advice_eating' | 'advice_drinking' | 'advice_passingOut' | 'advice_coloredButtons' | 'advice_sapling' | 'reminders_water' | 'reminders_resting' | 'proxy_setTo' | 'accessibility_replaceEmojis' | 'tag' | 'antiproxies' | 'lastRecordedTopVote' | 'nextRedeemableTopVote' | 'lastRecordedDiscordsVote' | 'nextRedeemableDiscordsVote' | 'lastRecordedDblVote' | 'nextRedeemableDblVote'>;
+type UserCreationAttributes = Optional<UserAttributes, 'advice_resting' | 'advice_eating' | 'advice_drinking' | 'advice_passingOut' | 'advice_coloredButtons' | 'advice_sapling' | 'reminders_water' | 'reminders_resting' | 'proxy_editing' | 'proxy_keepInMessage' | 'proxy_setTo' | 'accessibility_replaceEmojis' | 'tag' | 'antiproxies' | 'lastRecordedTopVote' | 'nextRedeemableTopVote' | 'lastRecordedDiscordsVote' | 'nextRedeemableDiscordsVote' | 'lastRecordedDblVote' | 'nextRedeemableDblVote'>;
 
 @Table
 export default class User extends Model<UserAttributes, UserCreationAttributes> {
@@ -67,6 +69,12 @@ export default class User extends Model<UserAttributes, UserCreationAttributes> 
 
 	@Column({ type: DataType.BOOLEAN, defaultValue: true })
 	declare reminders_resting: boolean;
+
+	@Column({ type: DataType.BOOLEAN, defaultValue: true })
+	declare proxy_editing: boolean;
+
+	@Column({ type: DataType.BOOLEAN, defaultValue: false })
+	declare proxy_keepInMessage: boolean;
 
 	@Column({ type: DataType.SMALLINT, allowNull: false, defaultValue: 0 })
 	declare proxy_setTo: ProxySetTo;

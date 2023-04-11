@@ -91,7 +91,7 @@ export async function checkForProxy(
 
 	let channelLimits = await ProxyLimits.findByPk(server.proxy_channelLimitsId);
 	if (!channelLimits) {
-		channelLimits = await ProxyLimits.create();
+		channelLimits = await ProxyLimits.create({ id: generateId() });
 		server.update({ proxy_channelLimitsId: channelLimits.id });
 	}
 

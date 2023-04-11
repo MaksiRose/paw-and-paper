@@ -29,9 +29,12 @@ interface ServerAttributes {
 	sleepingDenId: string;
 	medicineDenId: string;
 	foodDenId: string;
+	requiredTagList: string[];
+	logChannelId: string | null;
+	logLimitsId: string;
 }
 
-type ServerCreationAttributes = Optional<ServerAttributes, 'nextPossibleAttackTimestamp' | 'visitChannelId' | 'currentlyVisitingChannelId' | 'skills' | 'proxy_logChannelId' | 'proxy_requireTag' | 'proxy_requireTagInDisplayname' | 'proxy_possibleTags' | 'inventory'>
+type ServerCreationAttributes = Optional<ServerAttributes, 'nextPossibleAttackTimestamp' | 'visitChannelId' | 'currentlyVisitingChannelId' | 'skills' | 'proxy_logChannelId' | 'proxy_requireTag' | 'proxy_requireTagInDisplayname' | 'proxy_possibleTags' | 'inventory' | 'requiredTagList' | 'logChannelId'>
 
 @Table
 export default class Server extends Model<ServerAttributes, ServerCreationAttributes> {
@@ -121,4 +124,17 @@ export default class Server extends Model<ServerAttributes, ServerCreationAttrib
 
 	@BelongsToMany(() => DiscordUser, () => DiscordUserToServer)
 	declare discordUsers: DiscordUser[];
+
+	@Column({ type: DataType.ARRAY(DataType.STRING), defaultValue: [] })
+	declare requiredTagList: string[];
+
+	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
+	declare logChannelId: string | null;
+
+	@ForeignKey(() => ProxyLimits)
+	@Column({ type: DataType.STRING })
+	declare logLimitsId: string;
+
+	@BelongsTo(() => ProxyLimits, { foreignKey: 'logLimitsId' })
+	declare logLimits: ProxyLimits;
 }
