@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageComponentInteraction, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle, RoleSelectMenuBuilder, ChannelSelectMenuBuilder, channelMention } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageComponentInteraction, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle, RoleSelectMenuBuilder, ChannelSelectMenuBuilder, channelMention, ModalMessageModalSubmitInteraction } from 'discord.js';
 import { deepCopy, respond, sendErrorMessage } from '../../utils/helperFunctions';
 import { checkLevelRequirements, checkRankRequirements, updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { missingPermissions } from '../../utils/permissionHandler';
@@ -15,6 +15,7 @@ import Den from '../../models/den';
 import DiscordUserToServer from '../../models/discordUserToServer';
 import GroupToServer from '../../models/groupToServer';
 import UserToServer from '../../models/userToServer';
+import { explainRuleset } from '../../utils/nameRules';
 const { default_color, update_channel_id } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -535,6 +536,48 @@ export const command: SlashCommand = {
 			}
 		}
 
+		if (interaction.isStringSelectMenu() && interaction.customId.includes('proxying_options') && interaction.values[0] === 'namerules') {
+
+			// This is always an update to the message with the select menu
+			await respond(interaction, await getProxyingNamerulesMessage(interaction, server, 0), 'update', interaction.message.id);
+			return;
+		}
+
+		if (interaction.isStringSelectMenu() && selectOptionId && interaction.customId.includes('proxying_namerules_options')) {
+
+			if (selectOptionId.includes('nextpage')) {
+
+				const page = Number(selectOptionId.split('_')[1]) + 1;
+
+				// This is always an update to the message with the select menu
+				await respond(interaction, await getProxyingNamerulesMessage(interaction, server, page), 'update', interaction.message.id);
+				return;
+			}
+			else {
+
+				/* Getting the position of the pronoun in the array, and the existing pronoun in that place */
+				const nameRuleSet = selectOptionId === 'add' ? '' : server.nameRuleSets[Number(selectOptionId)];
+				if (nameRuleSet === undefined) { throw new TypeError('nameRuleSet is undefined'); }
+
+				const textInput = new TextInputBuilder()
+					.setCustomId('nameRuleSet')
+					.setLabel('Text')
+					.setStyle(TextInputStyle.Paragraph)
+					.setMinLength(0)
+					.setRequired(selectOptionId === 'add');
+				if (selectOptionId !== 'add') { textInput.setValue(nameRuleSet); }
+
+				await interaction
+					.showModal(new ModalBuilder()
+						.setCustomId(`server-settings_proxying_namerules_${selectOptionId}`)
+						.setTitle(`${selectOptionId === 'add' ? 'Add' : 'Change'} Ruleset`)
+						.addComponents(new ActionRowBuilder<TextInputBuilder>()
+							.setComponents([textInput])),
+					);
+				return;
+			}
+		}
+
 		if (interaction.isStringSelectMenu() && interaction.customId.includes('proxying_options') && interaction.values[0] === 'channels') {
 
 			const channelLimits = await ProxyLimits.findByPk(server.proxy_channelLimitsId);
@@ -632,6 +675,59 @@ export const command: SlashCommand = {
 
 			await interaction.guild.leave();
 		}
+	},
+	async sendModalResponse(interaction, { server }) {
+
+		if (!interaction.isFromMessage()) { return; }
+		if (!interaction.inCachedGuild()) { return; }
+		if (!server) { return; }
+
+		/* Getting the array position of the pronoun that is being edited, the pronouns that are being set, whether the pronouns are being deleted, and whether the pronouns are being set to none. */
+		const rulesetNumber = Number(interaction.customId.split('_')[3]);
+		const newRuleset = interaction.fields.getTextInputValue('nameRuleSet');
+		const willBeDeleted = newRuleset === '';
+
+		/* Checking if the user has provided the correct amount of arguments. If they haven't, it will send an error message. */
+		if (!willBeDeleted) {
+
+			const newRules = newRuleset.split('\n');
+			for (let i = 0; i < newRules.length; i++) {
+
+				const rule = newRules[i];
+				if (!rule) { break; }
+
+				if (rule.replace(/@displayname/g, '@').length > 80) {
+
+					// This is always a reply
+					await respond(interaction, {
+						content: `Rule ${i + 1} is longer than 80 characters, which makes it impossible to follow because names can only be 80 characters long!`,
+						ephemeral: true,
+					});
+					return;
+				}
+			}
+		}
+
+		const oldRuleset = isNaN(rulesetNumber) ? undefined : server.nameRuleSets[rulesetNumber];
+
+		/* Add the pronouns, send a success message and update the original one. */
+		const nameRuleSets = deepCopy(server.nameRuleSets);
+		if ((willBeDeleted && !isNaN(rulesetNumber))) { nameRuleSets.splice(rulesetNumber, 1); }
+		else { nameRuleSets[isNaN(rulesetNumber) ? nameRuleSets.length : rulesetNumber] = newRuleset; }
+
+		await server.update({
+			nameRuleSets: nameRuleSets,
+		});
+
+		// This is always an update
+		await respond(interaction, await getProxyingNamerulesMessage(interaction, server, 0), 'update', interaction.message.id);
+
+		const addedOrEditedTo = oldRuleset === undefined ? 'added ruleset' : `edited ruleset from \`${explainRuleset(oldRuleset)}\` to`;
+		// This is always a followUp
+		await respond(interaction, {
+			content: `Successfully ${willBeDeleted ? `deleted ruleset \`${explainRuleset(oldRuleset ?? '')}\`` : `${addedOrEditedTo} \`${explainRuleset(newRuleset)}\``}!`,
+		});
+		return;
 	},
 };
 
@@ -891,7 +987,7 @@ async function getProxyingMessage(
 				.setPlaceholder('Select an option to configure.')
 				.setOptions(
 					{ value: 'logging', label: 'Logging', description: 'Configure logging proxied messages' },
-					{ value: 'tags', label: 'Tags', description: 'Configure rules a user\'s tag must follow for their message to be proxied' },
+					{ value: 'namerules', label: 'Name Rules', description: 'Configure rules a quid\'s name must follow for their message to be proxied' },
 					{ value: 'channels', label: 'Channels', description: 'Toggle in which channels proxying should be enabled or disabled' },
 					{ value: 'roles', label: 'Roles', description: 'Toggle for which channels proxying should be enabled or disabled' },
 				)])],
@@ -984,6 +1080,63 @@ async function getProxyingLoggingAdvancedMessage(
 				.setCustomId(`server-settings_proxying_logging_options_@${interaction.user.id}`)
 				.setPlaceholder(`Select channels to ${logLimits.setToWhitelist ? 'enable' : 'disable'} logging for`)
 				.setOptions(disableSelectMenuOptions)])],
+	};
+}
+
+async function getProxyingNamerulesMessage(
+	interaction: AnySelectMenuInteraction<'cached'> | ButtonInteraction<'cached'> | ModalMessageModalSubmitInteraction<'cached'>,
+	server: Server,
+	page: number,
+): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
+
+	// If ChannelSelects ever allow for default values, then this could be implemented here. Right now, using default values clashes with the "Show more channels" feature
+	let ruleSelectMenuOptions: Array<SelectMenuComponentOptionData> = [];
+
+	server.nameRuleSets.forEach((nameRules, value) => {
+
+		const nameRulesArr = nameRules.split('\n');
+		ruleSelectMenuOptions.push({
+			label: `Ruleset with ${nameRulesArr.length} rules:`,
+			description: explainRuleset(nameRules).substring(0, 100),
+			value: `${value}`,
+		});
+	});
+
+	if (ruleSelectMenuOptions.length < 25) {
+
+		ruleSelectMenuOptions.push({
+			label: 'Add a ruleset',
+			value: 'add',
+		});
+	}
+
+	if (ruleSelectMenuOptions.length > 25) {
+
+		const pageCount = Math.ceil(ruleSelectMenuOptions.length / 24);
+		let adjustedPage = page % pageCount;
+		if (adjustedPage < 0) { adjustedPage += pageCount; }
+
+		ruleSelectMenuOptions = ruleSelectMenuOptions.splice(page * 24, 24);
+		ruleSelectMenuOptions.push({ label: 'Show more rulesets', value: `nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
+	}
+
+	return {
+		embeds: [new EmbedBuilder()
+			.setColor(default_color)
+			.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() ?? undefined })
+			.setTitle('Settings ➜ Proxying ➜ Name Rules')
+			.setDescription('Name rules are rules a quid\'s name must follow for their message to be proxied. Selecting "Add a ruleset" from the drop-down menu opens a pop-up that allows you to type out a new ruleset. Each ruleset consists of one or multiple rules, each of which consists of exact text that must be included in the quid\'s name. You can also type @displayname to require one word from the user\'s display name to be present in the quid\'s name. To create a new rule, simply make a new line. The quid\'s name must include all rules of required text, but it can be in any order.This provides flexibility to users when creating their quid\'s name that comply with the rules. Each ruleset is a new way for users to comply, so they only need to follow one set of rules.')],
+		components: [new ActionRowBuilder<ButtonBuilder>()
+			.setComponents([new ButtonBuilder()
+				.setCustomId(`server-settings_proxying_@${interaction.user.id}`)
+				.setLabel('Back')
+				.setEmoji('⬅️')
+				.setStyle(ButtonStyle.Secondary)]),
+		new ActionRowBuilder<StringSelectMenuBuilder>()
+			.setComponents([new StringSelectMenuBuilder()
+				.setCustomId(`server-settings_proxying_namerules_options_@${interaction.user.id}`)
+				.setPlaceholder('Add or edit name rulesets')
+				.setOptions(ruleSelectMenuOptions)])],
 	};
 }
 

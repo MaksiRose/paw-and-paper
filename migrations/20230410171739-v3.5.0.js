@@ -140,7 +140,7 @@ module.exports = {
 				defaultValue: null
 			}).catch(e => console.error(e));
 
-			await queryInterface.addColumn('Server', 'requiredTagList', {
+			await queryInterface.addColumn('Server', 'nameRuleSets', {
 				type: Sequelize.ARRAY(Sequelize.STRING),
 				allowNull: false,
 				defaultValue: []
@@ -270,7 +270,7 @@ module.exports = {
 
 			await queryInterface.removeColumn('Server', 'logChannelId').catch(e => console.error(e));
 
-			await queryInterface.removeColumn('Server', 'requiredTagList').catch(e => console.error(e));
+			await queryInterface.removeColumn('Server', 'nameRuleSets').catch(e => console.error(e));
 
 			await queryInterface.removeColumn('User', 'proxy_editing').catch(e => console.error(e));
 

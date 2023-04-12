@@ -12,6 +12,7 @@ import { hasName, isInGuild } from '../utils/checkUserState';
 import { disableAllComponents } from '../utils/componentDisabling';
 import { getDisplayname } from '../utils/getQuidInfo';
 import { getArrayElement, respond } from '../utils/helperFunctions';
+import { explainRuleset, ruleIsBroken } from '../utils/nameRules';
 import { canManageWebhooks, missingPermissions } from '../utils/permissionHandler';
 
 export const command: ContextMenuCommand = {
@@ -95,6 +96,17 @@ export const command: ContextMenuCommand = {
 			if (interaction.channel === null) { throw new Error('Interaction channel is null.'); }
 			if (await canManageWebhooks(interaction.channel) === false) { return; }
 
+			const quidName = await getDisplayname(quid, { serverId: interaction.guildId, user, userToServer });
+			if (server.nameRuleSets.length > 0 && await ruleIsBroken(interaction.channel, interaction.user, server, quidName)) {
+
+				await respond(interaction, {
+					content: `Your message can't be proxied because your quid's displayname needs to include one of these:\n\n${server.nameRuleSets.map(nameRuleSet => `• ${explainRuleset(nameRuleSet)}`)}`,
+					ephemeral: true,
+					allowedMentions: { parse: [] },
+				});
+				return;
+			}
+
 			const webhookChannel = interaction.channel.isThread() ? interaction.channel.parent : interaction.channel;
 			if (webhookChannel === null) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
 
@@ -118,7 +130,7 @@ export const command: ContextMenuCommand = {
 						content: `**A message got replaced**\nMessage Link: https://discord.com/channels/${interaction.guildId}/${interaction.channelId!}/${botMessage.id}\nPrevious Message Link: ${previousMessage.url}\nSent by: <@${interaction.user.id}> ${interaction.user.tag}\nNew Quid ID: ${quid.id}\nOriginally sent on: ${time(Math.floor((previousMessage.createdTimestamp) / 1000), 'f')}`,
 						embeds: [new EmbedBuilder()
 							.setAuthor({
-								name: await getDisplayname(quid, { serverId: webhookChannel.guildId, user, userToServer }),
+								name: quidName,
 								iconURL: quid.avatarURL,
 							})
 							.setColor(quid.color)

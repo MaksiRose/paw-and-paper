@@ -29,12 +29,12 @@ interface ServerAttributes {
 	sleepingDenId: string;
 	medicineDenId: string;
 	foodDenId: string;
-	requiredTagList: string[];
+	nameRuleSets: string[];
 	logChannelId: string | null;
 	logLimitsId: string;
 }
 
-type ServerCreationAttributes = Optional<ServerAttributes, 'nextPossibleAttackTimestamp' | 'visitChannelId' | 'currentlyVisitingChannelId' | 'skills' | 'proxy_logChannelId' | 'proxy_requireTag' | 'proxy_requireTagInDisplayname' | 'proxy_possibleTags' | 'inventory' | 'requiredTagList' | 'logChannelId'>
+type ServerCreationAttributes = Optional<ServerAttributes, 'nextPossibleAttackTimestamp' | 'visitChannelId' | 'currentlyVisitingChannelId' | 'skills' | 'proxy_logChannelId' | 'proxy_requireTag' | 'proxy_requireTagInDisplayname' | 'proxy_possibleTags' | 'inventory' | 'nameRuleSets' | 'logChannelId'>
 
 @Table
 export default class Server extends Model<ServerAttributes, ServerCreationAttributes> {
@@ -126,7 +126,7 @@ export default class Server extends Model<ServerAttributes, ServerCreationAttrib
 	declare discordUsers: DiscordUser[];
 
 	@Column({ type: DataType.ARRAY(DataType.STRING), defaultValue: [] })
-	declare requiredTagList: string[];
+	declare nameRuleSets: string[];
 
 	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
 	declare logChannelId: string | null;

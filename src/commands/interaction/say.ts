@@ -1,4 +1,4 @@
-import { APIMessage, Attachment, EmbedBuilder, GuildTextBasedChannel, Message, MessageReference, SlashCommandBuilder, WebhookClient, Webhook as DiscordWebhook, User as DiscordUser, Collection } from 'discord.js';
+import { APIMessage, Attachment, EmbedBuilder, GuildTextBasedChannel, Message, MessageReference, SlashCommandBuilder, WebhookClient, Webhook as DiscordWebhook, User as DiscordUser, Collection, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { respond } from '../../utils/helperFunctions';
 import { hasName, isInGuild } from '../../utils/checkUserState';
 import { canManageWebhooks, getMissingPermissionContent, hasPermission, missingPermissions, permissionDisplay } from '../../utils/permissionHandler';
@@ -13,6 +13,7 @@ import UserToServer from '../../models/userToServer';
 import Channel from '../../models/channel';
 import Server from '../../models/server';
 import ProxyLimits from '../../models/proxyLimits';
+import { explainRuleset, ruleIsBroken } from '../../utils/nameRules';
 const { error_color } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -103,6 +104,24 @@ export async function sendMessage(
 
 	if (await canManageWebhooks(channel) === false) { return null; }
 
+	const quidName = await getDisplayname(quid, { serverId: channel.guildId, user, userToServer, quidToServer });
+
+	if (server.nameRuleSets.length > 0 && await ruleIsBroken(channel, discordUser, server, quidName)) {
+
+		await channel.send({
+			content: `${discordUser}, your message can't be proxied because your quid's displayname must contain:\n\n${server.nameRuleSets.map(nameRuleSet => `• ${explainRuleset(nameRuleSet)}`).join('\n')}`,
+			components: [new ActionRowBuilder<ButtonBuilder>()
+				.setComponents([
+					new ButtonBuilder()
+						.setCustomId(`dismiss_@${discordUser.id}`)
+						.setLabel('Dismiss')
+						.setStyle(ButtonStyle.Secondary),
+				])],
+			allowedMentions: { parse: [] },
+		});
+		return null;
+	}
+
 	const webhookChannel = channel.isThread() ? channel.parent : channel;
 	if (webhookChannel === null) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
 
@@ -148,7 +167,7 @@ export async function sendMessage(
 
 	const botMessage = await webhook
 		.send({
-			username: await getDisplayname(quid, { serverId: webhookChannel.guildId, user, userToServer, quidToServer }),
+			username: quidName,
 			avatarURL: quid.avatarURL,
 			content: text || undefined,
 			files: attachments,
