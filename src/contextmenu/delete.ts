@@ -4,10 +4,10 @@ import { ContextMenuCommand } from '../typings/handle';
 import { isInGuild } from '../utils/checkUserState';
 import Webhook from '../models/webhook';
 import Quid from '../models/quid';
-import User from '../models/user';
 import DiscordUser from '../models/discordUser';
 import Channel from '../models/channel';
-import { WebhookClient, Webhook as DiscordWebhook } from 'discord.js';
+import { WebhookClient, Webhook as DiscordWebhook, time } from 'discord.js';
+import ProxyLimits from '../models/proxyLimits';
 
 export const command: ContextMenuCommand = {
 	data: {
@@ -15,26 +15,25 @@ export const command: ContextMenuCommand = {
 		type: 3,
 		dm_permission: false,
 	},
-	sendCommand: async (interaction) => {
+	sendCommand: async (interaction, { server }) => {
 
 		/* This shouldn't happen as dm_permission is false. */
 		if (!isInGuild(interaction)) { return; }
+		if (!server) { throw new TypeError('server is undefined'); }
 
 		if (await missingPermissions(interaction, [
 			'ManageWebhooks', // Needed for webhook interaction
 		]) === true) { return; }
 
+		const targetMessageCreatedTimestamp = interaction.targetMessage.createdTimestamp;
+
 		/* This gets the webhookData and discordUsers */
 		const webhookData = await Webhook.findByPk(interaction.targetId, {
-			attributes: [], include: [{
-				model: Quid, as: 'quid', attributes: ['userId'], include: [{
-					model: User, as: 'user', attributes: ['id'], include: [{
-						model: DiscordUser, as: 'discordUsers', attributes: ['id'],
-					}],
-				}],
+			include: [{
+				model: Quid, as: 'quid', attributes: ['userId'],
 			}],
 		});
-		const discordUsers = webhookData?.quid?.user?.discordUsers ?? [];
+		const discordUsers = await DiscordUser.findAll({ where: { userId: webhookData?.quid?.userId } }) ?? [];
 
 		/* This is checking if the user who is trying to delete the message is the same user who sent the message. */
 		if (!discordUsers.some(du => du.id === interaction.user.id)) {
@@ -71,10 +70,30 @@ export const command: ContextMenuCommand = {
 				if (err.message && err.message.includes('Unknown Webhook') && channelData) {
 
 					await channelData.destroy();
-					return await command.sendCommand(interaction);
+					return await command.sendCommand(interaction, { server });
 				}
 				throw err;
 			});
+
+		(async function() {
+			if (server.logChannelId !== null) {
+
+				const logLimits = await ProxyLimits.findByPk(server.logLimitsId);
+				if (logLimits
+					&& (
+						(logLimits.setToWhitelist === true && !logLimits.whitelist.includes(interaction.channel!.id) && !logLimits.whitelist.includes(webhookChannel.id))
+					|| (logLimits.setToWhitelist === false && (logLimits.blacklist.includes(interaction.channel!.id) || logLimits.blacklist.includes(webhookChannel.id)))
+					)) { return; }
+
+				const logChannel = await interaction.guild.channels.fetch(server.logChannelId);
+				if (!logChannel || !logChannel.isTextBased()) { return; }
+
+				logChannel.send({
+					content: `**A message got deleted**\nMessage Link: https://discord.com/channels/${interaction.guildId}/${interaction.channelId!}/${interaction.targetId}\nSent by: <@${interaction.user.id}> ${interaction.user.tag}\nQuid ID: ${webhookData?.quidId || '`Missing`'}\nOriginally sent on: ${time(Math.floor((targetMessageCreatedTimestamp) / 1000), 'f')}`,
+					allowedMentions: { parse: [] },
+				});
+			}
+		})();
 		await webhookData?.destroy();
 
 		// This is always a reply

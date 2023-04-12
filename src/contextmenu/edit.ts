@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ForumChannel, Message, ModalBuilder, ModalSubmitInteraction, NewsChannel, StageChannel, TextChannel, TextInputBuilder, TextInputStyle, VoiceChannel, WebhookClient, Webhook as DiscordWebhook } from 'discord.js';
+import { ActionRowBuilder, ForumChannel, Message, ModalBuilder, ModalSubmitInteraction, NewsChannel, StageChannel, TextChannel, TextInputBuilder, TextInputStyle, VoiceChannel, WebhookClient, Webhook as DiscordWebhook, EmbedBuilder, APIMessage, time } from 'discord.js';
 import { respond } from '../utils/helperFunctions';
 import { canManageWebhooks, missingPermissions } from '../utils/permissionHandler';
 import { ContextMenuCommand } from '../typings/handle';
@@ -8,6 +8,10 @@ import Quid from '../models/quid';
 import User from '../models/user';
 import DiscordUser from '../models/discordUser';
 import Channel from '../models/channel';
+import ProxyLimits from '../models/proxyLimits';
+import Server from '../models/server';
+import { getDisplayname } from '../utils/getQuidInfo';
+import UserToServer from '../models/userToServer';
 
 export const command: ContextMenuCommand = {
 	data: {
@@ -26,15 +30,11 @@ export const command: ContextMenuCommand = {
 
 		/* This gets the webhookData and discordUsers */
 		const webhookData = await Webhook.findByPk(interaction.targetId, {
-			attributes: [], include: [{
-				model: Quid, as: 'quid', attributes: ['userId'], include: [{
-					model: User, as: 'user', attributes: ['id'], include: [{
-						model: DiscordUser, as: 'discordUsers', attributes: ['id'],
-					}],
-				}],
+			include: [{
+				model: Quid, as: 'quid', attributes: ['userId'],
 			}],
 		});
-		const discordUsers = webhookData?.quid?.user?.discordUsers ?? [];
+		const discordUsers = await DiscordUser.findAll({ where: { userId: webhookData?.quid?.userId } }) ?? [];
 
 		/* This is checking if the user who is trying to delete the message is the same user who sent the message. */
 		if (!discordUsers.some(du => du.id === interaction.user.id)) {
@@ -56,7 +56,7 @@ export const command: ContextMenuCommand = {
 						.setCustomId('text')
 						.setLabel('Text')
 						.setStyle(TextInputStyle.Paragraph)
-						.setMinLength(1)
+						.setMinLength(interaction.targetMessage.attachments.size > 0 ? 0 : 1)
 						.setMaxLength(2048)
 						.setValue(interaction.targetMessage.content),
 					],
@@ -64,7 +64,7 @@ export const command: ContextMenuCommand = {
 			),
 		);
 	},
-	async sendModalResponse(interaction) {
+	async sendModalResponse(interaction, { server, user, userToServer }) {
 
 		/* Returns if interaction.channel is null. This should not happen as this is checked in interactionCreate. */
 		if (!interaction.inCachedGuild()) { return; }
@@ -73,13 +73,14 @@ export const command: ContextMenuCommand = {
 
 		/* This is checking if the channel is a thread, if it is, it will get the parent channel. If the channel is a DM, it will throw an error. If the channel is a guild channel, it will get the webhook. If the webhook doesn't exist, it will create one. */
 		if (!interaction.channel) { return; }
+		if (!server) { return; }
 		if (await canManageWebhooks(interaction.channel) === false) { return; }
 
 		const webhookChannel = interaction.channel.isThread() ? interaction.channel.parent : interaction.channel;
 		if (webhookChannel === null) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
 
 		/* This gets the messageId of the message that will be edited. */
-		const webhookMessage = await editWebhookMessage(interaction, messageId, webhookChannel);
+		const webhookMessage = await editWebhookMessage(interaction, messageId, webhookChannel, server, user, userToServer);
 		if (!webhookMessage) { return; }
 
 		// This is always a reply
@@ -95,7 +96,10 @@ async function editWebhookMessage(
 	interaction: ModalSubmitInteraction<'cached'>,
 	messageId: string,
 	webhookChannel: NewsChannel | StageChannel | TextChannel | VoiceChannel | ForumChannel,
-) {
+	server: Server,
+	user?: User,
+	userToServer?: UserToServer,
+):Promise<Message<boolean> | APIMessage> {
 
 	const channelData = await Channel.findByPk(webhookChannel.id);
 	const webhook = channelData
@@ -109,15 +113,48 @@ async function editWebhookMessage(
 	const webhookMessage = await webhook
 		.editMessage(messageId, {
 			content: interaction.fields.getTextInputValue('text'),
-			threadId: interaction.channel?.isThread() ? interaction.channel.id : undefined,
+			threadId: interaction.channel!.isThread() ? interaction.channel.id : undefined,
 		})
 		.catch(async (err) => {
 			if (err.message && err.message.includes('Unknown Webhook') && channelData) {
 
 				await channelData.destroy();
-				// return await command.sendModalResponse(interaction, {});
+				return await editWebhookMessage(interaction, messageId, webhookChannel, server, user, userToServer);
 			}
 			throw err;
 		});
+
+	(async function() {
+		if (server.logChannelId !== null) {
+
+			const logLimits = await ProxyLimits.findByPk(server.logLimitsId);
+			if (logLimits
+					&& (
+						(logLimits.setToWhitelist === true && !logLimits.whitelist.includes(interaction.channel!.id) && !logLimits.whitelist.includes(webhookChannel.id))
+					|| (logLimits.setToWhitelist === false && (logLimits.blacklist.includes(interaction.channel!.id) || logLimits.blacklist.includes(webhookChannel.id)))
+					)) { return; }
+
+			const logChannel = await interaction.guild.channels.fetch(server.logChannelId);
+			if (!logChannel || !logChannel.isTextBased()) { return; }
+
+			const webhookData = await Webhook.findByPk(webhookMessage.id);
+			const quid = webhookData ? await Quid.findByPk(webhookData.quidId) : null;
+
+			console.log(webhookMessage instanceof Message, webhookMessage instanceof Message ? webhookMessage.createdTimestamp : webhookMessage.timestamp, webhookMessage instanceof Message ? webhookMessage.createdTimestamp : Number(webhookMessage.timestamp));
+			logChannel.send({
+				content: `**A message got edited**\nMessage Link: https://discord.com/channels/${interaction.guildId}/${interaction.channelId!}/${webhookMessage.id}\nSent by: <@${interaction.user.id}> ${interaction.user.tag}\nQuid ID: ${webhookData?.quidId || '`Missing`'}\nOriginally sent on: ${time(Math.floor((webhookMessage instanceof Message ? webhookMessage.createdTimestamp : Date.parse(webhookMessage.timestamp)) / 1000), 'f')}`,
+				embeds: [new EmbedBuilder()
+					.setAuthor({
+						name: quid ? await getDisplayname(quid, { serverId: webhookChannel.guildId, user, userToServer }) : 'Missing',
+						iconURL: quid?.avatarURL,
+					})
+					.setColor(quid?.color ?? null)
+					.setTitle('New Message:')
+					.setDescription(interaction.fields.getTextInputValue('text') || null)],
+				allowedMentions: { parse: [] },
+			});
+		}
+	})();
+
 	return webhookMessage;
 }

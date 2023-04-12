@@ -162,7 +162,7 @@ export const event: DiscordEvent = {
 
 				/* This sends the command and error message if an error occurs. */
 				console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully executed \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-				await command.sendCommand(interaction);
+				await command.sendCommand(interaction, { user, server });
 				return;
 			}
 

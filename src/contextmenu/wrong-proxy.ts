@@ -1,6 +1,7 @@
-import { ActionRowBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, WebhookClient, ForumChannel, NewsChannel, StageChannel, StringSelectMenuInteraction, TextChannel, VoiceChannel, Message, APIMessage, Webhook as DiscordWebhook } from 'discord.js';
+import { ActionRowBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, WebhookClient, ForumChannel, NewsChannel, StageChannel, StringSelectMenuInteraction, TextChannel, VoiceChannel, Message, APIMessage, Webhook as DiscordWebhook, time, EmbedBuilder } from 'discord.js';
 import Channel from '../models/channel';
 import DiscordUser from '../models/discordUser';
+import ProxyLimits from '../models/proxyLimits';
 import Quid from '../models/quid';
 import QuidToServer from '../models/quidToServer';
 import User from '../models/user';
@@ -19,23 +20,18 @@ export const command: ContextMenuCommand = {
 		type: 3,
 		dm_permission: false,
 	},
-	sendCommand: async (interaction) => {
+	sendCommand: async (interaction, { user }) => {
 
 		/* This shouldn't happen as dm_permission is false. */
 		if (!isInGuild(interaction)) { return; }
 
 		/* This gets the webhookData and discordUsers */
 		const webhookData = await Webhook.findByPk(interaction.targetId, {
-			attributes: [], include: [{
-				model: Quid, as: 'quid', attributes: ['userId'], include: [{
-					model: User, as: 'user', attributes: ['id'], include: [{
-						model: DiscordUser, as: 'discordUsers', attributes: ['id'],
-					}],
-				}],
+			include: [{
+				model: Quid, as: 'quid', attributes: ['userId'],
 			}],
 		});
-		const discordUsers = webhookData?.quid?.user?.discordUsers ?? [];
-		const user = webhookData?.quid?.user;
+		const discordUsers = await DiscordUser.findAll({ where: { userId: webhookData?.quid?.userId } }) ?? [];
 
 		/* This is checking if the user who is trying to delete the message is the same user who sent the message. */
 		if (!user || !discordUsers.some(du => du.id === interaction.user.id)) {
@@ -57,7 +53,7 @@ export const command: ContextMenuCommand = {
 			ephemeral: true,
 		});
 	},
-	async sendMessageComponentResponse(interaction, { user, userToServer, quidToServer, discordUser }) {
+	async sendMessageComponentResponse(interaction, { user, userToServer, quidToServer, discordUser, server }) {
 
 		if (!interaction.isStringSelectMenu()) { return; }
 		if (await missingPermissions(interaction, [
@@ -68,6 +64,7 @@ export const command: ContextMenuCommand = {
 		if (!interaction.inCachedGuild()) { throw new Error('interaction is not in cached guild'); }
 		if (discordUser === undefined) { throw new TypeError('discordUser is undefined'); }
 		if (user === undefined) { throw new TypeError('user is undefined'); }
+		if (server === undefined) { throw new TypeError('server is undefined'); }
 		const selectOptionId = getArrayElement(interaction.values, 0);
 		const targetMessageId = getArrayElement(interaction.customId.split('_'), 2).replace('@', '');
 
@@ -104,6 +101,33 @@ export const command: ContextMenuCommand = {
 			const { botMessage, webhook, previousMessage } = await replaceWebhookMessage(webhookChannel, interaction, targetMessageId, quid, userToServer, quidToServer, user, discordUser);
 			await Webhook.create({ id: botMessage.id, discordUserId: discordUser.id, quidId: quid.id });
 
+			(async function() {
+				if (server.logChannelId !== null) {
+
+					const logLimits = await ProxyLimits.findByPk(server.logLimitsId);
+					if (logLimits
+					&& (
+						(logLimits.setToWhitelist === true && !logLimits.whitelist.includes(interaction.channel!.id) && !logLimits.whitelist.includes(webhookChannel.id))
+					|| (logLimits.setToWhitelist === false && (logLimits.blacklist.includes(interaction.channel!.id) || logLimits.blacklist.includes(webhookChannel.id)))
+					)) { return; }
+
+					const logChannel = await interaction.guild.channels.fetch(server.logChannelId);
+					if (!logChannel || !logChannel.isTextBased()) { return; }
+
+					logChannel.send({
+						content: `**A message got replaced**\nMessage Link: https://discord.com/channels/${interaction.guildId}/${interaction.channelId!}/${botMessage.id}\nPrevious Message Link: ${previousMessage.url}\nSent by: <@${interaction.user.id}> ${interaction.user.tag}\nNew Quid ID: ${quid.id}\nOriginally sent on: ${time(Math.floor((previousMessage.createdTimestamp) / 1000), 'f')}`,
+						embeds: [new EmbedBuilder()
+							.setAuthor({
+								name: await getDisplayname(quid, { serverId: webhookChannel.guildId, user, userToServer }),
+								iconURL: quid.avatarURL,
+							})
+							.setColor(quid.color)
+							.setDescription((previousMessage.content || '') + '\n\n' + previousMessage.attachments.map(a => a.url).join('\n'))],
+						allowedMentions: { parse: [] },
+					});
+				}
+			})();
+
 			/* Deleting the message. */
 			await webhook.deleteMessage(targetMessageId, interaction.channel.isThread() ? interaction.channel.id : undefined);
 			await Webhook.destroy({ where: { id: previousMessage.id } });
@@ -113,7 +137,6 @@ export const command: ContextMenuCommand = {
 				components: disableAllComponents(interaction.message.components),
 			}, 'update', interaction.message.id);
 		}
-
 	},
 };
 
@@ -126,7 +149,8 @@ async function replaceWebhookMessage(
 	quidToServer: QuidToServer | undefined,
 	user: User | undefined,
 	discordUser: DiscordUser | undefined,
-): Promise<{ botMessage: APIMessage | Message, webhook: WebhookClient | DiscordWebhook, previousMessage: Message }> {
+): Promise<{ botMessage: APIMessage | Message, webhook: WebhookClient | DiscordWebhook, previousMessage: Message; }> {
+
 	const channelData = await Channel.findByPk(webhookChannel.id);
 	const webhook = channelData
 		? new WebhookClient({ url: channelData.webhookUrl })

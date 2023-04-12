@@ -1,4 +1,4 @@
-import { APIMessage, Attachment, EmbedBuilder, GuildTextBasedChannel, Message, MessageReference, SlashCommandBuilder, WebhookClient, Webhook as DiscordWebhook } from 'discord.js';
+import { APIMessage, Attachment, EmbedBuilder, GuildTextBasedChannel, Message, MessageReference, SlashCommandBuilder, WebhookClient, Webhook as DiscordWebhook, User as DiscordUser, Collection } from 'discord.js';
 import { respond } from '../../utils/helperFunctions';
 import { hasName, isInGuild } from '../../utils/checkUserState';
 import { canManageWebhooks, getMissingPermissionContent, hasPermission, missingPermissions, permissionDisplay } from '../../utils/permissionHandler';
@@ -11,6 +11,8 @@ import Webhook from '../../models/webhook';
 import User from '../../models/user';
 import UserToServer from '../../models/userToServer';
 import Channel from '../../models/channel';
+import Server from '../../models/server';
+import ProxyLimits from '../../models/proxyLimits';
 const { error_color } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -29,15 +31,16 @@ export const command: SlashCommand = {
 	position: 3,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
 
 		if (await missingPermissions(interaction, [
 			'ManageWebhooks', // Needed for webhook interaction
 		]) === true) { return; }
 
 		/* This ensures that the user is in a guild and has a completed account. */
+		if (!isInGuild(interaction) || !hasName(quid, { interaction, hasQuids: quid !== undefined || (user !== undefined && (await Quid.count({ where: { userId: user.id } })) > 0) })) { return; }
 		if (!user) { throw new TypeError('user is undefined'); }
-		if (!isInGuild(interaction) || !hasName(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; }
+		if (!server) { throw new TypeError('server is undefined'); }
 
 		const text = interaction.options.getString('text') || '';
 		const attachment = interaction.options.getAttachment('attachment');
@@ -66,7 +69,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		const botMessage = await sendMessage(interaction.channel, text, quid, interaction.user.id, attachment ? [attachment] : undefined, undefined, user, userToServer, quidToServer);
+		const botMessage = await sendMessage(interaction.channel, text, quid, user, server, interaction.user, attachment ? [attachment] : undefined, undefined, userToServer, quidToServer);
 
 		await interaction.deferReply({ ephemeral: true });
 		if (!botMessage) { return; }
@@ -89,10 +92,11 @@ export async function sendMessage(
 	channel: GuildTextBasedChannel,
 	text: string,
 	quid: Quid<true> | Quid<false>,
-	discordUserId: string,
+	user: User,
+	server: Server,
+	discordUser: DiscordUser,
 	attachments?: Array<Attachment>,
 	reference?: MessageReference,
-	user?: User | undefined,
 	userToServer?: UserToServer | undefined,
 	quidToServer?: QuidToServer | undefined,
 ): Promise<Message | APIMessage | null> {
@@ -128,8 +132,8 @@ export async function sendMessage(
 		}
 
 		const referencedMessage = await channel?.messages.fetch(reference.messageId);
-		const member = referencedMessage.member;
-		const user = referencedMessage.author;
+		const referencedMember = referencedMessage.member;
+		const referencedUser = referencedMessage.author;
 		let referencedMessageContent = referencedMessage.content;
 		const hasAttachment = referencedMessage.attachments.size > 0 || referencedMessage.embeds.length > 0;
 		if (referencedMessageContent.length === 0 && hasAttachment) { referencedMessageContent = '*Click to see attachment*'; }
@@ -137,8 +141,8 @@ export async function sendMessage(
 		if (referencedMessageContent.length > 30) { referencedMessageContent = referencedMessage.content.substring(0, 29) + '…'; }
 		if (hasAttachment) { referencedMessageContent += ' 🌄'; }
 		embeds.push(new EmbedBuilder()
-			.setColor(member?.displayColor || user.accentColor || '#ffffff')
-			.setAuthor({ name: member?.displayName || user.username, iconURL: member?.displayAvatarURL() || user.avatarURL() || undefined })
+			.setColor(referencedMember?.displayColor || referencedUser.accentColor || '#ffffff')
+			.setAuthor({ name: referencedMember?.displayName || referencedUser.username, iconURL: referencedMember?.displayAvatarURL() || referencedUser.avatarURL() || undefined })
 			.setDescription(`[Reply to:](${referencedMessage.url}) ${referencedMessageContent}`));
 	}
 
@@ -155,11 +159,41 @@ export async function sendMessage(
 			if (err.message && err.message.includes('Unknown Webhook') && channelData) {
 
 				await channelData.destroy();
-				return await sendMessage(channel, text, quid, discordUserId, attachments, reference, user, userToServer, quidToServer);
+				return await sendMessage(channel, text, quid, user, server, discordUser, attachments, reference, userToServer, quidToServer);
 			}
 			throw err;
 		});
 
-	if (botMessage) { Webhook.create({ discordUserId: discordUserId, id: botMessage.id, quidId: quid.id }); }
+	if (botMessage) {
+
+		Webhook.create({ discordUserId: discordUser.id, id: botMessage.id, quidId: quid.id });
+
+		(async function() {
+			if (server.logChannelId !== null) {
+
+				const logLimits = await ProxyLimits.findByPk(server.logLimitsId);
+				if (logLimits
+					&& (
+						(logLimits.setToWhitelist === true && !logLimits.whitelist.includes(channel.id) && !logLimits.whitelist.includes(webhookChannel.id))
+					|| (logLimits.setToWhitelist === false && (logLimits.blacklist.includes(channel.id) || logLimits.blacklist.includes(webhookChannel.id)))
+					)) { return; }
+
+				const logChannel = await channel.guild.channels.fetch(server.logChannelId);
+				if (!logChannel || !logChannel.isTextBased()) { return; }
+
+				logChannel.send({
+					content: `Message Link: https://discord.com/channels/${channel.guildId}/${channel.id}/${botMessage.id}\nSent by: <@${discordUser.id}> ${discordUser.tag}\nQuid ID: ${quid.id}`,
+					embeds: [new EmbedBuilder()
+						.setAuthor({
+							name: await getDisplayname(quid, { serverId: webhookChannel.guildId, user, userToServer, quidToServer }),
+							iconURL: quid.avatarURL,
+						})
+						.setColor(quid.color)
+						.setDescription((text || '') + '\n\n' + (botMessage.attachments instanceof Collection ? botMessage.attachments.map(a => a.url).join('\n') : botMessage.attachments.map(a => a.url).join('\n')))],
+					allowedMentions: { parse: [] },
+				});
+			}
+		})();
+	}
 	return botMessage;
 }

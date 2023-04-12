@@ -52,7 +52,7 @@ export const event: DiscordEvent = {
 
 		if (replaceMessage && hasName(quid) && (message.content.length > 0 || message.attachments.size > 0)) {
 
-			const botMessage = await sendMessage(message.channel, message.content, quid, message.author.id, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined, user, userToServer ?? undefined)
+			const botMessage = await sendMessage(message.channel, message.content, quid, user, server, message.author, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined, userToServer ?? undefined)
 				.catch(error => {
 					console.error(error);
 					return null;
@@ -69,7 +69,17 @@ export const event: DiscordEvent = {
 			}
 			else if (await hasPermission(message.guild.members.me || await message.channel.guild.members.fetchMe({ force: false }) || message.client.user.id, message.channel, message.channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) {
 
-				await message.reply(getMissingPermissionContent(permissionDisplay.ManageMessages));
+				await message
+					.reply(getMissingPermissionContent(permissionDisplay.ManageMessages))
+					.catch(async (e) => {
+
+
+						if (isObject(e) && e.code === 160002) {
+
+							await message.channel.send(getMissingPermissionContent(permissionDisplay.ManageMessages));
+						}
+						else { throw e; }
+					});
 			}
 		}
 	},

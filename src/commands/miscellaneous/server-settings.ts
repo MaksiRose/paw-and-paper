@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageComponentInteraction, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle, RoleSelectMenuBuilder, ChannelSelectMenuBuilder, channelMention } from 'discord.js';
-import { respond, sendErrorMessage } from '../../utils/helperFunctions';
+import { deepCopy, respond, sendErrorMessage } from '../../utils/helperFunctions';
 import { checkLevelRequirements, checkRankRequirements, updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
@@ -416,7 +416,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		if ((interaction.isStringSelectMenu() && interaction.values[0] === 'proxying') || (interaction.isButton() && interaction.customId.includes('server-settings_proxying'))) {
+		if ((interaction.isStringSelectMenu() && interaction.values[0] === 'proxying') || (interaction.isButton() && interaction.customId.includes('server-settings_proxying_@'))) {
 
 			// This is always an update to the message with the select menu
 			await respond(interaction, await getProxyingMessage(interaction), 'update', interaction.message.id);
@@ -464,7 +464,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		if (interaction.isStringSelectMenu() && interaction.customId.includes('proxying_logging_advanced')) {
+		if (interaction.isButton() && interaction.customId.includes('proxying_logging_advanced')) {
 
 			const logLimits = await ProxyLimits.findByPk(server.logLimitsId);
 			if (!logLimits) { throw new TypeError('channelLimits is null'); }
@@ -510,12 +510,13 @@ export const command: SlashCommand = {
 			else {
 
 				const listType = logLimits.setToWhitelist ? 'whitelist' : 'blacklist';
+				let deepCopiedList = deepCopy(logLimits[listType]);
 
-				const hasChannel = logLimits[listType].includes(selectOptionId);
-				if (!hasChannel) { logLimits[listType].push(selectOptionId); }
-				else { logLimits[listType] = logLimits[listType].filter(string => string !== selectOptionId); }
+				const hasChannel = deepCopiedList.includes(selectOptionId);
+				if (!hasChannel) { deepCopiedList.push(selectOptionId); }
+				else { deepCopiedList = deepCopiedList.filter(string => string !== selectOptionId); }
 				await logLimits.update({
-					[listType]: [...logLimits[listType]],
+					[listType]: deepCopiedList,
 				});
 
 
@@ -580,12 +581,13 @@ export const command: SlashCommand = {
 			else {
 
 				const listType = channelLimits.setToWhitelist ? 'whitelist' : 'blacklist';
+				let deepCopiedList = deepCopy(channelLimits[listType]);
 
-				const hasChannel = channelLimits[listType].includes(selectOptionId);
-				if (!hasChannel) { channelLimits[listType].push(selectOptionId); }
-				else { channelLimits[listType] = channelLimits[listType].filter(string => string !== selectOptionId); }
+				const hasChannel = deepCopiedList.includes(selectOptionId);
+				if (!hasChannel) { deepCopiedList.push(selectOptionId); }
+				else { deepCopiedList = deepCopiedList.filter(string => string !== selectOptionId); }
 				await channelLimits.update({
-					[listType]: [...channelLimits[listType]],
+					[listType]: deepCopiedList,
 				});
 
 
