@@ -37,7 +37,7 @@ export const command: SlashCommand = {
 		/* Getting userData and quid either for mentionedUser if there is one or for interaction user otherwise */
 		const mentionedUser = interaction.options.getUser('user');
 
-		discordUser = (!mentionedUser || mentionedUser.id === interaction.user.id) ? discordUser : await DiscordUser.findByPk(interaction.user.id, {
+		discordUser = (!mentionedUser || mentionedUser.id === interaction.user.id) ? discordUser : await DiscordUser.findByPk(mentionedUser.id, {
 			include: [{ model: User, as: 'user' }],
 		}) ?? undefined;
 
