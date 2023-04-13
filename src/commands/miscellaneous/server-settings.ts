@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageComponentInteraction, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle, RoleSelectMenuBuilder, ChannelSelectMenuBuilder, channelMention, ModalMessageModalSubmitInteraction } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageComponentInteraction, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle, RoleSelectMenuBuilder, ChannelSelectMenuBuilder, channelMention, ModalMessageModalSubmitInteraction, Role } from 'discord.js';
 import { deepCopy, respond, sendErrorMessage } from '../../utils/helperFunctions';
 import { checkLevelRequirements, checkRankRequirements, updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { missingPermissions } from '../../utils/permissionHandler';
@@ -649,6 +649,77 @@ export const command: SlashCommand = {
 			}
 		}
 
+		if (interaction.isStringSelectMenu() && interaction.customId.includes('proxying_options') && interaction.values[0] === 'roles') {
+
+			const roleLimits = await ProxyLimits.findByPk(server.proxy_roleLimitsId);
+			if (!roleLimits) { throw new TypeError('roleLimits is null'); }
+			// This is always an update to the message with the select menu
+			await respond(interaction, await getProxyingRolesMessage(interaction, roleLimits, 0), 'update', interaction.message.id);
+			return;
+		}
+
+		if (interaction.isButton() && interaction.customId.includes('proxying_channel_setTo')) {
+
+			const roleLimits = await ProxyLimits.findByPk(server.proxy_roleLimitsId);
+			if (!roleLimits) { throw new TypeError('roleLimits is null'); }
+			await roleLimits?.update({ setToWhitelist: !roleLimits.setToWhitelist });
+
+			// This is always an update to the message with the select menu
+			await respond(interaction, await getProxyingRolesMessage(interaction, roleLimits, 0), 'update', interaction.message.id)
+				.catch((error) => {
+					if (error.httpStatus !== 404) { console.error(error); }
+				});
+
+			// This is always a followUp
+			await respond(interaction, {
+				content: `Proxying is now only ${roleLimits.setToWhitelist ? 'enabled' : 'disabled'} for the ${roleLimits.setToWhitelist ? 'whitelisted' : 'blacklisted'} roles!`,
+				ephemeral: true,
+			});
+			return;
+		}
+
+		/* It's checking if the interaction is the visits select menu */
+		if (interaction.isStringSelectMenu() && selectOptionId && interaction.customId.includes('proxying_role_options')) {
+
+			const roleLimits = await ProxyLimits.findByPk(server.proxy_roleLimitsId);
+			if (!roleLimits) { throw new TypeError('roleLimits is null'); }
+			/* It's checking if the value is for turning a page. If it is, it's getting the page number from the value, and it's updating the message with the shop message with the page number. */
+			if (selectOptionId.includes('nextpage')) {
+
+				const page = Number(selectOptionId.split('_')[1]) + 1;
+
+				// This is always an update to the message with the select menu
+				await respond(interaction, await getProxyingRolesMessage(interaction, roleLimits, page), 'update', interaction.message.id);
+				return;
+			}
+			else {
+
+				const listType = roleLimits.setToWhitelist ? 'whitelist' : 'blacklist';
+				let deepCopiedList = deepCopy(roleLimits[listType]);
+
+				const hasRole = deepCopiedList.includes(selectOptionId);
+				if (!hasRole) { deepCopiedList.push(selectOptionId); }
+				else { deepCopiedList = deepCopiedList.filter(string => string !== selectOptionId); }
+				await roleLimits.update({
+					[listType]: deepCopiedList,
+				});
+
+
+				// This is always an update to the message with the select menu
+				await respond(interaction, await getProxyingRolesMessage(interaction, roleLimits, 0), 'update', interaction.message.id)
+					.catch((error) => {
+						if (error.httpStatus !== 404) { console.error(error); }
+					});
+
+				// This is always a followUp
+				await respond(interaction, {
+					content: `${hasRole ? 'Removed' : 'Added'} <@&${selectOptionId}> ${hasRole ? 'from' : 'to'} the proxying ${listType}!`,
+					ephemeral: true,
+				});
+				return;
+			}
+		}
+
 		if (interaction.isStringSelectMenu() && interaction.values[0] === 'delete') {
 
 			// This is always an update to the message with the select menu
@@ -1181,6 +1252,51 @@ async function getProxyingChannelsMessage(
 			.setComponents([new StringSelectMenuBuilder()
 				.setCustomId(`server-settings_proxying_channel_options_@${interaction.user.id}`)
 				.setPlaceholder(`Select channels to ${channelLimits.setToWhitelist ? 'enable' : 'disable'} proxying for`)
+				.setOptions(disableSelectMenuOptions)])],
+	};
+}
+
+async function getProxyingRolesMessage(
+	interaction: AnySelectMenuInteraction<'cached'> | ButtonInteraction<'cached'>,
+	roleLimits: ProxyLimits,
+	page: number,
+): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
+
+	// If ChannelSelects ever allow for default values, then this could be implemented here. Right now, using default values clashes with the "Show more channels" feature
+	const listType = roleLimits.setToWhitelist ? 'whitelist' : 'blacklist';
+	let disableSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (await interaction.guild.roles.fetch()).filter((r): r is Role => r != null).map((role, roleId) => ({ label: role.name, value: roleId, emoji: roleLimits[listType].includes(roleId) ? '🔘' : undefined }));
+
+	if (disableSelectMenuOptions.length > 25) {
+
+		const pageCount = Math.ceil(disableSelectMenuOptions.length / 24);
+		let adjustedPage = page % pageCount;
+		if (adjustedPage < 0) { adjustedPage += pageCount; }
+
+		disableSelectMenuOptions = disableSelectMenuOptions.splice(page * 24, 24);
+		disableSelectMenuOptions.push({ label: 'Show more roles', value: `nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
+	}
+
+	return {
+		embeds: [new EmbedBuilder()
+			.setColor(default_color)
+			.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() ?? undefined })
+			.setTitle('Settings ➜ Proxying ➜ Allowed roles')
+			.setDescription('This toggles for which roles proxying should be disabled or enabled, using the drop-down menu below. Selected roles will have a radio emoji next to them. When it is set to blacklist, proxying is *only disabled* for the selected roles. When it is set to whitelist, proxying is *only enabled* for the selected roles.')],
+		components: [new ActionRowBuilder<ButtonBuilder>()
+			.setComponents([new ButtonBuilder()
+				.setCustomId(`server-settings_proxying_@${interaction.user.id}`)
+				.setLabel('Back')
+				.setEmoji('⬅️')
+				.setStyle(ButtonStyle.Secondary)]),
+		new ActionRowBuilder<ButtonBuilder>()
+			.setComponents([new ButtonBuilder()
+				.setCustomId(`server-settings_proxying_role_setTo_@${interaction.user.id}`)
+				.setLabel(`Currently set to ${roleLimits.setToWhitelist ? 'whitelist' : 'blacklist'}`)
+				.setStyle(ButtonStyle.Secondary)]),
+		new ActionRowBuilder<StringSelectMenuBuilder>()
+			.setComponents([new StringSelectMenuBuilder()
+				.setCustomId(`server-settings_proxying_role_options_@${interaction.user.id}`)
+				.setPlaceholder(`Select roles to ${roleLimits.setToWhitelist ? 'enable' : 'disable'} proxying for`)
 				.setOptions(disableSelectMenuOptions)])],
 	};
 }

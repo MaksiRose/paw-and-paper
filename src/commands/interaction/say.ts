@@ -113,6 +113,15 @@ export async function sendMessage(
 
 	if (channelLimits.setToWhitelist ? !channelLimits.whitelist.includes(channel.id) : channelLimits.blacklist.includes(channel.id)) { return null; }
 
+	let roleLimits = await ProxyLimits.findByPk(server.proxy_roleLimitsId);
+	if (!roleLimits) {
+		roleLimits = await ProxyLimits.create({ id: generateId() });
+		server.update({ proxy_roleLimitsId: roleLimits.id });
+	}
+
+	const guildMember = await channel.guild.members.fetch(discordUser.id);
+	if (guildMember.roles.cache.some(r => roleLimits![roleLimits!.setToWhitelist ? 'whitelist' : 'blacklist'].includes(r.id)) === (roleLimits.setToWhitelist ? false : true)) { return null; }
+
 	const quidName = await getDisplayname(quid, { serverId: channel.guildId, user, userToServer, quidToServer });
 
 	if (server.nameRuleSets.length > 0 && await ruleIsBroken(channel, discordUser, server, quidName)) {
