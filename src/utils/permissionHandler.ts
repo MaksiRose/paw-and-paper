@@ -1,4 +1,4 @@
-import { GuildChannelResolvable, GuildMember, PermissionResolvable, RepliableInteraction, Snowflake, PermissionFlagsBits, GuildTextBasedChannel } from 'discord.js';
+import { GuildChannelResolvable, GuildMember, PermissionResolvable, RepliableInteraction, Snowflake, PermissionFlagsBits, GuildTextBasedChannel, RoleResolvable } from 'discord.js';
 import { client } from '../index';
 import { addCommasAndAnd, respond } from './helperFunctions';
 
@@ -104,5 +104,23 @@ export async function canManageWebhooks(
 		if (await hasPermission(channel.guild.members.me || channel.client.user.id, channel, channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) { await channel.send(getMissingPermissionContent(permissionDisplay.ManageWebhooks)); }
 		return false;
 	}
+	return true;
+}
+
+export function getHigherRoleContent(
+) { return { content: 'I can\'t add or remove roles that are above my highest role 😣', failIfNotExists: false }; }
+
+export async function roleTooHigh(
+	interaction: RepliableInteraction<'cached' >,
+	role: RoleResolvable,
+): Promise<boolean> {
+
+	const member = interaction.guild.members.me || await interaction.guild.members.fetchMe({ force: false });
+	const highestRole = member.roles.highest;
+
+	if (highestRole.comparePositionTo(role) >= 1) { return false; }
+
+	// This is always a reply
+	await respond(interaction, getHigherRoleContent());
 	return true;
 }

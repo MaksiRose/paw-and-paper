@@ -11,7 +11,7 @@ import UserToServer from '../models/userToServer';
 const { error_color } = require('../../config.json');
 
 export async function isPassedOut(
-	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'> | AnySelectMenuInteraction<'cached' | 'raw'>,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	user: User,
 	userToServer: UserToServer | undefined,
 	quid: Quid<true>,
@@ -147,7 +147,7 @@ export async function checkResting(
  * Checks if the user is passed out, on a cooldown or resting, sends or attaches the appropriate message/embed, and returns a boolean of the result.
  */
 export async function isInvalid(
-	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	user: User,
 	userToServer: UserToServer,
 	quid: Quid<true>,

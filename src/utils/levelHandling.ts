@@ -1,7 +1,7 @@
 import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, AnySelectMenuInteraction, GuildMember } from 'discord.js';
 import { capitalize, respond } from './helperFunctions';
 import { checkLevelRequirements, checkRoleCatchBlock, updateAndGetMembers } from './checkRoleRequirements';
-import { missingPermissions } from './permissionHandler';
+import { missingPermissions, roleTooHigh } from './permissionHandler';
 import { WayOfEarningType } from '../typings/data/user';
 import QuidToServer from '../models/quidToServer';
 import Quid from '../models/quid';
@@ -47,7 +47,7 @@ export async function checkLevelUp(
  */
 export async function decreaseLevel(
 	quidToServer: QuidToServer,
-	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'> | AnySelectMenuInteraction<'cached' | 'raw'>,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 ): Promise<string> {
 
 	/* newUserLevel is nine tenths of current profile level. */
@@ -98,6 +98,8 @@ export async function decreaseLevel(
 					if (await missingPermissions(interaction, [
 						'ManageRoles', // Needed to give out roles configured in this shop
 					]) === true) { continue; }
+					if (await roleTooHigh(interaction, roleConnection.shopRoleId)) { continue; }
+
 					await member.roles.remove(roleConnection.shopRoleId);
 
 					// This is a followUp
