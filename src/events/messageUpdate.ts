@@ -27,7 +27,7 @@ export const event: DiscordEvent = {
 		if (user === undefined || server === null) { return; }
 		if (user.proxy_editing === false) { return; }
 
-		const { replaceMessage, quid, userToServer } = await checkForProxy(message, user, server);
+		const { replaceMessage, quid, userToServer } = await checkForProxy(message, user);
 
 		if (replaceMessage && hasName(quid) && (message.content.length > 0 || message.attachments.size > 0)) {
 

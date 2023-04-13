@@ -1,7 +1,6 @@
 import { Message } from 'discord.js';
 import { sendMessage } from '../commands/interaction/say';
 import DiscordUser from '../models/discordUser';
-import ProxyLimits from '../models/proxyLimits';
 import Quid from '../models/quid';
 import Server from '../models/server';
 import DiscordUserToServer from '../models/discordUserToServer';
@@ -37,7 +36,7 @@ export const event: DiscordEvent = {
 
 		if (user === undefined || server === null) { return; }
 
-		let { replaceMessage, quid, userToServer } = await checkForProxy(message, user, server);
+		let { replaceMessage, quid, userToServer } = await checkForProxy(message, user);
 
 		if (server.currentlyVisitingChannelId !== null && message.channel.id === server.visitChannelId) {
 
@@ -88,7 +87,6 @@ export const event: DiscordEvent = {
 export async function checkForProxy(
 	message: Message<true> & Message<boolean>,
 	user: User,
-	server: Server,
 ): Promise<{ replaceMessage: boolean, quid: Quid | null, userToServer: UserToServer | null; }> {
 
 	let replaceMessage = true;
@@ -99,15 +97,6 @@ export async function checkForProxy(
 			if (r === 0) { DiscordUserToServer.create({ id: generateId(), discordUserId: message.author.id, serverId: message.guildId, isMember: true, lastUpdatedTimestamp: now() }); }
 		});
 
-	let channelLimits = await ProxyLimits.findByPk(server.proxy_channelLimitsId);
-	if (!channelLimits) {
-		channelLimits = await ProxyLimits.create({ id: generateId() });
-		server.update({ proxy_channelLimitsId: channelLimits.id });
-	}
-
-
-	const proxyIsDisabled = channelLimits.setToWhitelist ? !channelLimits.whitelist.includes(message.channelId) : channelLimits.blacklist.includes(message.channelId);
-	if (proxyIsDisabled) { replaceMessage = false; }
 
 	const userToServer = await UserToServer.findOne({
 		where: { serverId: message.guildId, userId: user.id },

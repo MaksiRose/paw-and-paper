@@ -14,6 +14,7 @@ import Channel from '../../models/channel';
 import Server from '../../models/server';
 import ProxyLimits from '../../models/proxyLimits';
 import { explainRuleset, ruleIsBroken } from '../../utils/nameRules';
+import { generateId } from 'crystalid';
 const { error_color } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -103,6 +104,14 @@ export async function sendMessage(
 ): Promise<Message | APIMessage | null> {
 
 	if (await canManageWebhooks(channel) === false) { return null; }
+
+	let channelLimits = await ProxyLimits.findByPk(server.proxy_channelLimitsId);
+	if (!channelLimits) {
+		channelLimits = await ProxyLimits.create({ id: generateId() });
+		server.update({ proxy_channelLimitsId: channelLimits.id });
+	}
+
+	if (channelLimits.setToWhitelist ? !channelLimits.whitelist.includes(channel.id) : channelLimits.blacklist.includes(channel.id)) { return null; }
 
 	const quidName = await getDisplayname(quid, { serverId: channel.guildId, user, userToServer, quidToServer });
 
