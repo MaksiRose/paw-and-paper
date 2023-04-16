@@ -21,7 +21,7 @@ module.exports = {
 				WHEN "stickymode_setTo" = TRUE THEN 2
 				ELSE 1
 			END,
-			SET "autoproxy_setToWhitelist" = CASE
+			"autoproxy_setToWhitelist" = CASE
 				WHEN "autoproxy_setToWhitelist" = TRUE THEN TRUE
 				ELSE FALSE
 			END;
