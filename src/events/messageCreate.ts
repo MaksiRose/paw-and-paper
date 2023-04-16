@@ -134,6 +134,7 @@ export async function checkForProxy(
 					&& message.content.endsWith(p[1] ?? '')) {
 
 					finalQuid = quid;
+					replaceMessage = true;
 					if (user.proxy_keepInMessage === false) {
 
 						message.content = message.content.substring(p[0]?.length ?? 0, message.content.length - (p[1]?.length ?? 0));
@@ -174,6 +175,7 @@ export async function checkForProxy(
 					&& message.content.endsWith(p[1] ?? '')) {
 
 					finalQuid = quid;
+					replaceMessage = true;
 					if (user.proxy_keepInMessage === false) {
 
 						message.content = message.content.substring(p[0]?.length ?? 0, message.content.length - (p[1]?.length ?? 0));
