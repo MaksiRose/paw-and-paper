@@ -79,8 +79,8 @@ export const command: SlashCommand = {
 		/* Checking if the user has a cooldown. */
 		else if (hasNameAndSpecies(quid) && interaction.inCachedGuild() && await hasCooldown(interaction, user, userToServer, quid, quidToServer)) { return; } // This is always a reply
 
-		const response = await getProfileMessageOptions(discordUser.id, quid, isYourself, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user });
-		const selectMenu = await getQuidSelectMenu(user.id, interaction.user.id, 0, quid?.id, isYourself);
+		const response = await getProfileMessageOptions(discordUser.id, quid, !mentionedUser, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user });
+		const selectMenu = await getQuidSelectMenu(user.id, interaction.user.id, 0, quid?.id, !mentionedUser);
 
 		// This is always a reply
 		await respond(interaction, {
@@ -126,7 +126,7 @@ export const command: SlashCommand = {
 
 			if (!user) { throw new TypeError('user is undefined'); }
 
-			const selectMenu = await getQuidSelectMenu(user.id, interaction.user.id, 0, quid?.id, isYourself);
+			const selectMenu = await getQuidSelectMenu(user.id, interaction.user.id, 0, quid?.id, false);
 
 			await Promise.all([
 				interaction.deferUpdate(),
@@ -151,7 +151,7 @@ export const command: SlashCommand = {
 
 			// This is always an update to the message with the select menu
 			await respond(interaction, {
-				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([await getQuidSelectMenu(user.id, interaction.user.id, Number(selectOptionId[1]) + 1, quid?.id, isYourself)])],
+				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([await getQuidSelectMenu(user.id, interaction.user.id, Number(selectOptionId[1]) + 1, quid?.id, interaction.component.placeholder?.includes('switch to') ?? false)])],
 			}, 'update', interaction.message.id);
 			return;
 		}
@@ -206,8 +206,8 @@ export const command: SlashCommand = {
 			// This is always an editReply to the message with the select menu (due to deferUpdate)
 			await respond(interaction, {
 				// we can interaction.user.id because the "switchto" option is only available to yourself
-				...await getProfileMessageOptions(interaction.user.id, quid, isYourself, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user }),
-				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([await getQuidSelectMenu(user.id, interaction.user.id, 0, quid?.id, isYourself)])],
+				...await getProfileMessageOptions(interaction.user.id, quid, true, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user }),
+				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([await getQuidSelectMenu(user.id, interaction.user.id, 0, quid?.id, true)])],
 			}, 'update', interaction.message.id);
 
 			// This is always a followUp
@@ -233,7 +233,7 @@ export const command: SlashCommand = {
 
 			// This is always an update to the message with the select menu
 			await respond(interaction, {
-				...await getProfileMessageOptions(interaction.user.id, quid, isYourself, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user }),
+				...await getProfileMessageOptions(interaction.user.id, quid, false, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user }),
 				components: interaction.message.components,
 			}, 'update', interaction.message.id);
 			return;
