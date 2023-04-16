@@ -1,5 +1,5 @@
 'use strict';
-const crystalId = require("crystalId");
+const crystalId = require("../node_modules/crystalid");
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
@@ -21,7 +21,10 @@ module.exports = {
 				WHEN "stickymode_setTo" = TRUE THEN 2
 				ELSE 1
 			END,
-			"autoproxy_setToWhitelist" = ("autoproxy_setToWhitelist" = TRUE);
+			"autoproxy_setToWhitelist" = CASE
+				WHEN "autoproxy_setToWhitelist" = TRUE THEN TRUE
+				ELSE FALSE
+			END;
     		`).catch(e => console.error(e));
 
 			// Change autoproxy_setToWhitelist to not allow null
