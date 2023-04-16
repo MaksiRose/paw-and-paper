@@ -1,5 +1,5 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageComponentInteraction, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle, RoleSelectMenuBuilder, ChannelSelectMenuBuilder, channelMention } from 'discord.js';
-import { respond, sendErrorMessage } from '../../utils/helperFunctions';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageComponentInteraction, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle, RoleSelectMenuBuilder, ChannelSelectMenuBuilder, channelMention, ModalMessageModalSubmitInteraction, Role } from 'discord.js';
+import { deepCopy, respond, sendErrorMessage } from '../../utils/helperFunctions';
 import { checkLevelRequirements, checkRankRequirements, updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
@@ -15,6 +15,7 @@ import Den from '../../models/den';
 import DiscordUserToServer from '../../models/discordUserToServer';
 import GroupToServer from '../../models/groupToServer';
 import UserToServer from '../../models/userToServer';
+import { explainRuleset } from '../../utils/nameRules';
 const { default_color, update_channel_id } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -58,7 +59,7 @@ export const command: SlashCommand = {
 		}
 
 		/* It's checking if the interaction value or customId includes shop, and sends a message if it does. */
-		if ((interaction.isButton() && interaction.customId.startsWith('server-settings_shop_@')) || (interaction.isStringSelectMenu() && interaction.values[0] === 'server-settings_shop')) {
+		if ((interaction.isButton() && interaction.customId.startsWith('server-settings_shop_@')) || (interaction.isStringSelectMenu() && interaction.values[0] === 'shop')) {
 
 			if (await missingPermissions(interaction, [
 				'ManageRoles', // Needed to give out roles configured in this shop
@@ -75,7 +76,7 @@ export const command: SlashCommand = {
 			/* It's checking if the value is for turning a page. If it is, it's getting the page number from the value, and it's updating the message with the shop message with the page number. */
 			if (selectOptionId.includes('nextpage')) {
 
-				const page = Number(selectOptionId.split('_')[3]);
+				const page = Number(selectOptionId.split('_')[1]) + 1;
 
 				// This is always an update to the message with the select menu
 				await respond(interaction, await getShopMessage(interaction, server, page), 'update', interaction.message.id);
@@ -83,25 +84,23 @@ export const command: SlashCommand = {
 			}
 			else {
 
-				const roleIdOrAdd = selectOptionId.split('_')[2] || '';
-
 				let rolePage = 0;
 				const shopRoles = await ShopRole.findAll({ where: { serverId: server.id } });
 
-				const role = roleIdOrAdd !== 'add' ? shopRoles.find(r => r.id === roleIdOrAdd) ?? null : null;
+				const role = selectOptionId !== 'add' ? shopRoles.find(r => r.id === selectOptionId) ?? null : null;
 				let roleId = role?.id;
 				let wayOfEarning = role?.wayOfEarning;
 				let requirement = role?.requirement;
 
 				let roleMenu = await async function() {
 
-					if (roleIdOrAdd !== 'add') { return null; }
+					if (selectOptionId !== 'add') { return null; }
 
 					return await getNewRoleMenu(interaction, shopRoles, rolePage);
 				}();
 
 				// This is always an update to the message with the select menu
-				await respond(interaction, getShopRoleMessage(interaction, roleMenu, roleIdOrAdd, shopRoles, roleId, wayOfEarning, requirement), 'update', interaction.message.id);
+				await respond(interaction, getShopRoleMessage(interaction, roleMenu, selectOptionId, shopRoles, roleId, wayOfEarning, requirement), 'update', interaction.message.id);
 
 				const modalCollector = new InteractionCollector(interaction.client, { channel: interaction.channel || undefined, interactionType: InteractionType.ModalSubmit, message: interaction.message });
 
@@ -128,7 +127,7 @@ export const command: SlashCommand = {
 							}
 
 							// This is always an update to the message with the select menu
-							await respond(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, shopRoles, roleId, wayOfEarning, requirement), 'update', interaction.message.id)
+							await respond(i, getShopRoleMessage(i, roleMenu, selectOptionId, shopRoles, roleId, wayOfEarning, requirement), 'update', interaction.message.id)
 								.catch(error => { console.error(error); });
 						}
 
@@ -138,7 +137,7 @@ export const command: SlashCommand = {
 							requirement = undefined;
 
 							// This is always an update to the message with the select menu
-							await respond(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, shopRoles, roleId, wayOfEarning, requirement), 'update', interaction.message.id)
+							await respond(i, getShopRoleMessage(i, roleMenu, selectOptionId, shopRoles, roleId, wayOfEarning, requirement), 'update', interaction.message.id)
 								.catch(error => { console.error(error); });
 						}
 
@@ -147,7 +146,7 @@ export const command: SlashCommand = {
 							requirement = collectorSelectOptionId as RankType;
 
 							// This is always an update to the message with the select menu
-							await respond(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, shopRoles, roleId, wayOfEarning, requirement), 'update', interaction.message.id)
+							await respond(i, getShopRoleMessage(i, roleMenu, selectOptionId, shopRoles, roleId, wayOfEarning, requirement), 'update', interaction.message.id)
 								.catch(error => { console.error(error); });
 						}
 
@@ -193,7 +192,7 @@ export const command: SlashCommand = {
 
 							// This is always a reply
 							await respond(i, {
-								content: `<@&${role}> ${roleIdOrAdd === 'add' ? 'added to the shop' : 'edited'}! The requirement is ${requirement} ${wayOfEarning}.`,
+								content: `<@&${role}> ${selectOptionId === 'add' ? 'added to the shop' : 'edited'}! The requirement is ${requirement} ${wayOfEarning}.`,
 								ephemeral: true,
 							}).catch(error => { console.error(error); });
 
@@ -291,7 +290,7 @@ export const command: SlashCommand = {
 
 							requirement = modalTextInput;
 							// This is always an update to the message the modal was called from
-							await respond(i, getShopRoleMessage(interaction, roleMenu, roleIdOrAdd, shopRoles, roleId, wayOfEarning, requirement), 'update', interaction.message.id)
+							await respond(i, getShopRoleMessage(interaction, roleMenu, selectOptionId, shopRoles, roleId, wayOfEarning, requirement), 'update', interaction.message.id)
 								.catch(error => { console.error(error); });
 							return;
 						}
@@ -328,7 +327,7 @@ export const command: SlashCommand = {
 		}
 
 		/* It's checking if the interaction value includes updates, and sends a message if it does. */
-		if (interaction.isStringSelectMenu() && interaction.values[0] === 'server-settings_updates') {
+		if (interaction.isStringSelectMenu() && interaction.values[0] === 'updates') {
 
 			if (await missingPermissions(interaction, [
 				'ViewChannel', 'ManageWebhooks', // Needed to add the follower
@@ -364,7 +363,7 @@ export const command: SlashCommand = {
 		}
 
 		/* It's checking if the interaction value includes visits, and sends a message if it does. */
-		if (interaction.isStringSelectMenu() && interaction.values[0] === 'server-settings_visits') {
+		if (interaction.isStringSelectMenu() && interaction.values[0] === 'visits') {
 
 			if (await missingPermissions(interaction, [
 				'ManageWebhooks', // Needed to do visits
@@ -378,53 +377,224 @@ export const command: SlashCommand = {
 		/* It's checking if the interaction is the visits select menu */
 		if (interaction.isChannelSelectMenu() && interaction.customId.includes('visits_options')) {
 
+			if (selectOptionId && selectOptionId.includes('nextpage')) {
+
+				const page = Number(selectOptionId.split('_')[1]) + 1;
+
+				// This is always an update to the message with the select menu
+				await respond(interaction, await getVisitsMessage(interaction, server, page), 'update', interaction.message.id);
+				return;
+			}
+			else {
+
+				// This is always an update to the message with the select menu
+				await respond(interaction, getOriginalMessage(interaction), 'update', interaction.message.id)
+					.catch((error) => {
+						if (error.httpStatus !== 404) { console.error(error); }
+					});
+
+				if (selectOptionId === undefined || selectOptionId === server.visitChannelId || selectOptionId === 'off') {
+
+					await server.update({ visitChannelId: null });
+
+					// This is always a followUp
+					await respond(interaction, {
+						content: 'Visits have successfully been turned off!',
+						ephemeral: true,
+					});
+				}
+				else {
+
+					await server.update({ visitChannelId: selectOptionId });
+
+					// This is always a followUp
+					await respond(interaction, {
+						content: `Visits are now possible in ${channelMention(selectOptionId)}!`,
+						ephemeral: true,
+					});
+				}
+			}
+			return;
+		}
+
+		if ((interaction.isStringSelectMenu() && interaction.values[0] === 'proxying') || (interaction.isButton() && interaction.customId.includes('server-settings_proxying_@'))) {
+
 			// This is always an update to the message with the select menu
-			await respond(interaction, getOriginalMessage(interaction), 'update', interaction.message.id)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { console.error(error); }
-				});
+			await respond(interaction, await getProxyingMessage(interaction), 'update', interaction.message.id);
+			return;
+		}
 
-			if (selectOptionId === undefined || selectOptionId === server.visitChannelId) {
+		if ((interaction.isStringSelectMenu() && interaction.customId.includes('proxying_options') && interaction.values[0] === 'logging') || (interaction.isButton() && interaction.customId.startsWith('server-settings_proxying_logging_@'))) {
 
-				await server.update({ visitChannelId: null });
+			// This is always an update to the message with the select menu
+			await respond(interaction, await getProxyingLoggingMessage(interaction, server, 0), 'update', interaction.message.id);
+			return;
+		}
 
-				// This is always a followUp
+		/* It's checking if the interaction is the visits select menu */
+		if (interaction.isStringSelectMenu() && interaction.customId.includes('proxying_logging_channel')) {
+
+			if (selectOptionId && selectOptionId.includes('nextpage')) {
+
+				const page = Number(selectOptionId.split('_')[1]) + 1;
+
+				// This is always an update to the message with the select menu
+				await respond(interaction, await getProxyingLoggingMessage(interaction, server, page), 'update', interaction.message.id);
+				return;
+			}
+			else if (selectOptionId === undefined || selectOptionId === server.visitChannelId || selectOptionId === 'off') {
+
+				await server.update({ logChannelId: null });
+
+				// This is always a reply
 				await respond(interaction, {
-					content: 'Visits have successfully been turned off!',
+					content: 'Logging has successfully been turned off!',
 					ephemeral: true,
 				});
 			}
 			else {
 
-				await server.update({ visitChannelId: selectOptionId });
+				await server.update({ logChannelId: selectOptionId });
 
-				// This is always a followUp
+				// This is always a reply
 				await respond(interaction, {
-					content: `Visits are now possible in ${channelMention(selectOptionId)}!`,
+					content: `Proxied messages are now logged in ${channelMention(selectOptionId)}!`,
 					ephemeral: true,
 				});
 			}
 			return;
 		}
 
-		/* It's checking if the interaction value includes visits, and sends a message if it does. */
-		if (interaction.isStringSelectMenu() && interaction.values[0] === 'server-settings_proxying') {
+		if (interaction.isButton() && interaction.customId.includes('proxying_logging_advanced')) {
+
+			const logLimits = await ProxyLimits.findByPk(server.logLimitsId);
+			if (!logLimits) { throw new TypeError('channelLimits is null'); }
+			// This is always an update to the message with the select menu
+			await respond(interaction, await getProxyingLoggingAdvancedMessage(interaction, logLimits, 0), 'update', interaction.message.id);
+			return;
+		}
+
+		if (interaction.isButton() && interaction.customId.includes('proxying_logging_setTo')) {
+
+			const logLimits = await ProxyLimits.findByPk(server.logLimitsId);
+			if (!logLimits) { throw new TypeError('channelLimits is null'); }
+			await logLimits?.update({ setToWhitelist: !logLimits.setToWhitelist });
+
+			// This is always an update to the message with the select menu
+			await respond(interaction, await getProxyingLoggingAdvancedMessage(interaction, logLimits, 0), 'update', interaction.message.id)
+				.catch((error) => {
+					if (error.httpStatus !== 404) { console.error(error); }
+				});
+
+			// This is always a followUp
+			await respond(interaction, {
+				content: `Logging proxied messages is now only ${logLimits.setToWhitelist ? 'enabled' : 'disabled'} in the ${logLimits.setToWhitelist ? 'whitelisted' : 'blacklisted'} channels!`,
+				ephemeral: true,
+			});
+			return;
+		}
+
+		/* It's checking if the interaction is the visits select menu */
+		if (interaction.isStringSelectMenu() && selectOptionId && interaction.customId.includes('proxying_logging_options')) {
+
+			const logLimits = await ProxyLimits.findByPk(server.logLimitsId);
+			if (!logLimits) { throw new TypeError('channelLimits is null'); }
+			/* It's checking if the value is for turning a page. If it is, it's getting the page number from the value, and it's updating the message with the shop message with the page number. */
+			if (selectOptionId.includes('nextpage')) {
+
+				const page = Number(selectOptionId.split('_')[1]) + 1;
+
+				// This is always an update to the message with the select menu
+				await respond(interaction, await getProxyingLoggingAdvancedMessage(interaction, logLimits, page), 'update', interaction.message.id);
+				return;
+			}
+			else {
+
+				const listType = logLimits.setToWhitelist ? 'whitelist' : 'blacklist';
+				let deepCopiedList = deepCopy(logLimits[listType]);
+
+				const hasChannel = deepCopiedList.includes(selectOptionId);
+				if (!hasChannel) { deepCopiedList.push(selectOptionId); }
+				else { deepCopiedList = deepCopiedList.filter(string => string !== selectOptionId); }
+				await logLimits.update({
+					[listType]: deepCopiedList,
+				});
+
+
+				// This is always an update to the message with the select menu
+				await respond(interaction, await getProxyingLoggingAdvancedMessage(interaction, logLimits, 0), 'update', interaction.message.id)
+					.catch((error) => {
+						if (error.httpStatus !== 404) { console.error(error); }
+					});
+
+				// This is always a followUp
+				await respond(interaction, {
+					content: `${hasChannel ? 'Removed' : 'Added'} <#${selectOptionId}> ${hasChannel ? 'from' : 'to'} the logging ${listType}!`,
+					ephemeral: true,
+				});
+				return;
+			}
+		}
+
+		if (interaction.isStringSelectMenu() && interaction.customId.includes('proxying_options') && interaction.values[0] === 'namerules') {
+
+			// This is always an update to the message with the select menu
+			await respond(interaction, await getProxyingNamerulesMessage(interaction, server, 0), 'update', interaction.message.id);
+			return;
+		}
+
+		if (interaction.isStringSelectMenu() && selectOptionId && interaction.customId.includes('proxying_namerules_options')) {
+
+			if (selectOptionId.includes('nextpage')) {
+
+				const page = Number(selectOptionId.split('_')[1]) + 1;
+
+				// This is always an update to the message with the select menu
+				await respond(interaction, await getProxyingNamerulesMessage(interaction, server, page), 'update', interaction.message.id);
+				return;
+			}
+			else {
+
+				/* Getting the position of the pronoun in the array, and the existing pronoun in that place */
+				const nameRuleSet = selectOptionId === 'add' ? '' : server.nameRuleSets[Number(selectOptionId)];
+				if (nameRuleSet === undefined) { throw new TypeError('nameRuleSet is undefined'); }
+
+				const textInput = new TextInputBuilder()
+					.setCustomId('nameRuleSet')
+					.setLabel('Text')
+					.setStyle(TextInputStyle.Paragraph)
+					.setMinLength(0)
+					.setRequired(selectOptionId === 'add');
+				if (selectOptionId !== 'add') { textInput.setValue(nameRuleSet); }
+
+				await interaction
+					.showModal(new ModalBuilder()
+						.setCustomId(`server-settings_proxying_namerules_${selectOptionId}`)
+						.setTitle(`${selectOptionId === 'add' ? 'Add' : 'Change'} Ruleset`)
+						.addComponents(new ActionRowBuilder<TextInputBuilder>()
+							.setComponents([textInput])),
+					);
+				return;
+			}
+		}
+
+		if (interaction.isStringSelectMenu() && interaction.customId.includes('proxying_options') && interaction.values[0] === 'channels') {
 
 			const channelLimits = await ProxyLimits.findByPk(server.proxy_channelLimitsId);
 			if (!channelLimits) { throw new TypeError('channelLimits is null'); }
 			// This is always an update to the message with the select menu
-			await respond(interaction, await getProxyingMessage(interaction, channelLimits, 0), 'update', interaction.message.id);
+			await respond(interaction, await getProxyingChannelsMessage(interaction, channelLimits, 0), 'update', interaction.message.id);
 			return;
 		}
 
-		if (interaction.isButton() && interaction.customId.includes('proxying_setTo')) {
+		if (interaction.isButton() && interaction.customId.includes('proxying_channel_setTo')) {
 
 			const channelLimits = await ProxyLimits.findByPk(server.proxy_channelLimitsId);
 			if (!channelLimits) { throw new TypeError('channelLimits is null'); }
 			await channelLimits?.update({ setToWhitelist: !channelLimits.setToWhitelist });
 
 			// This is always an update to the message with the select menu
-			await respond(interaction, await getProxyingMessage(interaction, channelLimits, 0), 'update', interaction.message.id)
+			await respond(interaction, await getProxyingChannelsMessage(interaction, channelLimits, 0), 'update', interaction.message.id)
 				.catch((error) => {
 					if (error.httpStatus !== 404) { console.error(error); }
 				});
@@ -438,48 +608,119 @@ export const command: SlashCommand = {
 		}
 
 		/* It's checking if the interaction is the visits select menu */
-		if (interaction.isStringSelectMenu() && selectOptionId && interaction.customId.includes('proxying_options')) {
+		if (interaction.isStringSelectMenu() && selectOptionId && interaction.customId.includes('proxying_channel_options')) {
 
 			const channelLimits = await ProxyLimits.findByPk(server.proxy_channelLimitsId);
 			if (!channelLimits) { throw new TypeError('channelLimits is null'); }
 			/* It's checking if the value is for turning a page. If it is, it's getting the page number from the value, and it's updating the message with the shop message with the page number. */
 			if (selectOptionId.includes('nextpage')) {
 
-				const page = Number(selectOptionId.split('_')[3]);
+				const page = Number(selectOptionId.split('_')[1]) + 1;
 
 				// This is always an update to the message with the select menu
-				await respond(interaction, await getProxyingMessage(interaction, channelLimits, page), 'update', interaction.message.id);
+				await respond(interaction, await getProxyingChannelsMessage(interaction, channelLimits, page), 'update', interaction.message.id);
 				return;
 			}
 			else {
 
-				const channelId = selectOptionId.replace('server-settings_proxying_', '');
 				const listType = channelLimits.setToWhitelist ? 'whitelist' : 'blacklist';
+				let deepCopiedList = deepCopy(channelLimits[listType]);
 
-				const hasChannel = channelLimits[listType].includes(channelId);
-				if (!hasChannel) { channelLimits[listType].push(channelId); }
-				else { channelLimits[listType] = channelLimits[listType].filter(string => string !== channelId); }
+				const hasChannel = deepCopiedList.includes(selectOptionId);
+				if (!hasChannel) { deepCopiedList.push(selectOptionId); }
+				else { deepCopiedList = deepCopiedList.filter(string => string !== selectOptionId); }
 				await channelLimits.update({
-					[listType]: [...channelLimits[listType]],
+					[listType]: deepCopiedList,
 				});
 
 
 				// This is always an update to the message with the select menu
-				await respond(interaction, await getProxyingMessage(interaction, channelLimits, 0), 'update', interaction.message.id)
+				await respond(interaction, await getProxyingChannelsMessage(interaction, channelLimits, 0), 'update', interaction.message.id)
 					.catch((error) => {
 						if (error.httpStatus !== 404) { console.error(error); }
 					});
 
 				// This is always a followUp
 				await respond(interaction, {
-					content: `${hasChannel ? 'Removed' : 'Added'} <#${channelId}> ${hasChannel ? 'from' : 'to'} the proxying ${listType}!`,
+					content: `${hasChannel ? 'Removed' : 'Added'} <#${selectOptionId}> ${hasChannel ? 'from' : 'to'} the proxying ${listType}!`,
 					ephemeral: true,
 				});
 				return;
 			}
 		}
 
-		if (interaction.isStringSelectMenu() && interaction.values[0] === 'server-settings_delete') {
+		if (interaction.isStringSelectMenu() && interaction.customId.includes('proxying_options') && interaction.values[0] === 'roles') {
+
+			const roleLimits = await ProxyLimits.findByPk(server.proxy_roleLimitsId);
+			if (!roleLimits) { throw new TypeError('roleLimits is null'); }
+			// This is always an update to the message with the select menu
+			await respond(interaction, await getProxyingRolesMessage(interaction, roleLimits, 0), 'update', interaction.message.id);
+			return;
+		}
+
+		if (interaction.isButton() && interaction.customId.includes('proxying_channel_setTo')) {
+
+			const roleLimits = await ProxyLimits.findByPk(server.proxy_roleLimitsId);
+			if (!roleLimits) { throw new TypeError('roleLimits is null'); }
+			await roleLimits?.update({ setToWhitelist: !roleLimits.setToWhitelist });
+
+			// This is always an update to the message with the select menu
+			await respond(interaction, await getProxyingRolesMessage(interaction, roleLimits, 0), 'update', interaction.message.id)
+				.catch((error) => {
+					if (error.httpStatus !== 404) { console.error(error); }
+				});
+
+			// This is always a followUp
+			await respond(interaction, {
+				content: `Proxying is now only ${roleLimits.setToWhitelist ? 'enabled' : 'disabled'} for the ${roleLimits.setToWhitelist ? 'whitelisted' : 'blacklisted'} roles!`,
+				ephemeral: true,
+			});
+			return;
+		}
+
+		/* It's checking if the interaction is the visits select menu */
+		if (interaction.isStringSelectMenu() && selectOptionId && interaction.customId.includes('proxying_role_options')) {
+
+			const roleLimits = await ProxyLimits.findByPk(server.proxy_roleLimitsId);
+			if (!roleLimits) { throw new TypeError('roleLimits is null'); }
+			/* It's checking if the value is for turning a page. If it is, it's getting the page number from the value, and it's updating the message with the shop message with the page number. */
+			if (selectOptionId.includes('nextpage')) {
+
+				const page = Number(selectOptionId.split('_')[1]) + 1;
+
+				// This is always an update to the message with the select menu
+				await respond(interaction, await getProxyingRolesMessage(interaction, roleLimits, page), 'update', interaction.message.id);
+				return;
+			}
+			else {
+
+				const listType = roleLimits.setToWhitelist ? 'whitelist' : 'blacklist';
+				let deepCopiedList = deepCopy(roleLimits[listType]);
+
+				const hasRole = deepCopiedList.includes(selectOptionId);
+				if (!hasRole) { deepCopiedList.push(selectOptionId); }
+				else { deepCopiedList = deepCopiedList.filter(string => string !== selectOptionId); }
+				await roleLimits.update({
+					[listType]: deepCopiedList,
+				});
+
+
+				// This is always an update to the message with the select menu
+				await respond(interaction, await getProxyingRolesMessage(interaction, roleLimits, 0), 'update', interaction.message.id)
+					.catch((error) => {
+						if (error.httpStatus !== 404) { console.error(error); }
+					});
+
+				// This is always a followUp
+				await respond(interaction, {
+					content: `${hasRole ? 'Removed' : 'Added'} <@&${selectOptionId}> ${hasRole ? 'from' : 'to'} the proxying ${listType}!`,
+					ephemeral: true,
+				});
+				return;
+			}
+		}
+
+		if (interaction.isStringSelectMenu() && interaction.values[0] === 'delete') {
 
 			// This is always an update to the message with the select menu
 			await respond(interaction, await getDeletionMessage(interaction), 'update', interaction.message.id);
@@ -506,6 +747,59 @@ export const command: SlashCommand = {
 			await interaction.guild.leave();
 		}
 	},
+	async sendModalResponse(interaction, { server }) {
+
+		if (!interaction.isFromMessage()) { return; }
+		if (!interaction.inCachedGuild()) { return; }
+		if (!server) { return; }
+
+		/* Getting the array position of the pronoun that is being edited, the pronouns that are being set, whether the pronouns are being deleted, and whether the pronouns are being set to none. */
+		const rulesetNumber = Number(interaction.customId.split('_')[3]);
+		const newRuleset = interaction.fields.getTextInputValue('nameRuleSet');
+		const willBeDeleted = newRuleset === '';
+
+		/* Checking if the user has provided the correct amount of arguments. If they haven't, it will send an error message. */
+		if (!willBeDeleted) {
+
+			const newRules = newRuleset.split('\n');
+			for (let i = 0; i < newRules.length; i++) {
+
+				const rule = newRules[i];
+				if (!rule) { break; }
+
+				if (rule.replace(/@displayname/g, '@').length > 80) {
+
+					// This is always a reply
+					await respond(interaction, {
+						content: `Rule ${i + 1} is longer than 80 characters, which makes it impossible to follow because names can only be 80 characters long!`,
+						ephemeral: true,
+					});
+					return;
+				}
+			}
+		}
+
+		const oldRuleset = isNaN(rulesetNumber) ? undefined : server.nameRuleSets[rulesetNumber];
+
+		/* Add the pronouns, send a success message and update the original one. */
+		const nameRuleSets = deepCopy(server.nameRuleSets);
+		if ((willBeDeleted && !isNaN(rulesetNumber))) { nameRuleSets.splice(rulesetNumber, 1); }
+		else { nameRuleSets[isNaN(rulesetNumber) ? nameRuleSets.length : rulesetNumber] = newRuleset; }
+
+		await server.update({
+			nameRuleSets: nameRuleSets,
+		});
+
+		// This is always an update
+		await respond(interaction, await getProxyingNamerulesMessage(interaction, server, 0), 'update', interaction.message.id);
+
+		const addedOrEditedTo = oldRuleset === undefined ? 'added ruleset' : `edited ruleset from \`${explainRuleset(oldRuleset)}\` to`;
+		// This is always a followUp
+		await respond(interaction, {
+			content: `Successfully ${willBeDeleted ? `deleted ruleset \`${explainRuleset(oldRuleset ?? '')}\`` : `${addedOrEditedTo} \`${explainRuleset(newRuleset)}\``}!`,
+		});
+		return;
+	},
 };
 
 function getOriginalMessage(
@@ -522,11 +816,11 @@ function getOriginalMessage(
 				.setCustomId(`server-settings_options_@${interaction.user.id}`)
 				.setPlaceholder('Select an option to configure')
 				.setOptions(
-					{ value: 'server-settings_shop', label: 'Shop', description: 'Add, delete or edit earnable roles' },
-					{ value: 'server-settings_updates', label: 'Updates', description: 'Get updates for new releases sent to a channel' },
-					{ value: 'server-settings_visits', label: 'Visits', description: 'Configure a channel to connect with other servers' },
-					{ value: 'server-settings_proxying', label: 'Proxying', description: 'Manage proxying' },
-					{ value: 'server-settings_delete', label: 'Deletion', description: 'Delete all information around this server and remove the bot' },
+					{ value: 'shop', label: 'Shop', description: 'Add, delete or edit earnable roles' },
+					{ value: 'updates', label: 'Updates', description: 'Get updates for new releases sent to a channel' },
+					{ value: 'visits', label: 'Visits', description: 'Configure a channel to connect with other servers' },
+					{ value: 'proxying', label: 'Proxying', description: 'Manage proxying' },
+					{ value: 'delete', label: 'Deletion', description: 'Delete all information around this server and remove the bot' },
 				)])],
 	};
 }
@@ -537,19 +831,19 @@ async function getShopMessage(
 	page: number,
 ): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
 
-	let roleMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [{ label: 'Add another shop item', value: 'server-settings_shop_add' }];
+	let roleMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [{ label: 'Add another shop item', value: 'add' }];
 	const shopRoles = await ShopRole.findAll({ where: { serverId: server.id } });
 
 	for (const shopItem of shopRoles) {
 
 		const discordRole = interaction.guild?.roles.cache.get(shopItem.id) ?? await interaction.guild?.roles.fetch(shopItem.id) ?? null;
-		roleMenuOptions.push({ label: discordRole?.name ?? shopItem.id, value: `server-settings_shop_${shopItem.id}`, description: `${shopItem.requirement} ${shopItem.wayOfEarning}` });
+		roleMenuOptions.push({ label: discordRole?.name ?? shopItem.id, value: `${shopItem.id}`, description: `${shopItem.requirement} ${shopItem.wayOfEarning}` });
 	}
 
 	if (roleMenuOptions.length > 25) {
 
 		roleMenuOptions = roleMenuOptions.splice(page * 24, 24);
-		roleMenuOptions.push({ label: 'Show more shop items', value: `server-settings_shop_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
+		roleMenuOptions.push({ label: 'Show more shop items', value: `nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
 	}
 
 	return {
@@ -708,12 +1002,16 @@ async function getVisitsMessage(
 	page: number,
 ): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
 
-	let updatesMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [{ label: 'off', value: 'server-settings_visits_off', emoji: server.visitChannelId === null ? '🔘' : undefined }, ...(await interaction.guild.channels.fetch()).filter((c): c is TextChannel => c !== null && c.type === ChannelType.GuildText).map(channel => ({ label: channel!.name, value: `server-settings_visits_${channel.id}`, emoji: server.visitChannelId === channel.id ? '🔘' : undefined }))];
+	let updatesMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [{ label: 'off', value: 'off', default: server.visitChannelId === null }, ...(await interaction.guild.channels.fetch()).filter((c): c is TextChannel => c !== null && c.type === ChannelType.GuildText).map(channel => ({ label: channel!.name, value: channel.id, default: server.visitChannelId === channel.id }))];
 
 	if (updatesMenuOptions.length > 25) {
 
+		const pageCount = Math.ceil(updatesMenuOptions.length / 24);
+		let adjustedPage = page % pageCount;
+		if (adjustedPage < 0) { adjustedPage += pageCount; }
+
 		updatesMenuOptions = updatesMenuOptions.splice(page * 24, 24);
-		updatesMenuOptions.push({ label: 'Show more channels', value: `server-settings_visits_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
+		updatesMenuOptions.push({ label: 'Show more channels', value: `nextpage_${adjustedPage}`, description: `You are currently on page ${adjustedPage + 1}`, emoji: '📋' });
 	}
 
 	return {
@@ -740,41 +1038,265 @@ async function getVisitsMessage(
 
 async function getProxyingMessage(
 	interaction: AnySelectMenuInteraction<'cached'> | ButtonInteraction<'cached'>,
-	channelLimits: ProxyLimits,
-	page: number,
 ): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
-
-	// If ChannelSelects ever allow for default values, then this could be implemented here. Right now, using default values clashes with the "Show more channels" feature
-	const listType = channelLimits.setToWhitelist ? 'whitelist' : 'blacklist';
-	let disableSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (await interaction.guild.channels.fetch()).filter((c): c is TextChannel => c !== null && c.type === ChannelType.GuildText).map((channel, channelId) => ({ label: channel.name, value: `server-settings_proxying_${channelId}`, emoji: channelLimits[listType].includes(channelId) ? '🔘' : undefined }));
-
-	if (disableSelectMenuOptions.length > 25) {
-
-		disableSelectMenuOptions = disableSelectMenuOptions.splice(page * 24, 24);
-		disableSelectMenuOptions.push({ label: 'Show more channels', value: `server-settings_proxying_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
-	}
 
 	return {
 		embeds: [new EmbedBuilder()
 			.setColor(default_color)
 			.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() ?? undefined })
 			.setTitle('Settings ➜ Proxying')
-			.setDescription('This toggles in which channels proxying should be disabled or enabled, using the drop-down menu below. Selected channels will have a radio emoji next to them. When it is set to blacklist, proxying is *only disabled* in the selected channels. When it is set to whitelist, proxying is *only enabled* in the selected channels.')],
+			.setDescription('Please select which proxying rule you would like to configure.')],
 		components: [new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
 				.setCustomId(`server-settings_mainpage_@${interaction.user.id}`)
 				.setLabel('Back')
 				.setEmoji('⬅️')
 				.setStyle(ButtonStyle.Secondary)]),
+		new ActionRowBuilder<StringSelectMenuBuilder>()
+			.setComponents([new StringSelectMenuBuilder()
+				.setCustomId(`server-settings_proxying_options_@${interaction.user.id}`)
+				.setPlaceholder('Select an option to configure.')
+				.setOptions(
+					{ value: 'logging', label: 'Logging', description: 'Configure logging proxied messages' },
+					{ value: 'namerules', label: 'Name Rules', description: 'Configure rules a quid\'s name must follow for their message to be proxied' },
+					{ value: 'channels', label: 'Channels', description: 'Toggle in which channels proxying should be enabled or disabled' },
+					{ value: 'roles', label: 'Roles', description: 'Toggle for which channels proxying should be enabled or disabled' },
+				)])],
+	};
+}
+
+async function getProxyingLoggingMessage(
+	interaction: AnySelectMenuInteraction<'cached'> | ButtonInteraction<'cached'>,
+	server: Server,
+	page: number,
+): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
+
+	let loggingChannelSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [{ label: 'off', value: 'off', default: server.logChannelId === null }, ...(await interaction.guild.channels.fetch()).filter((c): c is TextChannel => c !== null && c.type === ChannelType.GuildText).map(channel => ({ label: channel!.name, value: channel.id, default: server.logChannelId === channel.id }))];
+
+	if (loggingChannelSelectMenuOptions.length > 25) {
+
+		const pageCount = Math.ceil(loggingChannelSelectMenuOptions.length / 24);
+		let adjustedPage = page % pageCount;
+		if (adjustedPage < 0) { adjustedPage += pageCount; }
+
+		loggingChannelSelectMenuOptions = loggingChannelSelectMenuOptions.splice(page * 24, 24);
+		loggingChannelSelectMenuOptions.push({ label: 'Show more channels', value: `nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
+	}
+
+	return {
+		embeds: [new EmbedBuilder()
+			.setColor(default_color)
+			.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() ?? undefined })
+			.setTitle('Settings ➜ Proxying ➜ Logging')
+			.setDescription('Here, you can select a channel where proxied messages are logged to.')],
+		components: [new ActionRowBuilder<ButtonBuilder>()
+			.setComponents([new ButtonBuilder()
+				.setCustomId(`server-settings_proxying_@${interaction.user.id}`)
+				.setLabel('Back')
+				.setEmoji('⬅️')
+				.setStyle(ButtonStyle.Secondary)]),
+		new ActionRowBuilder<StringSelectMenuBuilder>()
+			.setComponents([new StringSelectMenuBuilder()
+				.setCustomId(`server-settings_proxying_logging_channel_@${interaction.user.id}`)
+				.setPlaceholder('Select a channel where proxied messages are logged to')
+				.setOptions(loggingChannelSelectMenuOptions)]),
 		new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
-				.setCustomId(`server-settings_proxying_setTo_@${interaction.user.id}`)
+				.setCustomId(`server-settings_proxying_logging_advanced_@${interaction.user.id}`)
+				.setLabel('Advanced Options')
+				.setEmoji('🔧')
+				.setStyle(ButtonStyle.Primary)])],
+	};
+}
+
+async function getProxyingLoggingAdvancedMessage(
+	interaction: AnySelectMenuInteraction<'cached'> | ButtonInteraction<'cached'>,
+	logLimits: ProxyLimits,
+	page: number,
+): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
+
+	// If ChannelSelects ever allow for default values, then this could be implemented here. Right now, using default values clashes with the "Show more channels" feature
+	const listType = logLimits.setToWhitelist ? 'whitelist' : 'blacklist';
+	let disableSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (await interaction.guild.channels.fetch()).filter((c): c is TextChannel => c !== null && c.type === ChannelType.GuildText).map((channel, channelId) => ({ label: channel.name, value: channelId, emoji: logLimits[listType].includes(channelId) ? '🔘' : undefined }));
+
+	if (disableSelectMenuOptions.length > 25) {
+
+		const pageCount = Math.ceil(disableSelectMenuOptions.length / 24);
+		let adjustedPage = page % pageCount;
+		if (adjustedPage < 0) { adjustedPage += pageCount; }
+
+		disableSelectMenuOptions = disableSelectMenuOptions.splice(page * 24, 24);
+		disableSelectMenuOptions.push({ label: 'Show more channels', value: `nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
+	}
+
+	return {
+		embeds: [new EmbedBuilder()
+			.setColor(default_color)
+			.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() ?? undefined })
+			.setTitle('Settings ➜ Proxying ➜ Logging ➜ Advanced')
+			.setDescription('This toggles in which channels logging proxied messages should be disabled or enabled, using the drop-down menu below. Selected channels will have a radio emoji next to them. When it is set to blacklist, logging is *only disabled* in the selected channels. When it is set to whitelist, logging is *only enabled* in the selected channels.')],
+		components: [new ActionRowBuilder<ButtonBuilder>()
+			.setComponents([new ButtonBuilder()
+				.setCustomId(`server-settings_proxying_logging_@${interaction.user.id}`)
+				.setLabel('Back')
+				.setEmoji('⬅️')
+				.setStyle(ButtonStyle.Secondary)]),
+		new ActionRowBuilder<ButtonBuilder>()
+			.setComponents([new ButtonBuilder()
+				.setCustomId(`server-settings_proxying_logging_setTo_@${interaction.user.id}`)
+				.setLabel(`Currently set to ${logLimits.setToWhitelist ? 'whitelist' : 'blacklist'}`)
+				.setStyle(ButtonStyle.Secondary)]),
+		new ActionRowBuilder<StringSelectMenuBuilder>()
+			.setComponents([new StringSelectMenuBuilder()
+				.setCustomId(`server-settings_proxying_logging_options_@${interaction.user.id}`)
+				.setPlaceholder(`Select channels to ${logLimits.setToWhitelist ? 'enable' : 'disable'} logging for`)
+				.setOptions(disableSelectMenuOptions)])],
+	};
+}
+
+async function getProxyingNamerulesMessage(
+	interaction: AnySelectMenuInteraction<'cached'> | ButtonInteraction<'cached'> | ModalMessageModalSubmitInteraction<'cached'>,
+	server: Server,
+	page: number,
+): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
+
+	// If ChannelSelects ever allow for default values, then this could be implemented here. Right now, using default values clashes with the "Show more channels" feature
+	let ruleSelectMenuOptions: Array<SelectMenuComponentOptionData> = [];
+
+	server.nameRuleSets.forEach((nameRules, value) => {
+
+		const nameRulesArr = nameRules.split('\n');
+		ruleSelectMenuOptions.push({
+			label: `Ruleset with ${nameRulesArr.length} rules:`,
+			description: explainRuleset(nameRules).substring(0, 100),
+			value: `${value}`,
+		});
+	});
+
+	if (ruleSelectMenuOptions.length < 25) {
+
+		ruleSelectMenuOptions.push({
+			label: 'Add a ruleset',
+			value: 'add',
+		});
+	}
+
+	if (ruleSelectMenuOptions.length > 25) {
+
+		const pageCount = Math.ceil(ruleSelectMenuOptions.length / 24);
+		let adjustedPage = page % pageCount;
+		if (adjustedPage < 0) { adjustedPage += pageCount; }
+
+		ruleSelectMenuOptions = ruleSelectMenuOptions.splice(page * 24, 24);
+		ruleSelectMenuOptions.push({ label: 'Show more rulesets', value: `nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
+	}
+
+	return {
+		embeds: [new EmbedBuilder()
+			.setColor(default_color)
+			.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() ?? undefined })
+			.setTitle('Settings ➜ Proxying ➜ Name Rules')
+			.setDescription('Name rules are rules a quid\'s name must follow for their message to be proxied. Selecting "Add a ruleset" from the drop-down menu opens a pop-up that allows you to type out a new ruleset. Each ruleset consists of one or multiple rules, each of which consists of exact text that must be included in the quid\'s name. You can also type @displayname to require one word from the user\'s display name to be present in the quid\'s name. To create a new rule, simply make a new line. The quid\'s name must include all rules of required text, but it can be in any order.This provides flexibility to users when creating their quid\'s name that comply with the rules. Each ruleset is a new way for users to comply, so they only need to follow one set of rules.')],
+		components: [new ActionRowBuilder<ButtonBuilder>()
+			.setComponents([new ButtonBuilder()
+				.setCustomId(`server-settings_proxying_@${interaction.user.id}`)
+				.setLabel('Back')
+				.setEmoji('⬅️')
+				.setStyle(ButtonStyle.Secondary)]),
+		new ActionRowBuilder<StringSelectMenuBuilder>()
+			.setComponents([new StringSelectMenuBuilder()
+				.setCustomId(`server-settings_proxying_namerules_options_@${interaction.user.id}`)
+				.setPlaceholder('Add or edit name rulesets')
+				.setOptions(ruleSelectMenuOptions)])],
+	};
+}
+
+async function getProxyingChannelsMessage(
+	interaction: AnySelectMenuInteraction<'cached'> | ButtonInteraction<'cached'>,
+	channelLimits: ProxyLimits,
+	page: number,
+): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
+
+	// If ChannelSelects ever allow for default values, then this could be implemented here. Right now, using default values clashes with the "Show more channels" feature
+	const listType = channelLimits.setToWhitelist ? 'whitelist' : 'blacklist';
+	let disableSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (await interaction.guild.channels.fetch()).filter((c): c is TextChannel => c !== null && c.type === ChannelType.GuildText).map((channel, channelId) => ({ label: channel.name, value: channelId, emoji: channelLimits[listType].includes(channelId) ? '🔘' : undefined }));
+
+	if (disableSelectMenuOptions.length > 25) {
+
+		const pageCount = Math.ceil(disableSelectMenuOptions.length / 24);
+		let adjustedPage = page % pageCount;
+		if (adjustedPage < 0) { adjustedPage += pageCount; }
+
+		disableSelectMenuOptions = disableSelectMenuOptions.splice(page * 24, 24);
+		disableSelectMenuOptions.push({ label: 'Show more channels', value: `nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
+	}
+
+	return {
+		embeds: [new EmbedBuilder()
+			.setColor(default_color)
+			.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() ?? undefined })
+			.setTitle('Settings ➜ Proxying ➜ Allowed channels')
+			.setDescription('This toggles in which channels proxying should be disabled or enabled, using the drop-down menu below. Selected channels will have a radio emoji next to them. When it is set to blacklist, proxying is *only disabled* in the selected channels. When it is set to whitelist, proxying is *only enabled* in the selected channels.')],
+		components: [new ActionRowBuilder<ButtonBuilder>()
+			.setComponents([new ButtonBuilder()
+				.setCustomId(`server-settings_proxying_@${interaction.user.id}`)
+				.setLabel('Back')
+				.setEmoji('⬅️')
+				.setStyle(ButtonStyle.Secondary)]),
+		new ActionRowBuilder<ButtonBuilder>()
+			.setComponents([new ButtonBuilder()
+				.setCustomId(`server-settings_proxying_channel_setTo_@${interaction.user.id}`)
 				.setLabel(`Currently set to ${channelLimits.setToWhitelist ? 'whitelist' : 'blacklist'}`)
 				.setStyle(ButtonStyle.Secondary)]),
 		new ActionRowBuilder<StringSelectMenuBuilder>()
 			.setComponents([new StringSelectMenuBuilder()
-				.setCustomId(`server-settings_proxying_options_@${interaction.user.id}`)
+				.setCustomId(`server-settings_proxying_channel_options_@${interaction.user.id}`)
 				.setPlaceholder(`Select channels to ${channelLimits.setToWhitelist ? 'enable' : 'disable'} proxying for`)
+				.setOptions(disableSelectMenuOptions)])],
+	};
+}
+
+async function getProxyingRolesMessage(
+	interaction: AnySelectMenuInteraction<'cached'> | ButtonInteraction<'cached'>,
+	roleLimits: ProxyLimits,
+	page: number,
+): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
+
+	// If ChannelSelects ever allow for default values, then this could be implemented here. Right now, using default values clashes with the "Show more channels" feature
+	const listType = roleLimits.setToWhitelist ? 'whitelist' : 'blacklist';
+	let disableSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (await interaction.guild.roles.fetch()).filter((r): r is Role => r != null).map((role, roleId) => ({ label: role.name, value: roleId, emoji: roleLimits[listType].includes(roleId) ? '🔘' : undefined }));
+
+	if (disableSelectMenuOptions.length > 25) {
+
+		const pageCount = Math.ceil(disableSelectMenuOptions.length / 24);
+		let adjustedPage = page % pageCount;
+		if (adjustedPage < 0) { adjustedPage += pageCount; }
+
+		disableSelectMenuOptions = disableSelectMenuOptions.splice(page * 24, 24);
+		disableSelectMenuOptions.push({ label: 'Show more roles', value: `nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
+	}
+
+	return {
+		embeds: [new EmbedBuilder()
+			.setColor(default_color)
+			.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() ?? undefined })
+			.setTitle('Settings ➜ Proxying ➜ Allowed roles')
+			.setDescription('This toggles for which roles proxying should be disabled or enabled, using the drop-down menu below. Selected roles will have a radio emoji next to them. When it is set to blacklist, proxying is *only disabled* for the selected roles. When it is set to whitelist, proxying is *only enabled* for the selected roles.')],
+		components: [new ActionRowBuilder<ButtonBuilder>()
+			.setComponents([new ButtonBuilder()
+				.setCustomId(`server-settings_proxying_@${interaction.user.id}`)
+				.setLabel('Back')
+				.setEmoji('⬅️')
+				.setStyle(ButtonStyle.Secondary)]),
+		new ActionRowBuilder<ButtonBuilder>()
+			.setComponents([new ButtonBuilder()
+				.setCustomId(`server-settings_proxying_role_setTo_@${interaction.user.id}`)
+				.setLabel(`Currently set to ${roleLimits.setToWhitelist ? 'whitelist' : 'blacklist'}`)
+				.setStyle(ButtonStyle.Secondary)]),
+		new ActionRowBuilder<StringSelectMenuBuilder>()
+			.setComponents([new StringSelectMenuBuilder()
+				.setCustomId(`server-settings_proxying_role_options_@${interaction.user.id}`)
+				.setPlaceholder(`Select roles to ${roleLimits.setToWhitelist ? 'enable' : 'disable'} proxying for`)
 				.setOptions(disableSelectMenuOptions)])],
 	};
 }

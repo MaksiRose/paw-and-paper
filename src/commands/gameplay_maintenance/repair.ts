@@ -27,7 +27,7 @@ export const command: SlashCommand = {
 		.addStringOption(option =>
 			option.setName('den')
 				.setDescription('The den that you want to repair')
-				.addChoices({ name: 'sleeping dens', value: 'sleepingDens' }, { name: 'food den', value: 'foodDen' }, { name: 'medicine den', value: 'medicineDen' })
+				.addChoices({ name: 'sleeping dens', value: 'sleepingDenId' }, { name: 'food den', value: 'foodDenId' }, { name: 'medicine den', value: 'medicineDenId' })
 				.setRequired(false))
 		.setDMPermission(false)
 		.toJSON(),

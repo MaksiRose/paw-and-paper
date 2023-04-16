@@ -6,6 +6,12 @@ import Quid from './quid';
 import Server from './server';
 import UserToServer from './userToServer';
 
+export enum ProxySetTo {
+	off = 0,
+	onWithSelectMode = 1,
+	onWithStickyMode = 2
+}
+
 interface UserAttributes {
 	id: string;
 	advice_resting: boolean;
@@ -16,15 +22,15 @@ interface UserAttributes {
 	advice_sapling: boolean;
 	reminders_water: boolean;
 	reminders_resting: boolean;
-	proxy_globalAutoproxy: boolean;
-	proxy_globalStickymode: boolean;
+	proxy_editing: boolean;
+	proxy_keepInMessage: boolean;
+	proxy_setTo: ProxySetTo;
 	proxy_lastGlobalProxiedQuidId: string | null;
 	lastGlobalActiveQuidId: string | null;
 	accessibility_replaceEmojis: boolean;
 	tag: string;
 	lastPlayedVersion: string;
-	antiproxy_startsWith: string;
-	antiproxy_endsWith: string;
+	antiproxies: string[][]
 	lastRecordedTopVote: number;
 	nextRedeemableTopVote: number;
 	lastRecordedDiscordsVote: number;
@@ -33,7 +39,7 @@ interface UserAttributes {
 	nextRedeemableDblVote: number;
 }
 
-type UserCreationAttributes = Optional<UserAttributes, 'advice_resting' | 'advice_eating' | 'advice_drinking' | 'advice_passingOut' | 'advice_coloredButtons' | 'advice_sapling' | 'reminders_water' | 'reminders_resting' | 'proxy_globalAutoproxy' | 'proxy_globalStickymode' | 'accessibility_replaceEmojis' | 'tag' | 'antiproxy_startsWith' | 'antiproxy_endsWith' | 'lastRecordedTopVote' | 'nextRedeemableTopVote' | 'lastRecordedDiscordsVote' | 'nextRedeemableDiscordsVote' | 'lastRecordedDblVote' | 'nextRedeemableDblVote'>;
+type UserCreationAttributes = Optional<UserAttributes, 'advice_resting' | 'advice_eating' | 'advice_drinking' | 'advice_passingOut' | 'advice_coloredButtons' | 'advice_sapling' | 'reminders_water' | 'reminders_resting' | 'proxy_editing' | 'proxy_keepInMessage' | 'proxy_setTo' | 'accessibility_replaceEmojis' | 'tag' | 'antiproxies' | 'lastRecordedTopVote' | 'nextRedeemableTopVote' | 'lastRecordedDiscordsVote' | 'nextRedeemableDiscordsVote' | 'lastRecordedDblVote' | 'nextRedeemableDblVote'>;
 
 @Table
 export default class User extends Model<UserAttributes, UserCreationAttributes> {
@@ -64,11 +70,14 @@ export default class User extends Model<UserAttributes, UserCreationAttributes> 
 	@Column({ type: DataType.BOOLEAN, defaultValue: true })
 	declare reminders_resting: boolean;
 
-	@Column({ type: DataType.BOOLEAN, defaultValue: false })
-	declare proxy_globalAutoproxy: boolean;
+	@Column({ type: DataType.BOOLEAN, defaultValue: true })
+	declare proxy_editing: boolean;
 
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })
-	declare proxy_globalStickymode: boolean;
+	declare proxy_keepInMessage: boolean;
+
+	@Column({ type: DataType.SMALLINT, allowNull: false, defaultValue: 0 })
+	declare proxy_setTo: ProxySetTo;
 
 	@ForeignKey(() => Quid<false>)
 	@Column({ type: DataType.STRING, allowNull: true })
@@ -93,11 +102,8 @@ export default class User extends Model<UserAttributes, UserCreationAttributes> 
 	@Column({ type: DataType.STRING })
 	declare lastPlayedVersion: string;
 
-	@Column({ type: DataType.STRING, defaultValue: '' })
-	declare antiproxy_startsWith: string;
-
-	@Column({ type: DataType.STRING, defaultValue: '' })
-	declare antiproxy_endsWith: string;
+	@Column({ type: DataType.ARRAY(DataType.ARRAY(DataType.STRING)), defaultValue: [] })
+	declare antiproxies: string[][];
 
 	@Column({ type: DataType.INTEGER, defaultValue: 0 })
 	declare lastRecordedTopVote: number;

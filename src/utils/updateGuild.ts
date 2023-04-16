@@ -54,6 +54,7 @@ export async function createGuild(
 			sleepingDenId: (await Den.create({ id: generateId() })).id,
 			medicineDenId: (await Den.create({ id: generateId() })).id,
 			foodDenId: (await Den.create({ id: generateId() })).id,
+			logLimitsId: (await ProxyLimits.create({ id: generateId() })).id,
 		});
 	}
 	finally { queue.shift(); }

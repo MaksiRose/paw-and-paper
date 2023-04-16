@@ -27,7 +27,7 @@ export interface SlashCommand extends Command {
 	}
 
 export interface ContextMenuCommand extends Command {
-	sendCommand: (interaction: MessageContextMenuCommandInteraction) => Promise<void>;
+	sendCommand: (interaction: MessageContextMenuCommandInteraction, data: {server?: Server, user?: User}) => Promise<void>;
 }
 
 export interface Votes {

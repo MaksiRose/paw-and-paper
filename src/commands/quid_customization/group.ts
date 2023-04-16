@@ -360,7 +360,7 @@ export async function getGroupMessage(
 				{
 					name: '**☂️ Members**',
 					value: (await GroupToQuid.findAll({ where: { groupId: currentGroup.id }, include: [{ model: Quid, as: 'quid' }] }))
-						.map(g => `${g.quid.name}${(g.quid.proxy_endsWith !== '' || g.quid.proxy_startsWith !== '') ? ` (\`${g.quid.proxy_startsWith}text${g.quid.proxy_endsWith}\`)` : ''}`)
+						.map(g => `${g.quid.name}${(g.quid.proxies.length > 0) ? ` (\`${g.quid.proxies[0]?.[0]}text${g.quid.proxies[0]?.[1]}\`)` : ''}`)
 						.join('\n') || 'No members',
 				},
 			])

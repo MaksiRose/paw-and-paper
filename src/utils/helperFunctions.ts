@@ -76,7 +76,7 @@ export async function respond(
 	/** If an error occurred and it has status 404, try to either edit the message if editing was tried above, or send a new message in the other two cases */
 	catch (error: unknown) {
 
-		if (isObject(error) && (error.code === 'ECONNRESET' || error.code === 10062)) {
+		if (isObject(error) && (error.code === 'ECONNRESET' || error.code === 10062)) { // Unknown Interaction
 
 			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
 			if (interaction.replied || interaction.deferred) { // Error code 10062 can never lead to this since an Unknown Interaction can't also be replied or deferred. Therefore, it is safe to call respond again
@@ -102,7 +102,7 @@ export async function respond(
 				else { throw error; }
 			}
 		}
-		else if (isObject(error) && error.code === 40060) {
+		else if (isObject(error) && error.code === 40060) { // Interaction has already been acknowledged
 
 			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
 			interaction.replied = true;
@@ -137,7 +137,6 @@ export async function sendErrorMessage(
 	error: unknown,
 	userToServer?: UserToServer,
 ): Promise<any> {
-
 	try {
 
 		if (!userToServer) {
@@ -209,6 +208,7 @@ export async function sendErrorMessage(
 	};
 
 	const isECONNRESET = isObject(error) && error.code === 'ECONNRESET';
+	const isUnknownMessage = isObject(error) && error.code === 10008;
 	if (isECONNRESET) {
 
 		console.trace('ECONNRESET Error');
@@ -223,10 +223,10 @@ export async function sendErrorMessage(
 		console.error('Error 400 - An error is not being sent to the user:', error);
 		return;
 	}
-	console.error(error, interactionInfo);
+	else { console.error(error, interactionInfo); }
 
 	let errorId: string | undefined = undefined;
-	let errorIsReported = false;
+	let isReportedError = false;
 
 	if (!isECONNRESET) {
 
@@ -240,7 +240,7 @@ export async function sendErrorMessage(
 			if (errorInfo) {
 
 				errorId = errorInfo.id;
-				if (errorInfo.isReported) { errorIsReported = true; }
+				if (errorInfo.isReported) { isReportedError = true; }
 			}
 			else {
 
@@ -258,10 +258,16 @@ export async function sendErrorMessage(
 	const messageOptions = {
 		embeds: [new EmbedBuilder()
 			.setColor(error_color)
-			.setTitle(isECONNRESET ? 'The connection was abruptly closed. Apologies for the inconvenience.' : 'There was an unexpected error executing this command:')
-			.setDescription(isECONNRESET ? null : `\`\`\`\n${String(error).substring(0, 4090)}\n\`\`\``)
-			.setFooter(isECONNRESET ? null : { text: errorIsReported ? 'This error already got reported and the devs are working hard to resolve it.\nIf you want to know when the bot gets updated, you can join our support server (Link is in the help command page 5), or ask an admin of this server to enable getting updates via the server-settings command.' : 'Please report this error using the button below to help us improving the bot and keeping it bug-free. We might get in touch with you for some context if we have trouble reproducing the bug.' })],
-		components: (isECONNRESET || errorIsReported) ? [] : [new ActionRowBuilder<ButtonBuilder>()
+			.setTitle(isECONNRESET
+				? 'The connection was abruptly closed. Apologies for the inconvenience.'
+				: 'There was an unexpected error executing this command:')
+			.setDescription(isECONNRESET
+				? null
+				: isUnknownMessage
+					? `The bot attempted to interact with a message with id \`${(isObject(error) && keyInObject(error, 'url') && typeof error.url === 'string') ? error.url.split('messages/')[1] : 'unknown'}\`. If this isn't a deleted message, please report this error on the support-server (Link to it is in the \`/help\`-command on page 5) or via the \`/ticket\`-command.`
+					: `\`\`\`\n${String(error).substring(0, 4090)}\n\`\`\``)
+			.setFooter((isECONNRESET || isUnknownMessage) ? null : { text: isReportedError ? 'This error already got reported and the devs are working hard to resolve it.\nIf you want to know when the bot gets updated, you can join our support server (Link is in the help command page 5), or ask an admin of this server to enable getting updates via the server-settings command.' : 'Please report this error using the button below to help us improving the bot and keeping it bug-free. We might get in touch with you for some context if we have trouble reproducing the bug.' })],
+		components: (isECONNRESET || isReportedError || isUnknownMessage) ? [] : [new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
 				.setCustomId(`report_@${interaction.user.id}${errorId ? `_${errorId}` : ''}`)
 				.setLabel('Report')
@@ -287,7 +293,7 @@ export async function sendErrorMessage(
 
 	function filterStacktrace(stack: string) {
 		const lines = stack.split('\n');
-		return [lines[0], ...lines.slice(1).filter(line => line.includes('/dist/') || line.includes('/src/') || !line.includes('at'))].join('\n');
+		return [lines[0], ...lines.slice(1).filter(line => ((line.includes('/dist/') || line.includes('/src/')) && !line.includes('node_modules')) || !line.includes('at'))].join('\n');
 	}
 }
 

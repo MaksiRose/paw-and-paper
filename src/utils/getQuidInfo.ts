@@ -12,15 +12,6 @@ export async function getDisplayname(
 	options: { serverId?: string; groupToServer?: GroupToServer; userToServer?: UserToServer; quidToServer?: QuidToServer, user?: User; },
 ): Promise<string> {
 
-	const group = quid.mainGroupId === null ? null : await Group.findByPk(quid.mainGroupId);
-	const groupToServer = options.groupToServer ?? ((group !== null && options.serverId !== undefined) ? await GroupToServer.findOne({
-		where: {
-			groupId: group.id,
-			serverId: options.serverId,
-		},
-	}) : null);
-	const groupTag = groupToServer?.tag || group?.tag || '';
-
 	const userToServer = options.userToServer ?? (options.serverId !== undefined ? await UserToServer.findOne({
 		where: {
 			userId: quid.userId,
@@ -29,6 +20,15 @@ export async function getDisplayname(
 	}) : null);
 	if (options.user === undefined) { options.user = await User.findByPk(quid.userId) ?? undefined; }
 	const userTag = userToServer?.tag || options.user?.tag || '';
+
+	const group = userTag.length > 0 ? null : quid.mainGroupId === null ? null : await Group.findByPk(quid.mainGroupId);
+	const groupToServer = userTag.length > 0 ? null : options.groupToServer ?? ((group !== null && options.serverId !== undefined) ? await GroupToServer.findOne({
+		where: {
+			groupId: group.id,
+			serverId: options.serverId,
+		},
+	}) : null);
+	const groupTag = userTag.length > 0 ? '' : (groupToServer?.tag || group?.tag || '');
 
 	const tag = userTag || groupTag;
 

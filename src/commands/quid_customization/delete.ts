@@ -444,12 +444,12 @@ function getOriginalComponents(
 		.setComponents([new ButtonBuilder()
 			.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, user.id, ['individual']))
 			.setLabel('A quid')
-			.setDisabled(hasQuids)
+			.setDisabled(!hasQuids)
 			.setStyle(ButtonStyle.Danger),
 		new ButtonBuilder()
 			.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, user.id, ['server']))
 			.setLabel('All information on one server')
-			.setDisabled(hasServerInfo)
+			.setDisabled(!hasServerInfo)
 			.setStyle(ButtonStyle.Danger),
 		new ButtonBuilder()
 			.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, user.id, ['all']))

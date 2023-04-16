@@ -8,14 +8,14 @@ import QuidToServerToShopRole from '../models/quidToServerToShopRole';
 import ShopRole from '../models/shopRole';
 import { RankType, WayOfEarningType } from '../typings/data/user';
 import { now, respond, sendErrorMessage } from './helperFunctions';
-import { missingPermissions } from './permissionHandler';
+import { missingPermissions, roleTooHigh } from './permissionHandler';
 const { default_color, error_color } = require('../../config.json');
 
 /**
  * Checks if user has reached the requirement to get a role based on their rank.
  */
 export async function checkRankRequirements(
-	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'>,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 	members: GuildMember[],
 	quidToServer: QuidToServer,
 	sendMessage = false,
@@ -50,6 +50,8 @@ export async function checkRankRequirements(
 						if (await missingPermissions(interaction, [
 							'ManageRoles', // Needed to give out roles configured in this shop
 						]) === true) { continue; }
+						if (await roleTooHigh(interaction, role.id)) { continue; }
+
 						await member.roles.add(role.id);
 
 						if (sendMessage) {
@@ -80,7 +82,7 @@ export async function checkRankRequirements(
  * Checks if user has reached the requirement to get a role based on their level.
  */
 export async function checkLevelRequirements(
-	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'> | AnySelectMenuInteraction<'cached' | 'raw'>,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	members: GuildMember[],
 	quidToServer: QuidToServer,
 	sendMessage = false,
@@ -113,6 +115,8 @@ export async function checkLevelRequirements(
 						if (await missingPermissions(interaction, [
 							'ManageRoles', // Needed to give out roles configured in this shop
 						]) === true) { continue; }
+						if (await roleTooHigh(interaction, role.id)) { continue; }
+
 						await member.roles.add(role.id);
 
 						if (sendMessage) {

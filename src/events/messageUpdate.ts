@@ -25,12 +25,13 @@ export const event: DiscordEvent = {
 		const server = (await Server.findByPk(message.guildId)) ?? await createGuild(message.guild);
 
 		if (user === undefined || server === null) { return; }
+		if (user.proxy_editing === false) { return; }
 
-		const { replaceMessage, quid } = await checkForProxy(message, user, server);
+		const { replaceMessage, quid, userToServer } = await checkForProxy(message, user);
 
 		if (replaceMessage && hasName(quid) && (message.content.length > 0 || message.attachments.size > 0)) {
 
-			const botMessage = await sendMessage(message.channel, message.content, quid, message.author.id, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined)
+			const botMessage = await sendMessage(message.channel, message.content, quid, user, server, message.author, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined, userToServer ?? undefined)
 				.catch(error => {
 					console.error(error);
 					return null;
@@ -43,7 +44,7 @@ export const event: DiscordEvent = {
 
 				await message
 					.delete()
-					.catch(async e => { if (isObject(e) && e.code === 10008) { await botMessage.delete(); } }); // If the message is unknown, its webhooked message is probbaly not supposed to exist too, so we delete it
+					.catch(async e => { if (isObject(e) && e.code === 10008) { await message.channel.messages.delete(botMessage.id); } }); // If the message is unknown, its webhooked message is probbaly not supposed to exist too, so we delete it
 			}
 			else if (await hasPermission(message.guild.members.me || message.client.user.id, message.channel, message.channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) {
 
