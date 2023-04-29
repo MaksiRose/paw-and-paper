@@ -62,7 +62,7 @@ export const command: SlashCommand = {
 			.join('\n');
 
 		let fields: APIEmbedField[] = [];
-		if (titleNr === '5') {
+		if (titleNr === '3') {
 
 			const maksiUser = await interaction.client.users.fetch('268402976844939266').catch(() => { return null; });
 			const brennanUser = await interaction.client.users.fetch('1013083558367215637').catch(() => { return null; });
