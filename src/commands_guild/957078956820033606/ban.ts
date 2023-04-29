@@ -1,6 +1,5 @@
 import { PermissionFlagsBits, SlashCommandBuilder, User } from 'discord.js';
 import { addCommasAndAnd, respond } from '../../utils/helperFunctions';
-import { client } from '../..';
 import { SlashCommand } from '../../typings/handle';
 import BannedUser from '../../models/bannedUser';
 import DiscordUser from '../../models/discordUser';
@@ -8,19 +7,14 @@ import UserModel from '../../models/user';
 import DiscordUserToServer from '../../models/discordUserToServer';
 import Quid from '../../models/quid';
 import Webhook from '../../models/webhook';
-import Friendship from '../../models/friendship';
 import { Op } from 'sequelize';
 import QuidToServer from '../../models/quidToServer';
-import QuidToServerToShopRole from '../../models/quidToServerToShopRole';
-import TemporaryStatIncrease from '../../models/temporaryStatIncrease';
 import GroupToQuid from '../../models/groupToQuid';
 import Group from '../../models/group';
 import GroupToServer from '../../models/groupToServer';
 import UserToServer from '../../models/userToServer';
 import Server from '../../models/server';
-import Den from '../../models/den';
 import ProxyLimits from '../../models/proxyLimits';
-import ShopRole from '../../models/shopRole';
 import BannedServer from '../../models/bannedServer';
 
 export const command: SlashCommand = {
@@ -48,10 +42,8 @@ export const command: SlashCommand = {
 	modifiesServerProfile: false,
 	sendCommand: async (interaction) => {
 
-		if (!client.isReady()) { throw new Error('client isn\'t ready'); }
-
-		await client.application.fetch();
-		if ((client.application.owner instanceof User) ? interaction.user.id !== client.application.owner.id : client.application.owner ? !client.application.owner.members.has(interaction.user.id) : false) { throw new Error('403: user is not bot owner'); }
+		await interaction.client.application.fetch();
+		if ((interaction.client.application.owner instanceof User) ? interaction.user.id !== interaction.client.application.owner.id : interaction.client.application.owner ? !interaction.client.application.owner.members.has(interaction.user.id) : false) { throw new Error('403: user is not bot owner'); }
 
 		const notified: string[] = [];
 		const type = interaction.options.getString('type');
@@ -71,7 +63,7 @@ export const command: SlashCommand = {
 
 				if (userData !== undefined) {
 
-					const user = await client.users.fetch(discordUserId).catch(() => { return null; });
+					const user = await interaction.client.users.fetch(discordUserId).catch(() => { return null; });
 					if (user) {
 
 						await user.send({ content: 'I am sorry to inform you that you have been banned from using this bot.' });
@@ -86,14 +78,8 @@ export const command: SlashCommand = {
 				for (const quid of quids) {
 
 					await Webhook.destroy({ where: { quidId: quid.id } });
-					await Friendship.destroy({ where: { [Op.or]: [{ quidId1: quid.id }, { quidId2: quid.id }] } });
 					await GroupToQuid.destroy({ where: { quidId: quid.id } });
-					const quidToServers = await QuidToServer.findAll({ where: { quidId: quid.id } });
-					for (const quidToServer of quidToServers) {
-						await QuidToServerToShopRole.destroy({ where: { quidToServerId: quidToServer.id } });
-						await TemporaryStatIncrease.destroy({ where: { quidToServerId: quidToServer.id } });
-						await quidToServer.destroy();
-					}
+					await QuidToServer.destroy({ where: { quidId: quid.id } });
 					await quid.destroy();
 				}
 
@@ -121,22 +107,16 @@ export const command: SlashCommand = {
 
 			if (serverData) {
 
-				await Den.destroy({ where: { [Op.or]: [{ id: serverData.foodDenId }, { id: serverData.medicineDenId }, { id: serverData.sleepingDenId }] } });
 				await ProxyLimits.destroy({ where: { [Op.or]: [{ id: serverData.proxy_roleLimitsId }, { id: serverData.proxy_channelLimitsId }] } });
 				await UserToServer.destroy({ where: { serverId: id } });
 				await GroupToServer.destroy({ where: { serverId: id } });
 				await DiscordUserToServer.destroy({ where: { serverId: id } });
-				const quidToServers = await QuidToServer.findAll({ where: { serverId: id } });
-				for (const quidToServer of quidToServers) {
-					await QuidToServerToShopRole.destroy({ where: { quidToServerId: quidToServer.id } });
-					await quidToServer.destroy();
-				}
-				await ShopRole.destroy({ where: { serverId: id } });
+				await QuidToServer.destroy({ where: { serverId: id } });
 				await serverData.destroy();
 
 
 				const guild = await interaction.client.guilds.fetch(id).catch(() => { return null; });
-				const user = await client.users.fetch(guild?.ownerId || '').catch(() => { return null; });
+				const user = await interaction.client.users.fetch(guild?.ownerId || '').catch(() => { return null; });
 
 				if (guild && user) {
 
