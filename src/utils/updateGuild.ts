@@ -42,7 +42,7 @@ export async function createGuild(
 		if (server) { return server; }
 
 		await owner
-			.send({ content: `Thank you for adding Paw and Paper to **${guild.name}**! 🥰\nYour server can receive updates about new releases and features. This is important since the bot is frequently being updated. You can configure this and more by typing **\`/server-settings\`** Don't worry, I won't spam you! 😊` })
+			.send({ content: `Thank you for adding Patchwork to **${guild.name}**! 🥰\nYour server can receive updates about new releases and features. This is important since the bot is frequently being updated. You can configure this and more by typing **\`/server-settings\`** Don't worry, I won't spam you! 😊` })
 			.catch((error) => { console.error(error); });
 
 		return await Server.create({
