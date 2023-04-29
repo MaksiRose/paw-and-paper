@@ -1,11 +1,11 @@
-import { EmbedBuilder, Interaction, RepliableInteraction } from 'discord.js';
+import { EmbedBuilder, Interaction } from 'discord.js';
 import { createNewTicket } from '../commands/miscellaneous/ticket';
 import { DiscordEvent } from '../typings/main';
 import { disableAllComponents } from '../utils/componentDisabling';
 import { addCommasAndAnd, getFirstLine, keyInObject, now, respond } from '../utils/helperFunctions';
 import { createGuild } from '../utils/updateGuild';
 import { sendErrorMessage } from '../utils/helperFunctions';
-import { client, handle } from '../index';
+import { handle } from '../index';
 import { deconstructCustomId } from '../utils/customId';
 import DiscordUser from '../models/discordUser';
 import Server from '../models/server';
@@ -13,15 +13,12 @@ import UserToServer from '../models/userToServer';
 import Quid from '../models/quid';
 import DiscordUserToServer from '../models/discordUserToServer';
 import QuidToServer from '../models/quidToServer';
-import { getDisplayname, getDisplayspecies, pronoun, pronounAndPlural } from '../utils/getQuidInfo';
 import User from '../models/user';
 import ErrorInfo from '../models/errorInfo';
 import { generateId } from 'crystalid';
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
-export const lastInteractionMap: Map<string, RepliableInteraction<'cached'>> = new Map();
-export const serverActiveUsersMap: Map<string, string[]> = new Map();
 export const event: DiscordEvent = {
 	name: 'interactionCreate',
 	once: false,
@@ -29,7 +26,7 @@ export const event: DiscordEvent = {
 		try {
 
 			/* This is only null when in DM without CHANNEL partial, or when channel cache is sweeped. Therefore, this is technically unsafe since this value could become null after this check. This scenario is unlikely though. */
-			if (!interaction.channel) { await client.channels.fetch(interaction.channelId || ''); }
+			if (!interaction.channel) { await interaction.client.channels.fetch(interaction.channelId || ''); }
 
 			const discordUser = await DiscordUser.findByPk(interaction.user.id, {
 				include: [{ model: User, as: 'user' }],
@@ -56,20 +53,6 @@ export const event: DiscordEvent = {
 				? (user.lastGlobalActiveQuidId ? ((await Quid.findByPk(user.lastGlobalActiveQuidId)) ?? undefined) : undefined)
 				: (userToServer?.activeQuid ?? undefined);
 
-			/* It's updating the last interaction info for the user in the server. */
-			if (userToServer && interaction.inCachedGuild() && interaction.isRepliable()) {
-
-				lastInteractionMap.set(userToServer.userId + userToServer.serverId, interaction);
-				await userToServer.update({
-					lastInteraction_timestamp: Math.round(interaction.createdTimestamp / 1000),
-					lastInteraction_channelId: interaction.channelId,
-				}, { logging: false });
-
-				const serverActiveUsers = serverActiveUsersMap.get(userToServer.serverId);
-				if (!serverActiveUsers) { serverActiveUsersMap.set(userToServer.serverId, [interaction.user.id]); }
-				else if (!serverActiveUsers.includes(interaction.user.id)) { serverActiveUsers.push(interaction.user.id); }
-			}
-
 			/* It's updating the info for the discord user in the server */
 			const discordUserToServer = (discordUser && server)
 				? await DiscordUserToServer.findOne({ where: { discordUserId: discordUser.id, serverId: server.id } }).then((row) => {
@@ -81,10 +64,7 @@ export const event: DiscordEvent = {
 			const quidToServer = (quid && interaction.inGuild())
 				? await QuidToServer.findOne({
 					where: { quidId: quid.id, serverId: interaction.guildId },
-				}).then((row) => {
-					if (row) { return row.update({ lastActiveTimestamp: now() }, { logging: false }); }
-					else { return QuidToServer.create({ id: generateId(), quidId: userToServer!.activeQuidId!, serverId: userToServer!.serverId, lastActiveTimestamp: now() }); }
-				}) : undefined;
+				}) ?? undefined : undefined;
 
 			if (interaction.isRepliable() && interaction.inRawGuild()) {
 
@@ -120,21 +100,6 @@ export const event: DiscordEvent = {
 				/* This sends the command and error message if an error occurs. */
 				{ console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully executed \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`); }
 				await command.sendCommand(interaction, { user, userToServer, quid, quidToServer, discordUser, discordUserToServer, server });
-
-				/* If sapling exists, a gentle reminder has not been sent and the watering time is after the perfect time, send a gentle reminder */
-				if (interaction.inGuild() && quid && quidToServer && quidToServer.sapling_exists && !quidToServer.sapling_sentGentleReminder && now() > (quidToServer.sapling_nextWaterTimestamp || 0) + 60) { // The 60 seconds is so this doesn't trigger when you just found your sapling while exploring
-
-					await quidToServer.update({ sapling_sentGentleReminder: true });
-
-					// This is always a followUp
-					await respond(interaction, {
-						embeds: [new EmbedBuilder()
-							.setColor(quid.color)
-							.setAuthor({ name: await getDisplayname(quid, { serverId: quidToServer.serverId, quidToServer, userToServer }), iconURL: quid.avatarURL })
-							.setDescription(`*Engrossed in ${pronoun(quid, 2)} work, ${quid.name} suddenly remembers that ${pronounAndPlural(quid, 0, 'has', 'have')} not yet watered ${pronoun(quid, 2)} plant today. The ${getDisplayspecies(quid)} should really do it soon!*`)
-							.setFooter({ text: 'Type "/water-tree" to water your ginkgo sapling!' })],
-					});
-				}
 
 				/* This is checking if the user has used the bot since the last update. If they haven't, it will
 				send them a message telling them that there is a new update. */

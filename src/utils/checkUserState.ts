@@ -7,9 +7,9 @@ const { default_color } = require('../../config.json');
  * Checks if there is an account and if the account has a name, returns false if they do, and if not, sends a message telling the user to create an account and return true.
  */
 export function hasName(
-	quid: Quid<true> | Quid<false> | null | undefined,
+	quid: Quid | null | undefined,
 	options?: {interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction, hasQuids: boolean},
-): quid is Quid<true> | Quid<false> {
+): quid is Quid {
 
 	if (quid === null || quid === undefined || quid.name === '') {
 
@@ -20,33 +20,6 @@ export function hasName(
 				embeds: [new EmbedBuilder()
 					.setColor(default_color)
 					.setDescription(options.hasQuids ? 'Please type "/profile" to switch to a quid!' : 'Please type "/name" to create a new quid!')],
-			});
-		}
-
-		return false;
-	}
-
-	return true;
-}
-
-/**
- * Checks if the account has a species, returns false if they do, and if not, sends a message telling the user to create an account and returns true.
- */
-export function hasNameAndSpecies(
-	quid: Quid<true> | Quid<false> | null | undefined,
-	options?: {interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction, hasQuids: boolean},
-): quid is Quid<true> {
-
-	if (!hasName(quid, options)) { return false; }
-	if (quid.species === null) {
-
-		if (options) {
-
-			// This is always a reply
-			respond(options.interaction, {
-				embeds: [new EmbedBuilder()
-					.setColor(default_color)
-					.setDescription(`To access this command, you need to choose ${quid.name}'s species (with "/species")!`)],
 			});
 		}
 

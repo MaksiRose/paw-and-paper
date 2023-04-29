@@ -13,12 +13,7 @@ import QuidToServer from '../../models/quidToServer';
 import UserToServer from '../../models/userToServer';
 import User from '../../models/user';
 import Webhook from '../../models/webhook';
-import Friendship from '../../models/friendship';
 import GroupToQuid from '../../models/groupToQuid';
-import QuidToServerToShopRole from '../../models/quidToServerToShopRole';
-import TemporaryStatIncrease from '../../models/temporaryStatIncrease';
-import { hasCooldown } from '../../utils/checkValidity';
-import { hasNameAndSpecies } from '../../utils/checkUserState';
 const { error_color } = require('../../../config.json');
 
 type CustomIdArgs = ['individual' | 'server' | 'all' | 'cancel'] | ['individual' | 'server', 'options'] | ['confirm', 'individual' | 'server', string] | ['confirm', 'all'];
@@ -73,15 +68,11 @@ export const command: SlashCommand = {
 		await respond(interaction, { ...sendOriginalMessage(user, hasQuids, hasServerInfo) });
 		return;
 	},
-	async sendMessageComponentResponse(interaction, { user, userToServer, quid, quidToServer }) {
+	async sendMessageComponentResponse(interaction, { user }) {
 
 		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
 		if (!customId) { throw new Error('customId is undefined'); }
 		if (user === undefined) { throw new Error('userData is undefined'); }
-
-		/* Checks if the profile is resting, on a cooldown or passed out. */
-		if (hasNameAndSpecies(quid) && interaction.inGuild() && await hasCooldown(interaction, user, userToServer, quid, quidToServer)) { return; }
-
 
 		/* Creating a new message asking the user if they are sure that they want to delete all their data. */
 		if (interaction.isButton() && customId.args[0] === 'all') {
@@ -202,12 +193,9 @@ export const command: SlashCommand = {
 
 				const quidIdIn = { [Op.in]: quids.map(q => q.id) };
 				await Webhook.destroy({ where: { quidId: quidIdIn } });
-				await Friendship.destroy({ where: { [Op.or]: [ { quidId1: quidIdIn }, { quidId2: quidIdIn }] } });
 				await GroupToQuid.destroy({ where: { quidId: quidIdIn } });
 
 				const quidToServerIdIn = { [Op.in]: quidsToServers.map(qts => qts.id) };
-				await QuidToServerToShopRole.destroy({ where: { quidToServerId: quidToServerIdIn } });
-				await TemporaryStatIncrease.destroy({ where: { quidToServerId: quidToServerIdIn } });
 				await QuidToServer.destroy({ where: { id: quidToServerIdIn } });
 
 				await Quid.destroy({ where: { id: quidIdIn } });

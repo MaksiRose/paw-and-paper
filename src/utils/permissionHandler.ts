@@ -1,5 +1,4 @@
-import { GuildChannelResolvable, GuildMember, PermissionResolvable, RepliableInteraction, Snowflake, PermissionFlagsBits, GuildTextBasedChannel, RoleResolvable } from 'discord.js';
-import { client } from '../index';
+import { GuildChannelResolvable, GuildMember, PermissionResolvable, RepliableInteraction, Snowflake, PermissionFlagsBits, GuildTextBasedChannel, RoleResolvable, Client } from 'discord.js';
 import { addCommasAndAnd, respond } from './helperFunctions';
 
 export const permissionDisplay: Record<keyof typeof PermissionFlagsBits, string> = {
@@ -50,6 +49,7 @@ export async function hasPermission(
 	memberResolvable: GuildMember | Snowflake,
 	channelResolvable: GuildChannelResolvable,
 	permission: PermissionResolvable,
+	client: Client<true>,
 ): Promise<boolean> {
 
 	if (memberResolvable instanceof GuildMember) {
@@ -83,7 +83,7 @@ export async function missingPermissions(
 
 	for (const permission of permissions) {
 
-		if (await hasPermission(member || interaction.client.user.id, interaction.channelId || '', permission) === false) { displayed.push(permissionDisplay[permission]); }
+		if (await hasPermission(member || interaction.client.user.id, interaction.channelId || '', permission, interaction.client) === false) { displayed.push(permissionDisplay[permission]); }
 	}
 
 	if (displayed.length <= 0) { return false; }
@@ -99,9 +99,9 @@ export async function canManageWebhooks(
 
 	const member = channel.guild.members.me || await channel.guild.members.fetchMe({ force: false });
 
-	if (await hasPermission(member || channel.client.user.id, channel.id, 'ManageWebhooks') === false) {
+	if (await hasPermission(member || channel.client.user.id, channel.id, 'ManageWebhooks', channel.client) === false) {
 
-		if (await hasPermission(channel.guild.members.me || channel.client.user.id, channel, channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) { await channel.send(getMissingPermissionContent(permissionDisplay.ManageWebhooks)); }
+		if (await hasPermission(channel.guild.members.me || channel.client.user.id, channel, channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages', channel.client)) { await channel.send(getMissingPermissionContent(permissionDisplay.ManageWebhooks)); }
 		return false;
 	}
 	return true;

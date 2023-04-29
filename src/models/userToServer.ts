@@ -22,18 +22,9 @@ interface UserToServerAttributes {
 	autoproxy_whitelist: string[];
 	autoproxy_blacklist: string[];
 	tag: string;
-	lastInteraction_timestamp: number | null;
-	lastInteraction_channelId: string | null;
-	resting_messageId: string | null;
-	resting_channelId: string | null;
-	/** @deprecated */
-	componentDisabling_channelId: string | null;
-	/** @deprecated */
-	componentDisabling_messageId: string | null;
-	hasCooldown: boolean;
 }
 
-type UserToServerCreationAttributes = Optional<UserToServerAttributes, 'autoproxy_setTo' | 'autoproxy_setToWhitelist' | 'autoproxy_whitelist' | 'autoproxy_blacklist' | 'tag' | 'lastInteraction_timestamp' | 'lastInteraction_channelId' | 'resting_messageId' | 'resting_channelId' | 'componentDisabling_channelId' | 'componentDisabling_messageId' | 'hasCooldown'>;
+type UserToServerCreationAttributes = Optional<UserToServerAttributes, 'autoproxy_setTo' | 'autoproxy_setToWhitelist' | 'autoproxy_whitelist' | 'autoproxy_blacklist' | 'tag'>;
 
 @Table
 export default class UserToServer extends Model<UserToServerAttributes, UserToServerCreationAttributes> {
@@ -48,14 +39,14 @@ export default class UserToServer extends Model<UserToServerAttributes, UserToSe
 	@Column({ type: DataType.STRING })
 	declare serverId: string;
 
-	@ForeignKey(() => Quid<false>)
+	@ForeignKey(() => Quid)
 	@Column({ type: DataType.STRING, allowNull: true })
 	declare lastProxiedQuidId: string | null;
 
 	@BelongsTo(() => Quid, { foreignKey: 'lastProxiedQuidId' })
 	declare lastProxiedQuid: Quid | null;
 
-	@ForeignKey(() => Quid<false>)
+	@ForeignKey(() => Quid)
 	@Column({ type: DataType.STRING, allowNull: true })
 	declare activeQuidId: string | null;
 
@@ -76,27 +67,4 @@ export default class UserToServer extends Model<UserToServerAttributes, UserToSe
 
 	@Column({ type: DataType.STRING, defaultValue: '' })
 	declare tag: string;
-
-	@Column({ type: DataType.INTEGER, allowNull: true, defaultValue: null })
-	declare lastInteraction_timestamp: number | null;
-
-	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
-	declare lastInteraction_channelId: string | null;
-
-	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
-	declare resting_messageId: string | null;
-
-	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
-	declare resting_channelId: string | null;
-
-	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
-	/** @deprecated */
-	declare componentDisabling_channelId: string | null;
-
-	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
-	/** @deprecated */
-	declare componentDisabling_messageId: string | null;
-
-	@Column({ type: DataType.BOOLEAN, defaultValue: false })
-	declare hasCooldown: boolean;
 }

@@ -103,12 +103,6 @@ This needs to include the following information:
 {
 	"token": "your discord token",
 	"test_guild_id": "your test guild",
-	"bfd_token": "your discords.com token",
-	"bfd_authorization": "authorization chosen on discords.com",
-	"top_token": "your top.gg token",
-	"top_authorization": "authorization chosen on top.gg",
-	"dbl_token": "your discordbotlist.com token",
-	"dbl_authorization": "authorization chosen on discordbotlist.com",
 	"github_token": "your github token",
 	"default_color": "#b4a257",
 	"error_color": "#d0342c",
@@ -125,7 +119,7 @@ The colors can be modified by will.
 
 Before the config.json file can be closed, the database needs to be installed. First, [download PostgreSQL](https://www.postgresql.org/download/). Keep the server "localhost", the port "5432" and the username "postgres", the password for that username can be picked by yourself and should be added to the config.json under "database_password".
 
-After everything is installed, open a new terminal window and type `psql` to open the SQL Shell (on Mac, a new Application should be available to do the same). In the shell, type `create database pnp;`, then `grant all privileges on database pnp to postgres;`. Don't forget the semicolons.
+After everything is installed, open a new terminal window and type `psql` to open the SQL Shell (on Mac, a new Application should be available to do the same). In the shell, type `create database patchwork;`, then `grant all privileges on database patchwork to postgres;`. Don't forget the semicolons.
 
 Save the config.json file, go back to the terminal, and type `npm run test`.
 Alternatively, you can also [install pm2](https://pm2.keymetrics.io/docs/usage/quick-start/) and run `npm run start`, then `npm run logs`. Other command are `npm run reload` and `npm run stop`.

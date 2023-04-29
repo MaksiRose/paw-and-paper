@@ -1,9 +1,7 @@
 import { AsyncQueue } from '@sapphire/async-queue';
 import { generateId } from 'crystalid';
 import { Guild } from 'discord.js';
-import { client } from '..';
 import BannedServer from '../models/bannedServer';
-import Den from '../models/den';
 import ProxyLimits from '../models/proxyLimits';
 import Server from '../models/server';
 
@@ -22,7 +20,7 @@ export async function createGuild(
 
 		const banEntry = await BannedServer.findByPk(guild.id);
 
-		const owner = await client.users.fetch(guild.ownerId);
+		const owner = await guild.client.users.fetch(guild.ownerId);
 
 		await owner
 			.createDM()
@@ -51,9 +49,6 @@ export async function createGuild(
 			id: guild.id,
 			proxy_channelLimitsId: (await ProxyLimits.create({ id: generateId() })).id,
 			proxy_roleLimitsId: (await ProxyLimits.create({ id: generateId() })).id,
-			sleepingDenId: (await Den.create({ id: generateId() })).id,
-			medicineDenId: (await Den.create({ id: generateId() })).id,
-			foodDenId: (await Den.create({ id: generateId() })).id,
 			logLimitsId: (await ProxyLimits.create({ id: generateId() })).id,
 		});
 	}

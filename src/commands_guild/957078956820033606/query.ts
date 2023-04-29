@@ -1,6 +1,6 @@
 import { PermissionFlagsBits, SlashCommandBuilder, User } from 'discord.js';
 import { objectHasKey, respond } from '../../utils/helperFunctions';
-import { client, sequelize } from '../..';
+import { sequelize } from '../..';
 import { SlashCommand } from '../../typings/handle';
 
 export const command: SlashCommand = {
@@ -20,10 +20,9 @@ export const command: SlashCommand = {
 	modifiesServerProfile: false,
 	sendCommand: async (interaction) => {
 
-		if (!client.isReady()) { return; }
 
-		await client.application.fetch();
-		if ((client.application.owner instanceof User) ? interaction.user.id !== client.application.owner.id : client.application.owner ? !client.application.owner.members.has(interaction.user.id) : false) { return; }
+		await interaction.client.application.fetch();
+		if ((interaction.client.application.owner instanceof User) ? interaction.user.id !== interaction.client.application.owner.id : interaction.client.application.owner ? !interaction.client.application.owner.members.has(interaction.user.id) : false) { return; }
 
 		const query = interaction.options.getString('query', true);
 

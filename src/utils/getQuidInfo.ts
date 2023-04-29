@@ -8,7 +8,7 @@ import { deepCopy, getArrayElement } from './helperFunctions';
 import { getRandomNumber } from './randomizers';
 
 export async function getDisplayname(
-	quid: Quid<true> | Quid<false>,
+	quid: Quid,
 	options: { serverId?: string; groupToServer?: GroupToServer; userToServer?: UserToServer; quidToServer?: QuidToServer, user?: User; },
 ): Promise<string> {
 
@@ -42,14 +42,14 @@ export async function getDisplayname(
 }
 
 export function getDisplayspecies(
-	quid: Quid<true> | Quid<false>,
+	quid: Quid,
 ): string {
 
-	return quid.displayedSpecies || quid.species || '';
+	return quid.displayedSpecies || '';
 }
 
 function getRandomPronounSet(
-	quid: Quid<true> | Quid<false>,
+	quid: Quid,
 ): string[] {
 
 	const pronouns = deepCopy(quid.pronouns_en);
@@ -60,7 +60,7 @@ function getRandomPronounSet(
 }
 
 export function pronoun(
-	quid: Quid<true> | Quid<false>,
+	quid: Quid,
 	pronounNumber: 0 | 1 | 2 | 3 | 4 | 5,
 ): string {
 
@@ -69,7 +69,7 @@ export function pronoun(
 }
 
 export function pronounAndPlural(
-	quid: Quid<true> | Quid<false>,
+	quid: Quid,
 	pronounNumber: 0 | 1 | 2 | 3 | 4 | 5,
 	string1: string,
 	string2?: string,

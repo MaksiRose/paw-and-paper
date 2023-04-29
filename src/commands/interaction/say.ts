@@ -2,7 +2,6 @@ import { APIMessage, Attachment, EmbedBuilder, GuildTextBasedChannel, Message, M
 import { respond } from '../../utils/helperFunctions';
 import { hasName, isInGuild } from '../../utils/checkUserState';
 import { canManageWebhooks, getMissingPermissionContent, hasPermission, missingPermissions, permissionDisplay } from '../../utils/permissionHandler';
-import { CurrentRegionType } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import QuidToServer from '../../models/quidToServer';
 import Quid from '../../models/quid';
@@ -93,7 +92,7 @@ export const command: SlashCommand = {
 export async function sendMessage(
 	channel: GuildTextBasedChannel,
 	text: string,
-	quid: Quid<true> | Quid<false>,
+	quid: Quid,
 	user: User,
 	server: Server,
 	discordUser: DiscordUser,
@@ -151,17 +150,15 @@ export async function sendMessage(
 
 	if (webhook instanceof DiscordWebhook) { Channel.create({ id: webhookChannel.id, serverId: webhookChannel.guildId, webhookUrl: webhook.url }); }
 
-	QuidToServer.update({ currentRegion: CurrentRegionType.Ruins }, { where: { quidId: quid.id, serverId: webhookChannel.guildId } });
-
 	const embeds: Array<EmbedBuilder> = [];
 
 	if (reference && reference.messageId) {
 
 		const botMember = channel.guild.members.me || await channel.guild.members.fetchMe({ force: false });
 
-		if (await hasPermission(botMember || channel.client.user.id, channel.id, 'ReadMessageHistory') === false) {
+		if (await hasPermission(botMember || channel.client.user.id, channel.id, 'ReadMessageHistory', channel.client) === false) {
 
-			if (await hasPermission(channel.guild.members.me || channel.client.user.id, channel, channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) {
+			if (await hasPermission(channel.guild.members.me || channel.client.user.id, channel, channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages', channel.client)) {
 
 				await channel.send(getMissingPermissionContent(permissionDisplay.ReadMessageHistory));
 			}

@@ -1,6 +1,6 @@
 import { ActionRowBuilder, APIEmbedField, EmbedBuilder, StringSelectMenuBuilder, SlashCommandBuilder, ButtonStyle } from 'discord.js';
 import { getArrayElement, respond } from '../../utils/helperFunctions';
-import { client, handle, octokit } from '../..';
+import { handle, octokit } from '../..';
 import { SlashCommand } from '../../typings/handle';
 import { ButtonBuilder } from '@discordjs/builders';
 
@@ -64,19 +64,19 @@ export const command: SlashCommand = {
 		let fields: APIEmbedField[] = [];
 		if (titleNr === '5') {
 
-			const maksiUser = await client.users.fetch('268402976844939266').catch(() => { return null; });
-			const ezraUser = await client.users.fetch('669725936840736840').catch(() => { return null; });
-			const renUser = await client.users.fetch('794320272723410955').catch(() => { return null; });
-			const jagsUser = await client.users.fetch('840108230176145410').catch(() => { return null; });
-			const elliottUser = await client.users.fetch('422145578676256779').catch(() => { return null; });
-			const hazenithUser = await client.users.fetch('708943555305144367').catch(() => { return null; });
-			const johannaUser = await client.users.fetch('442125304794841099').catch(() => { return null; });
-			const skyUser = await client.users.fetch('642963515098923015').catch(() => { return null; });
-			const asrielUser = await client.users.fetch('625469376145129502').catch(() => { return null; });
+			const maksiUser = await interaction.client.users.fetch('268402976844939266').catch(() => { return null; });
+			const ezraUser = await interaction.client.users.fetch('669725936840736840').catch(() => { return null; });
+			const renUser = await interaction.client.users.fetch('794320272723410955').catch(() => { return null; });
+			const jagsUser = await interaction.client.users.fetch('840108230176145410').catch(() => { return null; });
+			const elliottUser = await interaction.client.users.fetch('422145578676256779').catch(() => { return null; });
+			const hazenithUser = await interaction.client.users.fetch('708943555305144367').catch(() => { return null; });
+			const johannaUser = await interaction.client.users.fetch('442125304794841099').catch(() => { return null; });
+			const skyUser = await interaction.client.users.fetch('642963515098923015').catch(() => { return null; });
+			const asrielUser = await interaction.client.users.fetch('625469376145129502').catch(() => { return null; });
 
 			fields = [
 				{ name: '\n**__CREDITS:__**', value: `This bot was made with love by **${maksiUser?.tag}**. Special thanks goes out to:\n\`${elliottUser?.tag}\` - RPG texts, testing, ideas\n\`${ezraUser?.tag}\` - RPG texts, testing\n\`${hazenithUser?.tag}\` - testing, ideas\n\`${skyUser?.tag}\` - testing, \`${asrielUser?.tag}\` - ideas, \`${renUser?.tag}\` - RPG texts\n\`${jagsUser?.tag}\` - drawing the profile picture, \`${johannaUser?.tag}\` - drawing the ginkgo tree.\n\nThis bot was originally created for a Discord server called [Rushing River Pack](https://disboard.org/server/854522091328110595). If you are therian, otherkin, or supporter of those, you are welcome to join.` },
-				{ name: '\n**__OTHER:__**', value: `Uptime: ${Math.floor(interaction.client.uptime / 3600000)} hours ${Math.floor(interaction.client.uptime / 60000) % 60} minutes\nPing: ${client.ws.ping} ms\nServer count: ${client.guilds.cache.size}\nVersion: ${version}` },
+				{ name: '\n**__OTHER:__**', value: `Uptime: ${Math.floor(interaction.client.uptime / 3600000)} hours ${Math.floor(interaction.client.uptime / 60000) % 60} minutes\nPing: ${interaction.client.ws.ping} ms\nServer count: ${interaction.client.guilds.cache.size}\nVersion: ${version}` },
 			];
 		}
 

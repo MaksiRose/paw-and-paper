@@ -1,10 +1,11 @@
 import { readdirSync } from 'fs';
 import path from 'path';
-import { client } from '..';
 import { DiscordEvent } from '../typings/main';
+import { Client } from 'discord.js';
 
 /** Adds all events to the client */
 export async function execute(
+	client: Client,
 ): Promise<void> {
 
 	process.on('unhandledRejection', async (err) => {

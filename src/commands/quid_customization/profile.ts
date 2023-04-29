@@ -1,8 +1,6 @@
-import { ActionRowBuilder, EmbedBuilder, InteractionReplyOptions, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, EmbedBuilder, InteractionReplyOptions, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, Client } from 'discord.js';
 import { capitalize, deepCopy, respond } from '../../utils/helperFunctions';
-import { hasName, hasNameAndSpecies } from '../../utils/checkUserState';
-import { hasCooldown, checkResting } from '../../utils/checkValidity';
-import { client } from '../..';
+import { hasName } from '../../utils/checkUserState';
 import { SlashCommand } from '../../typings/handle';
 import { constructCustomId, constructSelectOptions, deconstructCustomId, deconstructSelectOptions } from '../../utils/customId';
 import Quid from '../../models/quid';
@@ -76,10 +74,8 @@ export const command: SlashCommand = {
 			}
 			return;
 		}
-		/* Checking if the user has a cooldown. */
-		else if (hasNameAndSpecies(quid) && interaction.inCachedGuild() && await hasCooldown(interaction, user, userToServer, quid, quidToServer)) { return; } // This is always a reply
 
-		const response = await getProfileMessageOptions(discordUser.id, quid, !mentionedUser, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user });
+		const response = await getProfileMessageOptions(interaction.client, discordUser.id, quid, !mentionedUser, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user });
 		const selectMenu = await getQuidSelectMenu(user.id, interaction.user.id, 0, quid?.id, !mentionedUser);
 
 		// This is always a reply
@@ -163,23 +159,6 @@ export const command: SlashCommand = {
 
 			if (!user) { throw new TypeError('user is undefined'); }
 
-			/* Checking if the user is on a cooldown, and if they are, it will respond that they can't switch quids. */
-			if (userToServer?.hasCooldown === true) {
-
-				// This is always an editReply to the message with the select menu (due to deferUpdate)
-				await respond(interaction, {
-					content: 'You can\'t switch quids because your current quid is busy!',
-					ephemeral: true,
-				}, 'update', interaction.message.id);
-				return;
-			}
-
-			/* Checking if the user is resting, and if they are, it will stop the resting. */
-			if (interaction.inCachedGuild() && hasNameAndSpecies(quid) && userToServer && quidToServer) {
-
-				await checkResting(interaction, user, userToServer, quid, quidToServer);
-			}
-
 			/* Getting the old quid and the id of the quid the user has clicked on. Then it is updating the user's current quid to the quid they have clicked on. Then it is getting the new quid and profile. */
 			const quidId = selectOptionId[1]; // this is either an id, an empty string if empty slot
 			if (interaction.inGuild()) {
@@ -206,7 +185,7 @@ export const command: SlashCommand = {
 			// This is always an editReply to the message with the select menu (due to deferUpdate)
 			await respond(interaction, {
 				// we can interaction.user.id because the "switchto" option is only available to yourself
-				...await getProfileMessageOptions(interaction.user.id, quid, true, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user }),
+				...await getProfileMessageOptions(interaction.client, interaction.user.id, quid, true, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user }),
 				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([await getQuidSelectMenu(user.id, interaction.user.id, 0, quid?.id, true)])],
 			}, 'update', interaction.message.id);
 
@@ -233,7 +212,7 @@ export const command: SlashCommand = {
 
 			// This is always an update to the message with the select menu
 			await respond(interaction, {
-				...await getProfileMessageOptions(interaction.user.id, quid, false, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user }),
+				...await getProfileMessageOptions(interaction.client, interaction.user.id, quid, false, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user }),
 				components: interaction.message.components,
 			}, 'update', interaction.message.id);
 			return;
@@ -250,8 +229,9 @@ export const command: SlashCommand = {
  * @returns - InteractionReplyOptions
  */
 export async function getProfileMessageOptions(
+	client: Client<true>,
 	userId: string,
-	quid: Quid<true> | Quid<false> | undefined,
+	quid: Quid | undefined,
 	isYourself: boolean,
 	displaynameOptions: Parameters<typeof getDisplayname>[1],
 	embedArray: Array<EmbedBuilder> = [],

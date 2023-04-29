@@ -21,7 +21,7 @@ export const event: DiscordEvent = {
 
 		if (message.author.bot || !message.inGuild()) { return; }
 
-		if (message.content.toLowerCase().startsWith('rp ') && await hasPermission(message.guild.members.me || message.client.user.id, message.channel, message.channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) {
+		if (message.content.toLowerCase().startsWith('rp ') && await hasPermission(message.guild.members.me || message.client.user.id, message.channel, message.channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages', message.client)) {
 
 			await message.reply({ content: '**Regular commands were replaced in favour of slash (`/`) commands.**\n\nIf you don\'t know what slash commands are or how to use them, read this article: <https://support.discord.com/hc/en-us/articles/1500000368501-Slash-Commands-FAQ>\n\nIf no slash commands for this bot appear, re-invite this bot by clicking on its profile and then on "Add to server".' });
 			return;
@@ -36,18 +36,7 @@ export const event: DiscordEvent = {
 
 		if (user === undefined || server === null) { return; }
 
-		let { replaceMessage, quid, userToServer } = await checkForProxy(message, user);
-
-		if (server.currentlyVisitingChannelId !== null && message.channel.id === server.visitChannelId) {
-
-			const otherServerData = await Server.findOne({ where: { id: server.currentlyVisitingChannelId } });
-
-			if (otherServerData) {
-
-				// await sendVisitMessage(client, message, userData, serverData, otherServerData);
-				replaceMessage = true;
-			}
-		}
+		const { replaceMessage, quid, userToServer } = await checkForProxy(message, user);
 
 		if (replaceMessage && hasName(quid) && (message.content.length > 0 || message.attachments.size > 0)) {
 
@@ -60,13 +49,13 @@ export const event: DiscordEvent = {
 			if (!botMessage) { return; }
 			console.log(`\x1b[32m${message.author.tag} (${message.author.id})\x1b[0m successfully \x1b[31mproxied \x1b[0ma new message in \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
-			if (await hasPermission(message.guild.members.me || await message.channel.guild.members.fetchMe({ force: false }) || message.client.user.id, message.channel, 'ManageMessages')) {
+			if (await hasPermission(message.guild.members.me || await message.channel.guild.members.fetchMe({ force: false }) || message.client.user.id, message.channel, 'ManageMessages', message.client)) {
 
 				await message
 					.delete()
 					.catch(async e => { if (isObject(e) && e.code === 10008) { await message.channel.messages.delete(botMessage.id); } }); // If the message is unknown, its webhooked message is probbaly not supposed to exist too, so we delete it
 			}
-			else if (await hasPermission(message.guild.members.me || await message.channel.guild.members.fetchMe({ force: false }) || message.client.user.id, message.channel, message.channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) {
+			else if (await hasPermission(message.guild.members.me || await message.channel.guild.members.fetchMe({ force: false }) || message.client.user.id, message.channel, message.channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages', message.client)) {
 
 				await message
 					.reply(getMissingPermissionContent(permissionDisplay.ManageMessages))

@@ -1,7 +1,5 @@
 import { Optional } from 'sequelize';
 import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, HasMany, HasOne, Model, Table } from 'sequelize-typescript';
-import { SpeciesNames } from '../typings/data/general';
-import Friendship from './friendship';
 import Group from './group';
 import GroupToQuid from './groupToQuid';
 import QuidToServer from './quidToServer';
@@ -11,13 +9,12 @@ import UserToServer from './userToServer';
 import Webhook from './webhook';
 const { default_color } = require('../../config.json');
 
-interface QuidAttributes<Completed extends boolean = false> {
+interface QuidAttributes {
 	id: string;
 	userId: string;
 	mainGroupId: string | null;
 	name: string
 	nickname: string;
-	species: Completed extends true ? SpeciesNames : SpeciesNames | null;
 	displayedSpecies: string;
 	description: string;
 	avatarURL: string;
@@ -27,10 +24,10 @@ interface QuidAttributes<Completed extends boolean = false> {
 	color: `#${string}`;
 }
 
-type QuidCreationAttributes<Completed extends boolean = false> = Optional<QuidAttributes<Completed>, 'mainGroupId' | 'nickname' | 'species' | 'displayedSpecies' | 'description' | 'avatarURL' | 'pronouns_en' | 'noPronouns_en' | 'proxies' | 'color'>
+type QuidCreationAttributes = Optional<QuidAttributes, 'mainGroupId' | 'nickname' | 'displayedSpecies' | 'description' | 'avatarURL' | 'pronouns_en' | 'noPronouns_en' | 'proxies' | 'color'>
 
 @Table
-export default class Quid<Completed extends boolean = false> extends Model<QuidAttributes<Completed>, QuidCreationAttributes<Completed>> {
+export default class Quid extends Model<QuidAttributes, QuidCreationAttributes> {
 	@Column({ type: DataType.STRING, primaryKey: true })
 	declare id: string;
 
@@ -54,9 +51,6 @@ export default class Quid<Completed extends boolean = false> extends Model<QuidA
 	@Column({ type: DataType.STRING, defaultValue: '' })
 	declare nickname: string;
 
-	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
-	declare species: Completed extends true ? SpeciesNames : SpeciesNames | null;
-
 	@Column({ type: DataType.STRING, defaultValue: '' })
 	declare displayedSpecies: string;
 
@@ -77,12 +71,6 @@ export default class Quid<Completed extends boolean = false> extends Model<QuidA
 
 	@Column({ type: DataType.STRING, defaultValue: default_color })
 	declare color: `#${string}`;
-
-	@HasMany(() => Friendship, { foreignKey: 'quidId_1' })
-	declare friendships_1: Friendship[];
-
-	@HasMany(() => Friendship, { foreignKey: 'quidId_2' })
-	declare friendships_2: Friendship[];
 
 	@BelongsToMany(() => Group, () => GroupToQuid)
 	declare groups: Group[];

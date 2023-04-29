@@ -1,6 +1,5 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { now, respond } from '../../utils/helperFunctions';
-import { checkLevelRequirements, checkRankRequirements, updateAndGetMembers } from '../../utils/checkRoleRequirements';
 import { getRandomNumber } from '../../utils/randomizers';
 import { generateId } from 'crystalid';
 import { SlashCommand } from '../../typings/handle';
@@ -108,14 +107,6 @@ export const command: SlashCommand = {
 				.setDescription(isNewAccount === false ? null : '__What is a quid?__\nTo avoid using limiting words like "character" or "person", Paw and Paper uses the made-up word quid. It is based off of the word [Quiddity](https://en.wikipedia.org/wiki/Quiddity), which means "what makes something what it is". Quid then means "someone who is what they are", which is vague on purpose because it changes based on what they are.')
 				.setFooter(isNewQuid ? { text: 'To continue setting up your profile for the RPG, type "/species". For other options, review "/help".' } : null)],
 		});
-
-		/* This is checking if the user is in a guild, if the server has data saved in the database, and if the guildmember data is cached. If all of these are true, it will check if the user has reached the requirements to get roles based on their rank and level. */
-		if (interaction.inCachedGuild() && quidToServer) {
-
-			const members = await updateAndGetMembers(user.id, interaction.guild);
-			await checkRankRequirements(interaction, members, quidToServer, true);
-			await checkLevelRequirements(interaction, members, quidToServer, true);
-		}
 	},
 };
 

@@ -40,13 +40,13 @@ export const event: DiscordEvent = {
 			if (!botMessage) { return; }
 			console.log(`\x1b[32m${message.author.tag} (${message.author.id})\x1b[0m successfully \x1b[31mproxied \x1b[0man edited message in \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
-			if (await hasPermission(message.guild.members.me || message.client.user.id, message.channel, 'ManageMessages')) {
+			if (await hasPermission(message.guild.members.me || message.client.user.id, message.channel, 'ManageMessages', message.client)) {
 
 				await message
 					.delete()
 					.catch(async e => { if (isObject(e) && e.code === 10008) { await message.channel.messages.delete(botMessage.id); } }); // If the message is unknown, its webhooked message is probbaly not supposed to exist too, so we delete it
 			}
-			else if (await hasPermission(message.guild.members.me || message.client.user.id, message.channel, message.channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) {
+			else if (await hasPermission(message.guild.members.me || message.client.user.id, message.channel, message.channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages', message.client)) {
 
 				await message.reply(getMissingPermissionContent(permissionDisplay.ManageMessages));
 			}

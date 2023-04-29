@@ -1,6 +1,5 @@
 import { Optional } from 'sequelize';
 import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
-import Den from './den';
 import DiscordUser from './discordUser';
 import Group from './group';
 import GroupToServer from './groupToServer';
@@ -8,50 +7,29 @@ import ProxyLimits from './proxyLimits';
 import Quid from './quid';
 import QuidToServer from './quidToServer';
 import DiscordUserToServer from './discordUserToServer';
-import ShopRole from './shopRole';
 import User from './user';
 import UserToServer from './userToServer';
 import Channel from './channel';
 
 interface ServerAttributes {
 	id: string;
-	nextPossibleAttackTimestamp: number;
-	visitChannelId: string | null;
-	currentlyVisitingChannelId: string | null;
-	skills: string[];
 	proxy_logChannelId: string | null;
 	proxy_requireTag: boolean;
 	proxy_requireTagInDisplayname: boolean;
 	proxy_possibleTags: string[];
 	proxy_channelLimitsId: string;
 	proxy_roleLimitsId: string;
-	inventory: string[];
-	sleepingDenId: string;
-	medicineDenId: string;
-	foodDenId: string;
 	nameRuleSets: string[];
 	logChannelId: string | null;
 	logLimitsId: string;
 }
 
-type ServerCreationAttributes = Optional<ServerAttributes, 'nextPossibleAttackTimestamp' | 'visitChannelId' | 'currentlyVisitingChannelId' | 'skills' | 'proxy_logChannelId' | 'proxy_requireTag' | 'proxy_requireTagInDisplayname' | 'proxy_possibleTags' | 'inventory' | 'nameRuleSets' | 'logChannelId'>
+type ServerCreationAttributes = Optional<ServerAttributes, 'proxy_logChannelId' | 'proxy_requireTag' | 'proxy_requireTagInDisplayname' | 'proxy_possibleTags' | 'nameRuleSets' | 'logChannelId'>
 
 @Table
 export default class Server extends Model<ServerAttributes, ServerCreationAttributes> {
 	@Column({ type: DataType.STRING, primaryKey: true })
 	declare id: string;
-
-	@Column({ type: DataType.INTEGER, defaultValue: 0 })
-	declare nextPossibleAttackTimestamp: number;
-
-	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
-	declare visitChannelId: string | null;
-
-	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
-	declare currentlyVisitingChannelId: string | null;
-
-	@Column({ type: DataType.ARRAY(DataType.STRING), defaultValue: ['strength', 'dexterity', 'constitution', 'charisma', 'wisdom', 'intelligence'] })
-	declare skills: string[];
 
 	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
 	declare proxy_logChannelId: string | null;
@@ -79,35 +57,8 @@ export default class Server extends Model<ServerAttributes, ServerCreationAttrib
 	@BelongsTo(() => ProxyLimits, { foreignKey: 'proxy_roleLimitsId' })
 	declare proxy_roleLimits: ProxyLimits;
 
-	@Column({ type: DataType.ARRAY(DataType.STRING), defaultValue: [] })
-	declare inventory: string[];
-
-	@ForeignKey(() => Den)
-	@Column({ type: DataType.STRING })
-	declare sleepingDenId: string;
-
-	@BelongsTo(() => Den, { foreignKey: 'sleepingDenId' })
-	declare sleepingDen: Den;
-
-	@ForeignKey(() => Den)
-	@Column({ type: DataType.STRING })
-	declare medicineDenId: string;
-
-	@BelongsTo(() => Den, { foreignKey: 'medicineDenId' })
-	declare medicineDen: Den;
-
-	@ForeignKey(() => Den)
-	@Column({ type: DataType.STRING })
-	declare foodDenId: string;
-
-	@BelongsTo(() => Den, { foreignKey: 'foodDenId' })
-	declare foodDen: Den;
-
 	@BelongsToMany(() => User, () => UserToServer)
 	declare users: User[];
-
-	@HasMany(() => ShopRole, { foreignKey: 'serverId' })
-	declare shopRoles: ShopRole[];
 
 	@HasMany(() => Channel, { foreignKey: 'serverId' })
 	declare channels: Channel[];

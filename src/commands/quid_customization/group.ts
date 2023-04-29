@@ -309,7 +309,7 @@ export async function getGroupMessage(
 	page: number,
 	user: User,
 	userToServer?: UserToServer,
-	quid?: Quid<true> | Quid<false>,
+	quid?: Quid,
 	quidToServer?: QuidToServer,
 	groupId?: string,
 ): Promise<InteractionReplyOptions> {

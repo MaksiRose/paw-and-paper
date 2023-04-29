@@ -1,9 +1,10 @@
-import { client } from '..';
+import { Client } from 'discord.js';
 import Server from '../models/server';
 import { createGuild } from '../utils/updateGuild';
 
 /** It updates the database to reflect the current state of the servers */
 export async function execute(
+	client: Client<true>,
 ): Promise<void> {
 
 	/* For each server, it is updating the servers name in the database and adding an entry

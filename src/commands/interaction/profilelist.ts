@@ -2,7 +2,6 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, Guild, Stri
 import { now, respond } from '../../utils/helperFunctions';
 import { isInGuild } from '../../utils/checkUserState';
 import { SlashCommand } from '../../typings/handle';
-import { RankType } from '../../typings/data/user';
 import QuidToServer from '../../models/quidToServer';
 import { Op } from 'sequelize';
 import Quid from '../../models/quid';
@@ -31,41 +30,16 @@ export const command: SlashCommand = {
 
 		/* Creating a message with up to 25 profiles of a certain rank, a select menu to select another rank and buttons to go back and fourth a page if the rank as more than 25 profiles. */
 		// This is always a reply
-		await respond(interaction, await getProfilesMessage(interaction.user.id, 0, interaction.guild, [RankType.Youngling]));
+		await respond(interaction, await getProfilesMessage(interaction.user.id, 0, interaction.guild));
 	},
 	async sendMessageComponentResponse(interaction) {
 
 		if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild.'); }
 
-		if (interaction.isStringSelectMenu() && interaction.customId.startsWith('profilelist_rank_options')) {
-
-			const rankName = (interaction.values[0] === 'profilelist_elderlies') ?
-				[RankType.Elderly] :
-				(interaction.values[0] === 'profilelist_younglings') ?
-					[RankType.Youngling] :
-					(interaction.values[0] === 'profilelist_apprentices') ?
-						[RankType.Apprentice] :
-						[RankType.Hunter, RankType.Healer];
-
-			const profilesText = await getProfilesTexts(interaction.guild, rankName);
-
-			// This is always an update to the message with the select menu
-			await respond(interaction, await getProfilesMessage(interaction.user.id, 0, interaction.guild, rankName, profilesText), 'update', interaction.message.id);
-			return;
-		}
-
-		const rankName = interaction.customId.includes(RankType.Elderly) ?
-			[RankType.Elderly] :
-			interaction.customId.includes(RankType.Youngling) ?
-				[RankType.Youngling] :
-				interaction.customId.includes(RankType.Apprentice) ?
-					[RankType.Apprentice] :
-					[RankType.Hunter, RankType.Healer];
-
-		const profilesText = await getProfilesTexts(interaction.guild, rankName);
+		const profilesText = await getProfilesTexts(interaction.guild);
 
 		/* Get the page number of the friendship list.  */
-		let page = Number(interaction.customId.split('_')[3] ?? 0);
+		let page = Number(interaction.customId.split('_')[2] ?? 0);
 
 		/* Checking if the user clicked on the left or right button and then it is changing the page number accordingly. */
 		if (interaction.customId.includes('left')) {
@@ -80,7 +54,7 @@ export const command: SlashCommand = {
 		}
 
 		// This is always an update to the message with the component
-		await respond(interaction, await getProfilesMessage(interaction.user.id, page, interaction.guild, rankName, profilesText), 'update', interaction.message.id);
+		await respond(interaction, await getProfilesMessage(interaction.user.id, page, interaction.guild, profilesText), 'update', interaction.message.id);
 		return;
 
 	},
@@ -95,7 +69,6 @@ export const command: SlashCommand = {
  */
 async function getProfilesTexts(
 	guild: Guild,
-	rankTypes: RankType[],
 ): Promise<string[]> {
 
 	const usersToServer = await UserToServer.findAll({ where: { serverId: guild.id } });
@@ -108,7 +81,6 @@ async function getProfilesTexts(
 			where: {
 				serverId: guild.id,
 				quidId: { [Op.in]: quids.map(q => q.id) },
-				rank: { [Op.in]: rankTypes },
 			},
 		});
 
@@ -150,7 +122,7 @@ async function getProfilesTexts(
 			for (const qts of quidsToServer) {
 
 				const q = quids.find(q => q.id === qts.quidId);
-				if (q !== undefined) { rankTexts.push(`${q.name} (\`${qts.health}/${qts.maxHealth} HP\`) - <@${discordUserId}>`); }
+				if (q !== undefined) { rankTexts.push(`${q.name} - <@${discordUserId}>`); }
 			}
 			break userIdLoop;
 		}
@@ -170,7 +142,6 @@ async function getProfilesMessage(
 	_id: string,
 	page: number,
 	guild: Guild,
-	rankType: RankType[],
 	profilesText?: string[],
 ): Promise<{
 	embeds: EmbedBuilder[];
@@ -178,50 +149,25 @@ async function getProfilesMessage(
 }> {
 
 	/* Getting an array of strings for all the profiles with that rank. */
-	if (!profilesText) { profilesText = await getProfilesTexts(guild, rankType); }
-
-	enum DisplayedRankType {
-		Younglings = 'Younglings',
-		Apprentices = 'Apprentices',
-		HuntersHealers = 'Hunters/Healers',
-		Elderlies = 'Elderlies'
-	}
-
-	const displayedRank: DisplayedRankType = rankType.includes(RankType.Elderly) ?
-		DisplayedRankType.Elderlies :
-		rankType.includes(RankType.Healer) || rankType.includes(RankType.Hunter) ?
-			DisplayedRankType.HuntersHealers :
-			rankType.includes(RankType.Apprentice) ?
-				DisplayedRankType.Apprentices :
-				DisplayedRankType.Younglings;
+	if (!profilesText) { profilesText = await getProfilesTexts(guild); }
 
 	return {
 		embeds: [new EmbedBuilder()
 			.setColor(default_color)
 			.setAuthor({ name: guild.name, iconURL: guild.iconURL() || undefined })
-			.setTitle(`Profiles - ${displayedRank}`)
+			.setTitle('Profiles')
 			.setDescription(profilesText.length > 0 ?
 				profilesText.slice(page * 25, (page + 1) * 25).join('\n') :
 				'There are no profiles with this rank on this server :(')],
 		components: [
-			new ActionRowBuilder<StringSelectMenuBuilder>()
-				.setComponents(new StringSelectMenuBuilder()
-					.setCustomId(`profilelist_rank_options_@${_id}`)
-					.setPlaceholder('Select a rank')
-					.setOptions([
-						{ label: DisplayedRankType.Younglings, value: 'profilelist_younglings' },
-						{ label: DisplayedRankType.Apprentices, value: 'profilelist_apprentices' },
-						{ label: DisplayedRankType.HuntersHealers, value: 'profilelist_huntershealers' },
-						{ label: DisplayedRankType.Elderlies, value: 'profilelist_elderlies' },
-					])),
 			...(profilesText.length > 25 ? [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([
 					new ButtonBuilder()
-						.setCustomId(`profilelist_left_${rankType}_${page}_@${_id}`)
+						.setCustomId(`profilelist_left_${page}_@${_id}`)
 						.setEmoji('⬅️')
 						.setStyle(ButtonStyle.Secondary),
 					new ButtonBuilder()
-						.setCustomId(`profilelist_right_${rankType}_${page}_@${_id}`)
+						.setCustomId(`profilelist_right_${page}_@${_id}`)
 						.setEmoji('➡️')
 						.setStyle(ButtonStyle.Secondary),
 				])] : []),

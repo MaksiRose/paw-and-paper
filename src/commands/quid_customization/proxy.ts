@@ -399,7 +399,7 @@ export const command: SlashCommand = {
 async function getMainPageContent(
 	interaction: ChatInputCommandInteraction | ButtonInteraction,
 	user: User,
-	quid: Quid<true> | Quid<false> | undefined,
+	quid: Quid | undefined,
 	userToServer: UserToServer | undefined,
 	quidToServer: QuidToServer | undefined,
 ) {
@@ -439,7 +439,7 @@ async function getMainPageContent(
 
 function getAutoproxyComponents(
 	user: User,
-	quid: Quid<true> | Quid<false> | undefined,
+	quid: Quid | undefined,
 	userToServer: UserToServer | undefined,
 	isInGuild: boolean,
 ): (ActionRowBuilder<ButtonBuilder> | ActionRowBuilder<StringSelectMenuBuilder>)[] {
@@ -486,7 +486,7 @@ function getAutoproxyComponents(
 function getAdvancedAutoproxyComponents(
 	allChannels: Collection<string, NonThreadGuildBasedChannel>,
 	user: User,
-	quid: Quid<true> | Quid<false> | undefined,
+	quid: Quid | undefined,
 	userToServer: UserToServer | undefined,
 	page: number,
 ): (ActionRowBuilder<ButtonBuilder> | ActionRowBuilder<StringSelectMenuBuilder>)[] {
@@ -531,7 +531,7 @@ function getAdvancedAutoproxyComponents(
 
 function getSetproxyMsg(
 	user: User,
-	quid: Quid<true> | Quid<false> | undefined,
+	quid: Quid | undefined,
 	page: number,
 ): (ActionRowBuilder<ButtonBuilder> | ActionRowBuilder<StringSelectMenuBuilder>)[] {
 

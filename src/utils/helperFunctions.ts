@@ -1,10 +1,6 @@
 import { generateId } from 'crystalid';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, RepliableInteraction, WebhookMessageEditOptions, Snowflake, InteractionResponse } from 'discord.js';
-import DiscordUser from '../models/discordUser';
 import ErrorInfo from '../models/errorInfo';
-import Server from '../models/server';
-import User from '../models/user';
-import UserToServer from '../models/userToServer';
 const { error_color } = require('../../config.json');
 const { version } = require('../../package.json');
 
@@ -135,31 +131,7 @@ export function getMessageId(
 export async function sendErrorMessage(
 	interaction: RepliableInteraction,
 	error: unknown,
-	userToServer?: UserToServer,
 ): Promise<any> {
-	try {
-
-		if (!userToServer) {
-			const discordUser = await DiscordUser.findByPk(interaction.user.id, {
-				include: [{ model: User, as: 'user' }],
-			});
-			const user = discordUser?.user;
-
-			const server = interaction.inCachedGuild()
-				? ((await Server.findByPk(interaction.guildId)))
-				: undefined;
-
-			userToServer = (user && server)
-				? ((await UserToServer.findOne({
-					where: { userId: user.id, serverId: server.id },
-				})) ?? (await UserToServer.create({
-					id: generateId(), userId: user.id, serverId: server.id,
-				})))
-				: undefined;
-		}
-		if (userToServer) { await setCooldown(userToServer, false); }
-	}
-	catch (newError) { console.error(newError); }
 
 	if (interaction.type === InteractionType.ApplicationCommand) {
 		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to execute \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
@@ -344,16 +316,6 @@ export function getFirstLine(
 
 	const index = str.indexOf('\n');
 	return str.substring(0, index !== -1 ? index : str.length);
-}
-
-export async function setCooldown(
-	userToServer: UserToServer,
-	setTo: boolean,
-) {
-
-	await userToServer.update({
-		hasCooldown: setTo,
-	});
 }
 
 /**
