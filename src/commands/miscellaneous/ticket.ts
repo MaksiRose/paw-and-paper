@@ -37,7 +37,7 @@ export const command: SlashCommand = {
 			option.setName('attachment')
 				.setDescription('Optional picture or video to add context'))
 		.toJSON(),
-	category: 'page5',
+	category: 'page3',
 	position: 3,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,

@@ -75,7 +75,7 @@ The Service collects and stores the following data in its database:
 - A list of webhook messages sent by the Bot via their message ID provided by Discord with the user ID provided by Discord of the user that caused this webhook message to be sent. Other information like the messages content, the channel or server ID's provided by Discord etc. is not stored.<sup>5</sup>
 
 This is why we need and how we use the data:
-1. This information is stored to uniquely identify a party, such as you, your quids, or server. It is used to relate the information stored with it to that party.
+1. This information is stored to uniquely identify a party, such as you, the active members, or server. It is used to relate the information stored with it to that party.
 2. This information is stored to save progress users have made when using the in-game features. It is displayed when using in-game features.
 3. This information is stored to enable the in-game visiting feature. It is used to connect servers/channels with each other.
 4. This information is stored as a setting that you made. It is used to enable or disable features related to that setting.

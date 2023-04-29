@@ -19,7 +19,7 @@ export const command: SlashCommand = {
 		.setDMPermission(false)
 		.setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels + PermissionFlagsBits.ManageRoles)
 		.toJSON(),
-	category: 'page5',
+	category: 'page3',
 	position: 2,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
@@ -535,7 +535,7 @@ async function getProxyingMessage(
 				.setPlaceholder('Select an option to configure.')
 				.setOptions(
 					{ value: 'logging', label: 'Logging', description: 'Configure logging proxied messages' },
-					{ value: 'namerules', label: 'Name Rules', description: 'Configure rules a quid\'s name must follow for their message to be proxied' },
+					{ value: 'namerules', label: 'Name Rules', description: 'Configure rules a members name must follow for their message to be proxied' },
 					{ value: 'channels', label: 'Channels', description: 'Toggle in which channels proxying should be enabled or disabled' },
 					{ value: 'roles', label: 'Roles', description: 'Toggle for which channels proxying should be enabled or disabled' },
 				)])],
@@ -673,7 +673,7 @@ async function getProxyingNamerulesMessage(
 			.setColor(default_color)
 			.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() ?? undefined })
 			.setTitle('Settings ➜ Proxying ➜ Name Rules')
-			.setDescription('Name rules are rules a quid\'s name must follow for their message to be proxied. Selecting "Add a ruleset" from the drop-down menu opens a pop-up that allows you to type out a new ruleset. Each ruleset consists of one or multiple rules, each of which consists of exact text that must be included in the quid\'s name. You can also type @displayname to require one word from the user\'s display name to be present in the quid\'s name. To create a new rule, simply make a new line. The quid\'s name must include all rules of required text, but it can be in any order.This provides flexibility to users when creating their quid\'s name that comply with the rules. Each ruleset is a new way for users to comply, so they only need to follow one set of rules.')],
+			.setDescription('Name rules are rules a members name must follow for their message to be proxied. Selecting "Add a ruleset" from the drop-down menu opens a pop-up that allows you to type out a new ruleset. Each ruleset consists of one or multiple rules, each of which consists of exact text that must be included in the members name. You can also type @displayname to require one word from the user\'s display name to be present in the members name. To create a new rule, simply make a new line. The members name must include all rules of required text, but it can be in any order.This provides flexibility to users when creating their members name that comply with the rules. Each ruleset is a new way for users to comply, so they only need to follow one set of rules.')],
 		components: [new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
 				.setCustomId(`server-settings_proxying_@${interaction.user.id}`)

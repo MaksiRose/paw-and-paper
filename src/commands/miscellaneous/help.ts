@@ -34,8 +34,8 @@ export const command: SlashCommand = {
 			embeds: [
 				new EmbedBuilder()
 					.setColor(default_color)
-					.setTitle('Welcome to Paw and Paper!')
-					.setDescription(`This bot has powerful tools to help make your roleplay more immersive, or to express your mental shifts.\nAdditionally, it features a community-driven RPG about animals surviving in the wild. Your goal is to go up the ranks, level up, find items, help your friends and keep your stats high.\n\nClick on the menu options below to get an overview of the available commands!\n**If you are new, start with \`/name (name)\`!**\n\n*Latest changes:*\n> ${release.data.body?.split('\n').slice(1, 4).join('\n> ') ?? '(Missing data)'}\n> [Full changelog](https://github.com/MaksiRose/paw-and-paper/releases/tag/${tag})`),
+					.setTitle('Welcome to Patchwork!')
+					.setDescription(`This bot has powerful tools for traumagenic systems to express themselves. It's a fork of the bot called "Paw and Paper", to give people with DID, OSDD and PDID a unique bot to proxy with.\n\nClick on the menu options below to get an overview of the available commands!\n**If you are new, start with \`/name (name)\`!**\n\n*Latest changes:*\n> ${release.data.body?.split('\n').slice(1, 4).join('\n> ') ?? '(Missing data)'}\n> [Full changelog](https://github.com/MaksiRose/paw-and-paper/releases/tag/${tag})`),
 			],
 			components: [buildPageSelect(user?.id ?? interaction.user.id)],
 		});
@@ -46,7 +46,7 @@ export const command: SlashCommand = {
 		if (!interaction.isStringSelectMenu()) { return; }
 		const value = getArrayElement(interaction.values, 0);
 
-		const titles = ['📝 Quid Customization', '🎲 Gameplay (Primary)', '🍗 Gameplay (Maintenance)', '👥 Interaction', '⚙️ Miscellaneous'];
+		const titles = ['📝 Quid Customization', '👥 Interaction', '⚙️ Miscellaneous'];
 		const titleNr = value.substring(value.length - 1);
 		const title = `Page ${titleNr}: ${getArrayElement(titles, Number(titleNr) - 1)}`;
 
@@ -65,17 +65,10 @@ export const command: SlashCommand = {
 		if (titleNr === '5') {
 
 			const maksiUser = await interaction.client.users.fetch('268402976844939266').catch(() => { return null; });
-			const ezraUser = await interaction.client.users.fetch('669725936840736840').catch(() => { return null; });
-			const renUser = await interaction.client.users.fetch('794320272723410955').catch(() => { return null; });
-			const jagsUser = await interaction.client.users.fetch('840108230176145410').catch(() => { return null; });
-			const elliottUser = await interaction.client.users.fetch('422145578676256779').catch(() => { return null; });
-			const hazenithUser = await interaction.client.users.fetch('708943555305144367').catch(() => { return null; });
-			const johannaUser = await interaction.client.users.fetch('442125304794841099').catch(() => { return null; });
-			const skyUser = await interaction.client.users.fetch('642963515098923015').catch(() => { return null; });
-			const asrielUser = await interaction.client.users.fetch('625469376145129502').catch(() => { return null; });
+			const brennanUser = await interaction.client.users.fetch('1013083558367215637').catch(() => { return null; });
 
 			fields = [
-				{ name: '\n**__CREDITS:__**', value: `This bot was made with love by **${maksiUser?.tag}**. Special thanks goes out to:\n\`${elliottUser?.tag}\` - RPG texts, testing, ideas\n\`${ezraUser?.tag}\` - RPG texts, testing\n\`${hazenithUser?.tag}\` - testing, ideas\n\`${skyUser?.tag}\` - testing, \`${asrielUser?.tag}\` - ideas, \`${renUser?.tag}\` - RPG texts\n\`${jagsUser?.tag}\` - drawing the profile picture, \`${johannaUser?.tag}\` - drawing the ginkgo tree.\n\nThis bot was originally created for a Discord server called [Rushing River Pack](https://disboard.org/server/854522091328110595). If you are therian, otherkin, or supporter of those, you are welcome to join.` },
+				{ name: '\n**__CREDITS:__**', value: `This bot was made with love by **${maksiUser?.tag}**. Special thanks goes out to:\n\`${brennanUser?.tag}\` - Name of this bot\n\nPaw and Paper, the bot this one is based on, was originally created for a Discord server called [Rushing River Pack](https://disboard.org/server/854522091328110595). If you are therian, otherkin, or supporter of those, you are welcome to join.` },
 				{ name: '\n**__OTHER:__**', value: `Uptime: ${Math.floor(interaction.client.uptime / 3600000)} hours ${Math.floor(interaction.client.uptime / 60000) % 60} minutes\nPing: ${interaction.client.ws.ping} ms\nServer count: ${interaction.client.guilds.cache.size}\nVersion: ${version}` },
 			];
 		}
@@ -130,10 +123,8 @@ function buildPageSelect(
 				.setPlaceholder('Select a page')
 				.setOptions([
 					{ label: 'Page 1', value: 'help_page1', description: 'Quid Customization', emoji: '📝' },
-					{ label: 'Page 2', value: 'help_page2', description: 'Gameplay (Primary)', emoji: '🎲' },
-					{ label: 'Page 3', value: 'help_page3', description: 'Gameplay (Maintenance)', emoji: '🍗' },
-					{ label: 'Page 4', value: 'help_page4', description: 'Interaction', emoji: '👥' },
-					{ label: 'Page 5', value: 'help_page5', description: 'Miscellaneous', emoji: '⚙️' },
+					{ label: 'Page 2', value: 'help_page2', description: 'Interaction', emoji: '👥' },
+					{ label: 'Page 3', value: 'help_page3', description: 'Miscellaneous', emoji: '⚙️' },
 				]),
 		]);
 }

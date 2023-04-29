@@ -14,7 +14,7 @@ export const command: SlashCommand = {
 		.setName('user-settings')
 		.setDescription('List of user-specific settings like mentions and accessibility.')
 		.toJSON(),
-	category: 'page5',
+	category: 'page3',
 	position: 1,
 	disablePreviousCommand: true,
 	modifiesServerProfile: false,

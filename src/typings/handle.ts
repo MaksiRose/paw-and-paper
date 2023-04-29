@@ -8,7 +8,7 @@ import QuidToServer from '../models/quidToServer';
 import DiscordUser from '../models/discordUser';
 import DiscordUserToServer from '../models/discordUserToServer';
 
-type dataOptions = { user?: User, server?: Server, userToServer?: UserToServer, quid?: Quid<true> | Quid<false>, quidToServer?: QuidToServer; discordUser?: DiscordUser, discordUserToServer?: DiscordUserToServer }
+type dataOptions = { user?: User, server?: Server, userToServer?: UserToServer, quid?: Quid, quidToServer?: QuidToServer; discordUser?: DiscordUser, discordUserToServer?: DiscordUserToServer }
 
 interface Command {
 	data: RESTPostAPIApplicationCommandsJSONBody;
@@ -17,7 +17,7 @@ interface Command {
 }
 
 export interface SlashCommand extends Command {
-	category: 'page1' | 'page2' | 'page3' | 'page4' | 'page5' | 'other';
+	category: 'page1' | 'page2' | 'page3' | 'other';
 	position: number;
 	/** Best practice is that only commands that immediately return without any form of interaction (Button, Select Menu, Modal) that changes something in the database are set to false. */
 	disablePreviousCommand: boolean;

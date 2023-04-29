@@ -20,7 +20,7 @@ export const command: SlashCommand = {
 		.setDescription('View a list of all the profiles that exist on this server.')
 		.setDMPermission(false)
 		.toJSON(),
-	category: 'page4',
+	category: 'page2',
 	position: 5,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,

@@ -28,7 +28,7 @@ export const command: SlashCommand = {
 				.setDescription('An attachment that you want to attach to the message'))
 		.setDMPermission(false)
 		.toJSON(),
-	category: 'page4',
+	category: 'page2',
 	position: 3,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
