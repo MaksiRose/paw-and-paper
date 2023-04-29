@@ -4,8 +4,8 @@
 	"description": "A Discord Bot for roleplay communities, featuring a community-based interactive RPG and powerful tools to roleplay",
 	"main": "index.ts",
 	"scripts": {
-		"start": "git pull origin pnp && npm update && rm -rf dist && tsc -p tsconfig.json && pm2 start dist/index.js --name pnp --time",
-		"reload": "git pull origin pnp && npm update && rm -rf dist && tsc -p tsconfig.json && pm2 reload pnp",
+		"start": "git pull origin stable && npm update && rm -rf dist && tsc -p tsconfig.json && pm2 start dist/index.js --name pnp --time",
+		"reload": "git pull origin stable && npm update && rm -rf dist && tsc -p tsconfig.json && pm2 reload pnp",
 		"stop": "pm2 stop pnp",
 		"logs": "pm2 logs --timestamp --lines 0 pnp",
 		"test": "ts-node src/index.ts"
