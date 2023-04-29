@@ -83,7 +83,7 @@ export const command: ContextMenuCommand = {
 			}])
 			.setTimestamp(new Date())];
 
-		const response = await getProfileMessageOptions(targetDiscordUserId, targetQuid, targetDiscordUserId === interaction.user.id, { serverId: interaction.guildId, user: targetUser }, embedArray);
+		const response = await getProfileMessageOptions(interaction.client, targetDiscordUserId, targetQuid, targetDiscordUserId === interaction.user.id, { serverId: interaction.guildId, user: targetUser }, embedArray);
 
 		// This is always a reply
 		await respond(interaction, {

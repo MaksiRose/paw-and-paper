@@ -43,6 +43,11 @@ export const permissionDisplay: Record<keyof typeof PermissionFlagsBits, string>
 	ViewAuditLog: 'view the audit log',
 	ViewChannel: 'view this channel',
 	ViewGuildInsights: 'view the guild insights',
+	ManageGuildExpressions: 'manage guild expressions',
+	ViewCreatorMonetizationAnalytics: 'view creator monetization analytics',
+	UseSoundboard: 'use the soundboard',
+	UseExternalSounds: 'use external sounds',
+	SendVoiceMessages: 'send voice messages',
 };
 
 export async function hasPermission(

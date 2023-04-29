@@ -156,7 +156,7 @@ async function replaceWebhookMessage(
 	webhookChannel: NewsChannel | StageChannel | TextChannel | VoiceChannel | ForumChannel,
 	interaction: StringSelectMenuInteraction<'cached'>,
 	targetMessageId: string,
-	quid: Quid<false> | Quid<true>,
+	quid: Quid,
 	userToServer: UserToServer | undefined,
 	quidToServer: QuidToServer | undefined,
 	user: User | undefined,
