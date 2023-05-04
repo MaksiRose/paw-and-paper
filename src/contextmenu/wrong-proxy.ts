@@ -186,7 +186,7 @@ async function replaceWebhookMessage(
 		})
 		.then(botMessage => ({ botMessage, webhook, previousMessage }))
 		.catch(async (err) => {
-			if (err.message && err.message.includes('Unknown Webhook') && channelData) {
+			if (err.message && (err.message.includes('Unknown Webhook') || err.message.includes('The provided webhook URL is not valid')) && channelData) {
 
 				await channelData.destroy();
 				return await replaceWebhookMessage(webhookChannel, interaction, targetMessageId, quid, userToServer, quidToServer, user, discordUser);
