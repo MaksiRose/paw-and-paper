@@ -103,7 +103,14 @@ This needs to include the following information:
 {
 	"token": "your discord token",
 	"test_guild_id": "your test guild",
+	"bfd_token": "optional, your bfd token",
+	"bfd_authorization": "optional, your bfd authorization",
+	"top_token": "optional, your top token",
+	"top_authorization": "optional, your top authorization",
+	"dbl_token": "optional, your dbl token",
+	"dbl_authorization": "optional, your dbl authorization",
 	"github_token": "your github token",
+	"webhook_name": "PnP Profile Webhook", // the webhook name chosen for discord channels, should be unique
 	"default_color": "#b4a257",
 	"error_color": "#d0342c",
 	"update_channel_id": "channel users can receive updates from",

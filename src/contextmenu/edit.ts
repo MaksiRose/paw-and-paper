@@ -12,6 +12,7 @@ import ProxyLimits from '../models/proxyLimits';
 import Server from '../models/server';
 import { getDisplayname } from '../utils/getQuidInfo';
 import UserToServer from '../models/userToServer';
+const { webhook_name } = require('../../../config.json');
 
 export const command: ContextMenuCommand = {
 	data: {
@@ -104,8 +105,8 @@ async function editWebhookMessage(
 	const channelData = await Channel.findByPk(webhookChannel.id);
 	const webhook = channelData
 		? new WebhookClient({ url: channelData.webhookUrl })
-		: (await webhookChannel.fetchWebhooks()).find(webhook => webhook.name === 'PnP Profile Webhook')
-		|| await webhookChannel.createWebhook({ name: 'PnP Profile Webhook' });
+		: (await webhookChannel.fetchWebhooks()).find(webhook => webhook.name === webhook_name)
+		|| await webhookChannel.createWebhook({ name: webhook_name });
 
 	if (webhook instanceof DiscordWebhook) { Channel.create({ id: webhookChannel.id, serverId: webhookChannel.guildId, webhookUrl: webhook.url }); }
 
@@ -116,7 +117,7 @@ async function editWebhookMessage(
 			threadId: interaction.channel!.isThread() ? interaction.channel.id : undefined,
 		})
 		.catch(async (err) => {
-			if (err.message && err.message.includes('Unknown Webhook') && channelData) {
+			if (err.message && (err.message.includes('Unknown Webhook') || err.message.includes('The provided webhook URL is not valid')) && channelData) {
 
 				await channelData.destroy();
 				return await editWebhookMessage(interaction, messageId, webhookChannel, server, user, userToServer);
