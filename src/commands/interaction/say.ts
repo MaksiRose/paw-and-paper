@@ -15,7 +15,7 @@ import Server from '../../models/server';
 import ProxyLimits from '../../models/proxyLimits';
 import { explainRuleset, ruleIsBroken } from '../../utils/nameRules';
 import { generateId } from 'crystalid';
-const { error_color } = require('../../../config.json');
+const { error_color, webhook_name } = require('../../../config.json');
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -146,8 +146,8 @@ export async function sendMessage(
 	const channelData = await Channel.findByPk(webhookChannel.id);
 	const webhook = channelData
 		? new WebhookClient({ url: channelData.webhookUrl })
-		: (await webhookChannel.fetchWebhooks()).find(webhook => webhook.name === 'PnP Profile Webhook')
-		|| await webhookChannel.createWebhook({ name: 'PnP Profile Webhook' });
+		: (await webhookChannel.fetchWebhooks()).find(webhook => webhook.name === webhook_name)
+		|| await webhookChannel.createWebhook({ name: webhook_name });
 
 	if (webhook instanceof DiscordWebhook) { Channel.create({ id: webhookChannel.id, serverId: webhookChannel.guildId, webhookUrl: webhook.url }); }
 
@@ -193,7 +193,7 @@ export async function sendMessage(
 			threadId: channel.isThread() ? channel.id : undefined,
 		})
 		.catch(async err => {
-			if (err.message && err.message.includes('Unknown Webhook') && channelData) {
+			if (err.message && (err.message.includes('Unknown Webhook') || err.message.includes('The provided webhook URL is not valid')) && channelData) {
 
 				await channelData.destroy();
 				return await sendMessage(channel, text, quid, user, server, discordUser, attachments, reference, userToServer, quidToServer);
