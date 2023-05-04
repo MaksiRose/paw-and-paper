@@ -9,7 +9,7 @@ export const event: DiscordEvent = {
 	async execute(client: Client<true>) {
 
 		/* Logging to the console that the bot is online and setting the bot's activity. */
-		console.log('Paw and Paper is online!');
+		console.log('Patchwork is online!');
 		client.user?.setActivity('/help', { type: ActivityType.Listening });
 
 		await client.application.commands.set(applicationCommands);
