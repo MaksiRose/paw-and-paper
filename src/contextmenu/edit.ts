@@ -12,7 +12,7 @@ import ProxyLimits from '../models/proxyLimits';
 import Server from '../models/server';
 import { getDisplayname } from '../utils/getQuidInfo';
 import UserToServer from '../models/userToServer';
-const { webhook_name } = require('../../../config.json');
+const { webhook_name } = require('../../config.json');
 
 export const command: ContextMenuCommand = {
 	data: {

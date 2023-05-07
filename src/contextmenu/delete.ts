@@ -8,7 +8,7 @@ import DiscordUser from '../models/discordUser';
 import Channel from '../models/channel';
 import { WebhookClient, Webhook as DiscordWebhook, time } from 'discord.js';
 import ProxyLimits from '../models/proxyLimits';
-const { webhook_name } = require('../../../config.json');
+const { webhook_name } = require('../../config.json');
 
 export const command: ContextMenuCommand = {
 	data: {
