@@ -1,6 +1,5 @@
 import { PermissionFlagsBits, SlashCommandBuilder, User } from 'discord.js';
 import { respond } from '../../utils/helperFunctions';
-import { client } from '../..';
 import { SlashCommand } from '../../typings/handle';
 import DiscordUser from '../../models/discordUser';
 import UserModel from '../../models/user';
@@ -27,10 +26,8 @@ export const command: SlashCommand = {
 	modifiesServerProfile: false,
 	sendCommand: async (interaction) => {
 
-		if (!client.isReady()) { return; }
-
-		await client.application.fetch();
-		if ((client.application.owner instanceof User) ? interaction.user.id !== client.application.owner.id : client.application.owner ? !client.application.owner.members.has(interaction.user.id) : false) { return; }
+		const application = await interaction.client.application.fetch();
+		if ((application.owner instanceof User) ? interaction.user.id !== application.owner.id : application.owner ? !application.owner.members.has(interaction.user.id) : false) { return; }
 
 		const user = interaction.options.getUser('user');
 		const guildId = interaction.options.getString('guild');
@@ -51,7 +48,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		const guild = await client.guilds
+		const guild = await interaction.client.guilds
 			.fetch(guildId)
 			.catch(() => { return null; });
 

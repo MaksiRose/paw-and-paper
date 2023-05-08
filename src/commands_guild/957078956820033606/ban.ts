@@ -1,6 +1,5 @@
 import { PermissionFlagsBits, SlashCommandBuilder, User } from 'discord.js';
 import { addCommasAndAnd, respond } from '../../utils/helperFunctions';
-import { client } from '../..';
 import { SlashCommand } from '../../typings/handle';
 import BannedUser from '../../models/bannedUser';
 import DiscordUser from '../../models/discordUser';
@@ -48,10 +47,8 @@ export const command: SlashCommand = {
 	modifiesServerProfile: false,
 	sendCommand: async (interaction) => {
 
-		if (!client.isReady()) { throw new Error('client isn\'t ready'); }
-
-		await client.application.fetch();
-		if ((client.application.owner instanceof User) ? interaction.user.id !== client.application.owner.id : client.application.owner ? !client.application.owner.members.has(interaction.user.id) : false) { throw new Error('403: user is not bot owner'); }
+		const application = await interaction.client.application.fetch();
+		if ((application.owner instanceof User) ? interaction.user.id !== application.owner.id : application.owner ? !application.owner.members.has(interaction.user.id) : false) { throw new Error('403: user is not bot owner'); }
 
 		const notified: string[] = [];
 		const type = interaction.options.getString('type');
@@ -71,7 +68,7 @@ export const command: SlashCommand = {
 
 				if (userData !== undefined) {
 
-					const user = await client.users.fetch(discordUserId).catch(() => { return null; });
+					const user = await interaction.client.users.fetch(discordUserId).catch(() => { return null; });
 					if (user) {
 
 						await user.send({ content: 'I am sorry to inform you that you have been banned from using this bot.' });
@@ -136,7 +133,7 @@ export const command: SlashCommand = {
 
 
 				const guild = await interaction.client.guilds.fetch(id).catch(() => { return null; });
-				const user = await client.users.fetch(guild?.ownerId || '').catch(() => { return null; });
+				const user = await interaction.client.users.fetch(guild?.ownerId || '').catch(() => { return null; });
 
 				if (guild && user) {
 

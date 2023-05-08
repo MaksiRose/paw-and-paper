@@ -4,7 +4,7 @@ import { disableAllComponents } from '../../utils/componentDisabling';
 import { generateId } from 'crystalid';
 import { readFileSync, writeFileSync } from 'fs';
 import { hasPermission } from '../../utils/permissionHandler';
-import { client, octokit } from '../..';
+import { octokit } from '../..';
 import { SlashCommand } from '../../typings/handle';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import ErrorInfo from '../../models/errorInfo';
@@ -223,7 +223,7 @@ export async function createNewTicket(
 	/* Sending the ticket to the dedicated channel or creating a thread/post */
 	(async function() {
 
-		const serverChannel = await client.channels
+		const serverChannel = await interaction.client.channels
 			.fetch(ticket_channel_id)
 			.catch(() => { return null; });
 
@@ -271,14 +271,11 @@ export async function createNewTicket(
 		}
 
 		let ownerId = '';
-		if (client.isReady()) {
+		const application = await interaction.client.application.fetch();
+		if (application.owner instanceof User) { ownerId = application.owner.id; }
+		else if (application.owner instanceof Team) { ownerId = application.owner.ownerId || ''; }
 
-			const application = await client.application.fetch();
-			if (application.owner instanceof User) { ownerId = application.owner.id; }
-			else if (application.owner instanceof Team) { ownerId = application.owner.ownerId || ''; }
-		}
-
-		const owner = await client.users.fetch(ownerId);
+		const owner = await interaction.client.users.fetch(ownerId);
 		const dmChannel = await owner.createDM();
 		await dmChannel.send(messageOptions);
 	})();
