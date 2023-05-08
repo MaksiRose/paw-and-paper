@@ -16,8 +16,8 @@ import QuidToServer from '../../models/quidToServer';
 import { generateId } from 'crystalid';
 const { error_color } = require('../../../config.json');
 
-export type CustomIdArgs = ['accountselect' | 'learnabout', string]
-type SelectOptionArgs = ['nextpage', `${number}`] | ['switchto' | 'view', string]
+export type CustomIdArgs = ['accountselect', string, `${number}`] | ['learnabout', string]
+type SelectOptionArgs = ['nextpage'] | ['switchto' | 'view', string]
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -80,7 +80,7 @@ export const command: SlashCommand = {
 		else if (hasNameAndSpecies(quid) && interaction.inCachedGuild() && await hasCooldown(interaction, user, userToServer, quid, quidToServer)) { return; } // This is always a reply
 
 		const response = await getProfileMessageOptions(discordUser.id, quid, !mentionedUser, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user });
-		const selectMenu = await getQuidSelectMenu(user.id, interaction.user.id, 0, quid?.id, !mentionedUser);
+		const selectMenu = await getQuidSelectMenu(discordUser.id, interaction.user.id, undefined, quid?.id, !mentionedUser);
 
 		// This is always a reply
 		await respond(interaction, {
@@ -96,7 +96,7 @@ export const command: SlashCommand = {
 
 		/* Getting userData and quid either for mentionedUser if there is one or for interaction user otherwise */
 		const mentionedUserId = customId.args[1];
-		discordUser = mentionedUserId === interaction.user.id ? discordUser : await DiscordUser.findByPk(interaction.user.id, {
+		discordUser = mentionedUserId === interaction.user.id ? discordUser : await DiscordUser.findByPk(mentionedUserId, {
 			include: [{ model: User, as: 'user' }],
 		}) ?? undefined;
 
@@ -126,7 +126,7 @@ export const command: SlashCommand = {
 
 			if (!user) { throw new TypeError('user is undefined'); }
 
-			const selectMenu = await getQuidSelectMenu(user.id, interaction.user.id, 0, quid?.id, false);
+			const selectMenu = await getQuidSelectMenu(user.id, interaction.user.id, undefined, quid?.id, false);
 
 			await Promise.all([
 				interaction.deferUpdate(),
@@ -144,6 +144,8 @@ export const command: SlashCommand = {
 		const selectOptionId = deconstructSelectOptions<SelectOptionArgs>(interaction)[0];
 		if (selectOptionId === undefined) { throw new TypeError('selectOptionId is undefined'); }
 
+		const page = Number(customId.args[2]);
+
 		/* Checking if the user has clicked on the "Show more accounts" button, and if they have, it will increase the page number by 1, and if the page number is greater than the total number of pages, it will set the page number to 0. Then, it will edit the bot reply to show the next page of accounts. */
 		if (interaction.isStringSelectMenu() && selectOptionId[0] === 'nextpage') {
 
@@ -151,7 +153,7 @@ export const command: SlashCommand = {
 
 			// This is always an update to the message with the select menu
 			await respond(interaction, {
-				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([await getQuidSelectMenu(user.id, interaction.user.id, Number(selectOptionId[1]) + 1, quid?.id, interaction.component.placeholder?.includes('switch to') ?? false)])],
+				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([await getQuidSelectMenu(user.id, interaction.user.id, page + 1, interaction.component.placeholder?.includes('view') === true ? undefined : quid?.id, interaction.component.placeholder?.includes('switch to') ?? false)])],
 			}, 'update', interaction.message.id);
 			return;
 		}
@@ -207,7 +209,7 @@ export const command: SlashCommand = {
 			await respond(interaction, {
 				// we can interaction.user.id because the "switchto" option is only available to yourself
 				...await getProfileMessageOptions(interaction.user.id, quid, true, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user }),
-				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([await getQuidSelectMenu(user.id, interaction.user.id, 0, quid?.id, true)])],
+				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([await getQuidSelectMenu(user.id, interaction.user.id, page, quid?.id, true)])],
 			}, 'update', interaction.message.id);
 
 			// This is always a followUp
@@ -233,8 +235,8 @@ export const command: SlashCommand = {
 
 			// This is always an update to the message with the select menu
 			await respond(interaction, {
-				...await getProfileMessageOptions(interaction.user.id, quid, false, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user }),
-				components: interaction.message.components,
+				...await getProfileMessageOptions(mentionedUserId, quid, false, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user }),
+				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([await getQuidSelectMenu(quid.userId, interaction.user.id, page, quid.id, false)])],
 			}, 'update', interaction.message.id);
 			return;
 		}
@@ -306,17 +308,25 @@ export async function getProfileMessageOptions(
 async function getQuidSelectMenu(
 	userId: string,
 	executorId: string,
-	page: number,
+	page: number | undefined,
 	selectedQuidId: string | undefined,
 	isYourself: boolean,
 ): Promise<StringSelectMenuBuilder> {
 
 	const quids = await Quid.findAll({ where: { userId: userId } });
+	const sortedQuids = quids.sort((a, b) => {
+		if (a.name < b.name) { return -1; }
+		else if (a.name > b.name) { return 1; }
+		else if (a.id < b.id) { return -1; }
+		else if (a.id > b.id) { return 1; }
+		else { return 0; }
+	});
+	if (page === undefined) { page = selectedQuidId === undefined ? 0 : Math.ceil(sortedQuids.findIndex(q => q.id === selectedQuidId) / 24); }
 
-	let quidOptions: RestOrArray<SelectMenuComponentOptionData> = quids.map(quid => ({
+	let quidOptions: RestOrArray<SelectMenuComponentOptionData> = sortedQuids.map(quid => ({
 		label: quid.name,
+		description: `ID: ${quid.id}`,
 		value: constructSelectOptions<SelectOptionArgs>([isYourself ? 'switchto' : 'view', quid.id]),
-		default: quid.id === selectedQuidId ? true : false,
 	}));
 
 	if (isYourself) {
@@ -324,7 +334,6 @@ async function getQuidSelectMenu(
 		quidOptions.push({
 			label: 'Empty Slot',
 			value: constructSelectOptions<SelectOptionArgs>(['switchto', '']),
-			default: selectedQuidId === undefined,
 		});
 	}
 
@@ -336,15 +345,15 @@ async function getQuidSelectMenu(
 
 		quidOptions = quidOptions.splice(page * 24, 24);
 		quidOptions.push({
-			label: 'Show more quids',
-			value: constructSelectOptions<SelectOptionArgs>(['nextpage', `${page}`]),
+			label: 'Next page',
+			value: constructSelectOptions<SelectOptionArgs>(['nextpage']),
 			description: `You are currently on page ${page + 1}`,
 			emoji: '📋',
 		});
 	}
 
 	return new StringSelectMenuBuilder()
-		.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, executorId, ['accountselect', userId]))
+		.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, executorId, ['accountselect', userId, `${page}`]))
 		.setPlaceholder(`Select a quid to ${isYourself ? 'switch to' : 'view'}`)
 		.setOptions(quidOptions);
 }

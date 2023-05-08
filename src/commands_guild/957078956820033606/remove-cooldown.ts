@@ -33,7 +33,7 @@ export const command: SlashCommand = {
 		const guildId = interaction.options.getString('guild');
 		if (user === null || guildId === null) { throw new TypeError('user or guildId is null'); }
 
-		const discordUser = await DiscordUser.findByPk(interaction.user.id, {
+		const discordUser = await DiscordUser.findByPk(user.id, {
 			include: [{ model: UserModel, as: 'user' }],
 		});
 		const userData = discordUser?.user;

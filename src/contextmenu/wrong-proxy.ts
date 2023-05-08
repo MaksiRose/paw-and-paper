@@ -14,7 +14,7 @@ import { getDisplayname } from '../utils/getQuidInfo';
 import { getArrayElement, respond } from '../utils/helperFunctions';
 import { explainRuleset, ruleIsBroken } from '../utils/nameRules';
 import { canManageWebhooks, missingPermissions } from '../utils/permissionHandler';
-const { webhook_name } = require('../../../config.json');
+const { webhook_name } = require('../../config.json');
 
 export const command: ContextMenuCommand = {
 	data: {
