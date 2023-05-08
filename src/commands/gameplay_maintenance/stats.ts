@@ -167,16 +167,15 @@ async function sendStatsMessage(
 	];
 	for (const [injuryKind, injuryAmount] of injuries) {
 
-		if (injuryAmount > 0) {
-
-			if (typeof injuryAmount === 'number') {
+		if (typeof injuryAmount === 'number') {
+			if (injuryAmount > 0) {
 
 				injuryText += `, ${injuryAmount} ${(injuryAmount < 2) ? injuryKind.slice(0, -1) : injuryKind}`;
 			}
-			else {
+		}
+		else if (injuryAmount === true) {
 
-				injuryText += `, ${injuryKind}: yes`;
-			}
+			injuryText += `, ${injuryKind}: yes`;
 		}
 	}
 
