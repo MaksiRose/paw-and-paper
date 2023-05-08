@@ -80,7 +80,7 @@ export const command: SlashCommand = {
 		else if (hasNameAndSpecies(quid) && interaction.inCachedGuild() && await hasCooldown(interaction, user, userToServer, quid, quidToServer)) { return; } // This is always a reply
 
 		const response = await getProfileMessageOptions(discordUser.id, quid, !mentionedUser, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user });
-		const selectMenu = await getQuidSelectMenu(discordUser.id, interaction.user.id, undefined, quid?.id, !mentionedUser);
+		const selectMenu = await getQuidSelectMenu(user.id, discordUser.id, interaction.user.id, undefined, quid?.id, !mentionedUser);
 
 		// This is always a reply
 		await respond(interaction, {
@@ -126,7 +126,7 @@ export const command: SlashCommand = {
 
 			if (!user) { throw new TypeError('user is undefined'); }
 
-			const selectMenu = await getQuidSelectMenu(user.id, interaction.user.id, undefined, quid?.id, false);
+			const selectMenu = await getQuidSelectMenu(user.id, mentionedUserId, interaction.user.id, undefined, quid?.id, false);
 
 			await Promise.all([
 				interaction.deferUpdate(),
@@ -153,7 +153,7 @@ export const command: SlashCommand = {
 
 			// This is always an update to the message with the select menu
 			await respond(interaction, {
-				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([await getQuidSelectMenu(user.id, interaction.user.id, page + 1, interaction.component.placeholder?.includes('view') === true ? undefined : quid?.id, interaction.component.placeholder?.includes('switch to') ?? false)])],
+				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([await getQuidSelectMenu(user.id, mentionedUserId, interaction.user.id, page + 1, interaction.component.placeholder?.includes('view') === true ? undefined : quid?.id, interaction.component.placeholder?.includes('switch to') ?? false)])],
 			}, 'update', interaction.message.id);
 			return;
 		}
@@ -209,7 +209,7 @@ export const command: SlashCommand = {
 			await respond(interaction, {
 				// we can interaction.user.id because the "switchto" option is only available to yourself
 				...await getProfileMessageOptions(interaction.user.id, quid, true, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user }),
-				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([await getQuidSelectMenu(user.id, interaction.user.id, page, quid?.id, true)])],
+				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([await getQuidSelectMenu(user.id, mentionedUserId, interaction.user.id, page, quid?.id, true)])],
 			}, 'update', interaction.message.id);
 
 			// This is always a followUp
@@ -236,7 +236,7 @@ export const command: SlashCommand = {
 			// This is always an update to the message with the select menu
 			await respond(interaction, {
 				...await getProfileMessageOptions(mentionedUserId, quid, false, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user }),
-				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([await getQuidSelectMenu(quid.userId, interaction.user.id, page, quid.id, false)])],
+				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([await getQuidSelectMenu(quid.userId, mentionedUserId, interaction.user.id, page, quid.id, false)])],
 			}, 'update', interaction.message.id);
 			return;
 		}
@@ -307,6 +307,7 @@ export async function getProfileMessageOptions(
  */
 async function getQuidSelectMenu(
 	userId: string,
+	discordUserId: string,
 	executorId: string,
 	page: number | undefined,
 	selectedQuidId: string | undefined,
@@ -353,7 +354,7 @@ async function getQuidSelectMenu(
 	}
 
 	return new StringSelectMenuBuilder()
-		.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, executorId, ['accountselect', userId, `${page}`]))
+		.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, executorId, ['accountselect', discordUserId, `${page}`]))
 		.setPlaceholder(`Select a quid to ${isYourself ? 'switch to' : 'view'}`)
 		.setOptions(quidOptions);
 }
