@@ -33,7 +33,18 @@ export const command: ContextMenuCommand = {
 				model: Quid, as: 'quid', attributes: ['userId'],
 			}],
 		});
-		const discordUsers = await DiscordUser.findAll({ where: { userId: webhookData?.quid?.userId } }) ?? [];
+
+		if (!webhookData) {
+
+			await interaction
+				.reply({
+					content: 'With this command, you can change which quid a proxied message you sent is from. Either the selected message is not a proxied message, or it hasn\'t been proxied by this bot.',
+					ephemeral: true,
+				});
+			return;
+		}
+
+		const discordUsers = await DiscordUser.findAll({ where: { userId: webhookData.quid.userId } }) ?? [];
 
 		/* This is checking if the user who is trying to delete the message is the same user who sent the message. */
 		if (!user || !discordUsers.some(du => du.id === interaction.user.id)) {
