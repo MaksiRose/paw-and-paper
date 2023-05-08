@@ -165,7 +165,7 @@ export async function sendErrorMessage(
 		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to execute \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 	}
 	else if (interaction.isAnySelectMenu()) {
-		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to select \x1b[31m${addCommasAndAnd(interaction.values)} \x1b[0mfrom the menu \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to select \x1b[31m${interaction.values.length === 0 ? 'nothing' : addCommasAndAnd(interaction.values)} \x1b[0mfrom the menu \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 	}
 	else if (interaction.isButton()) {
 		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to click the button \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
@@ -308,11 +308,11 @@ export function valueInObject<T extends Record<PropertyKey, any>, V extends Valu
 export function keyInObject<T extends Record<PropertyKey, any>, K extends keyof T>(
 	obj: T,
 	key: PropertyKey,
-): key is K { return Object.prototype.hasOwnProperty.call(obj, key); }
+): key is K { return Object.hasOwn(obj, key); }
 export function objectHasKey<T, K extends PropertyKey>(
 	obj: T,
 	key: K,
-): obj is T & Record<K, any> { return typeof obj === 'object' && obj !== null && Object.prototype.hasOwnProperty.call(obj, key); }
+): obj is T & Record<K, any> { return typeof obj === 'object' && obj !== null && Object.hasOwn(obj, key); }
 
 export function isObject(val: any): val is Record<string | number | symbol, unknown> { return typeof val === 'object' && val !== null; }
 

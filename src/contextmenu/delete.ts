@@ -8,6 +8,7 @@ import DiscordUser from '../models/discordUser';
 import Channel from '../models/channel';
 import { WebhookClient, Webhook as DiscordWebhook, time } from 'discord.js';
 import ProxyLimits from '../models/proxyLimits';
+const { webhook_name } = require('../../config.json');
 
 export const command: ContextMenuCommand = {
 	data: {
@@ -33,7 +34,18 @@ export const command: ContextMenuCommand = {
 				model: Quid, as: 'quid', attributes: ['userId'],
 			}],
 		});
-		const discordUsers = await DiscordUser.findAll({ where: { userId: webhookData?.quid?.userId } }) ?? [];
+
+		if (!webhookData) {
+
+			await interaction
+				.reply({
+					content: 'With this command, you can delete a proxied message you sent. Either the selected message is not a proxied message, or it hasn\'t been proxied by this bot.',
+					ephemeral: true,
+				});
+			return;
+		}
+
+		const discordUsers = await DiscordUser.findAll({ where: { userId: webhookData.quid.userId } }) ?? [];
 
 		/* This is checking if the user who is trying to delete the message is the same user who sent the message. */
 		if (!discordUsers.some(du => du.id === interaction.user.id)) {
@@ -58,8 +70,8 @@ export const command: ContextMenuCommand = {
 		const channelData = await Channel.findByPk(webhookChannel.id);
 		const webhook = channelData
 			? new WebhookClient({ url: channelData.webhookUrl })
-			: (await webhookChannel.fetchWebhooks()).find(webhook => webhook.name === 'PnP Profile Webhook')
-			|| await webhookChannel.createWebhook({ name: 'PnP Profile Webhook' });
+			: (await webhookChannel.fetchWebhooks()).find(webhook => webhook.name === webhook_name)
+			|| await webhookChannel.createWebhook({ name: webhook_name });
 
 		if (webhook instanceof DiscordWebhook) { Channel.create({ id: webhookChannel.id, serverId: webhookChannel.guildId, webhookUrl: webhook.url }); }
 
@@ -67,7 +79,7 @@ export const command: ContextMenuCommand = {
 		await webhook
 			.deleteMessage(interaction.targetId, interaction.channel.isThread() ? interaction.channel.id : undefined)
 			.catch(async err => {
-				if (err.message && err.message.includes('Unknown Webhook') && channelData) {
+				if (err.message && (err.message.includes('Unknown Webhook') || err.message.includes('The provided webhook URL is not valid')) && channelData) {
 
 					await channelData.destroy();
 					return await command.sendCommand(interaction, { server });

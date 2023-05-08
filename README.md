@@ -110,6 +110,7 @@ This needs to include the following information:
 	"dbl_token": "your discordbotlist.com token",
 	"dbl_authorization": "authorization chosen on discordbotlist.com",
 	"github_token": "your github token",
+	"webhook_name": "PnP Profile Webhook", // the webhook name chosen for discord channels, should be unique
 	"default_color": "#b4a257",
 	"error_color": "#d0342c",
 	"update_channel_id": "channel users can receive updates from",

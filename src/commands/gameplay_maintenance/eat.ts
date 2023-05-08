@@ -111,7 +111,7 @@ export async function sendEatMessage(
 	const mentionedUserMatch = chosenFood.match(FormattingPatterns.User);
 	if (mentionedUserMatch) {
 
-		const taggedDiscordUser = await DiscordUser.findByPk(interaction.user.id, {
+		const taggedDiscordUser = await DiscordUser.findByPk(mentionedUserMatch[0] ?? '', {
 			include: [{ model: User, as: 'user' }],
 		}) ?? undefined;
 		const taggedUser = taggedDiscordUser?.user;

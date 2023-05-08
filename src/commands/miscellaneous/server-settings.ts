@@ -442,7 +442,7 @@ export const command: SlashCommand = {
 				await respond(interaction, await getProxyingLoggingMessage(interaction, server, page), 'update', interaction.message.id);
 				return;
 			}
-			else if (selectOptionId === undefined || selectOptionId === server.visitChannelId || selectOptionId === 'off') {
+			else if (selectOptionId === undefined || selectOptionId === server.logChannelId || selectOptionId === 'off') {
 
 				await server.update({ logChannelId: null });
 
@@ -658,7 +658,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		if (interaction.isButton() && interaction.customId.includes('proxying_channel_setTo')) {
+		if (interaction.isButton() && interaction.customId.includes('proxying_role_setTo')) {
 
 			const roleLimits = await ProxyLimits.findByPk(server.proxy_roleLimitsId);
 			if (!roleLimits) { throw new TypeError('roleLimits is null'); }
@@ -1010,7 +1010,7 @@ async function getVisitsMessage(
 		let adjustedPage = page % pageCount;
 		if (adjustedPage < 0) { adjustedPage += pageCount; }
 
-		updatesMenuOptions = updatesMenuOptions.splice(page * 24, 24);
+		updatesMenuOptions = updatesMenuOptions.splice(adjustedPage * 24, 24);
 		updatesMenuOptions.push({ label: 'Show more channels', value: `nextpage_${adjustedPage}`, description: `You are currently on page ${adjustedPage + 1}`, emoji: '📋' });
 	}
 
@@ -1079,8 +1079,8 @@ async function getProxyingLoggingMessage(
 		let adjustedPage = page % pageCount;
 		if (adjustedPage < 0) { adjustedPage += pageCount; }
 
-		loggingChannelSelectMenuOptions = loggingChannelSelectMenuOptions.splice(page * 24, 24);
-		loggingChannelSelectMenuOptions.push({ label: 'Show more channels', value: `nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
+		loggingChannelSelectMenuOptions = loggingChannelSelectMenuOptions.splice(adjustedPage * 24, 24);
+		loggingChannelSelectMenuOptions.push({ label: 'Show more channels', value: `nextpage_${adjustedPage}`, description: `You are currently on page ${adjustedPage + 1}`, emoji: '📋' });
 	}
 
 	return {
@@ -1125,8 +1125,8 @@ async function getProxyingLoggingAdvancedMessage(
 		let adjustedPage = page % pageCount;
 		if (adjustedPage < 0) { adjustedPage += pageCount; }
 
-		disableSelectMenuOptions = disableSelectMenuOptions.splice(page * 24, 24);
-		disableSelectMenuOptions.push({ label: 'Show more channels', value: `nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
+		disableSelectMenuOptions = disableSelectMenuOptions.splice(adjustedPage * 24, 24);
+		disableSelectMenuOptions.push({ label: 'Show more channels', value: `nextpage_${adjustedPage}`, description: `You are currently on page ${adjustedPage + 1}`, emoji: '📋' });
 	}
 
 	return {
@@ -1187,8 +1187,8 @@ async function getProxyingNamerulesMessage(
 		let adjustedPage = page % pageCount;
 		if (adjustedPage < 0) { adjustedPage += pageCount; }
 
-		ruleSelectMenuOptions = ruleSelectMenuOptions.splice(page * 24, 24);
-		ruleSelectMenuOptions.push({ label: 'Show more rulesets', value: `nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
+		ruleSelectMenuOptions = ruleSelectMenuOptions.splice(adjustedPage * 24, 24);
+		ruleSelectMenuOptions.push({ label: 'Show more rulesets', value: `nextpage_${adjustedPage}`, description: `You are currently on page ${adjustedPage + 1}`, emoji: '📋' });
 	}
 
 	return {
@@ -1227,8 +1227,8 @@ async function getProxyingChannelsMessage(
 		let adjustedPage = page % pageCount;
 		if (adjustedPage < 0) { adjustedPage += pageCount; }
 
-		disableSelectMenuOptions = disableSelectMenuOptions.splice(page * 24, 24);
-		disableSelectMenuOptions.push({ label: 'Show more channels', value: `nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
+		disableSelectMenuOptions = disableSelectMenuOptions.splice(adjustedPage * 24, 24);
+		disableSelectMenuOptions.push({ label: 'Show more channels', value: `nextpage_${adjustedPage}`, description: `You are currently on page ${adjustedPage + 1}`, emoji: '📋' });
 	}
 
 	return {
@@ -1272,8 +1272,8 @@ async function getProxyingRolesMessage(
 		let adjustedPage = page % pageCount;
 		if (adjustedPage < 0) { adjustedPage += pageCount; }
 
-		disableSelectMenuOptions = disableSelectMenuOptions.splice(page * 24, 24);
-		disableSelectMenuOptions.push({ label: 'Show more roles', value: `nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
+		disableSelectMenuOptions = disableSelectMenuOptions.splice(adjustedPage * 24, 24);
+		disableSelectMenuOptions.push({ label: 'Show more roles', value: `nextpage_${adjustedPage}`, description: `You are currently on page ${adjustedPage + 1}`, emoji: '📋' });
 	}
 
 	return {

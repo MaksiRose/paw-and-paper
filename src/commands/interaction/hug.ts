@@ -114,7 +114,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		const discordUser = await DiscordUser.findByPk(interaction.user.id, {
+		const discordUser = await DiscordUser.findByPk(originalUserId, {
 			include: [{ model: User, as: 'user' }],
 		}) ?? undefined;
 		const user = discordUser?.user;
