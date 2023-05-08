@@ -16,7 +16,7 @@ const maxModalLength = (maxPronounLength * 5) + 8 + 5; // In the modal, the most
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
 		.setName('pronouns')
-		.setDescription('Choose the pronouns you are using during roleplay.')
+		.setDescription('Choose the pronouns you want displayed on your profile.')
 		.toJSON(),
 	category: 'page1',
 	position: 2,
