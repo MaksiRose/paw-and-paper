@@ -658,7 +658,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		if (interaction.isButton() && interaction.customId.includes('proxying_channel_setTo')) {
+		if (interaction.isButton() && interaction.customId.includes('proxying_role_setTo')) {
 
 			const roleLimits = await ProxyLimits.findByPk(server.proxy_roleLimitsId);
 			if (!roleLimits) { throw new TypeError('roleLimits is null'); }
