@@ -1,4 +1,4 @@
-import { Client, Collection, GatewayIntentBits, Options } from 'discord.js';
+import { Client, Collection, GatewayIntentBits, Options, Partials } from 'discord.js';
 import { Sequelize } from 'sequelize-typescript';
 import { readdirSync } from 'fs';
 import path from 'path';
@@ -73,12 +73,15 @@ sequelize.authenticate()
 	.catch(function(error) { console.error('Unable to connect to the database:', error); });
 
 
-/* Note: Once slash commands replace message commands, DIRECT_MESSAGES intent and CHANNEL partial can be removed */
 export const client = new Client({
 	intents: [
 		GatewayIntentBits.Guilds,
 		GatewayIntentBits.GuildMessages,
 		GatewayIntentBits.MessageContent,
+		GatewayIntentBits.DirectMessages,
+	],
+	partials: [
+		Partials.Channel,
 	],
 	allowedMentions: {
 		parse: ['users', 'roles'],
