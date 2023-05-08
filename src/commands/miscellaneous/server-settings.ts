@@ -442,7 +442,7 @@ export const command: SlashCommand = {
 				await respond(interaction, await getProxyingLoggingMessage(interaction, server, page), 'update', interaction.message.id);
 				return;
 			}
-			else if (selectOptionId === undefined || selectOptionId === server.visitChannelId || selectOptionId === 'off') {
+			else if (selectOptionId === undefined || selectOptionId === server.logChannelId || selectOptionId === 'off') {
 
 				await server.update({ logChannelId: null });
 
