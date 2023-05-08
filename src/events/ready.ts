@@ -12,6 +12,8 @@ export const event: DiscordEvent = {
 		console.log('Patchwork is online!');
 		client.user?.setActivity('/help', { type: ActivityType.Listening });
 
+		// A check should be added that compares the current commands with the existing commands and only sets the commands when they differ from the existing commands
+
 		await client.application.commands.set(applicationCommands);
 		for (const [guildId, applicationCommandsGuild] of applicationCommandsGuilds) {
 			await client.application.commands.set(applicationCommandsGuild, guildId);

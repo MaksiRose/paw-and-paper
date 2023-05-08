@@ -42,8 +42,8 @@ export const command: SlashCommand = {
 	modifiesServerProfile: false,
 	sendCommand: async (interaction) => {
 
-		await interaction.client.application.fetch();
-		if ((interaction.client.application.owner instanceof User) ? interaction.user.id !== interaction.client.application.owner.id : interaction.client.application.owner ? !interaction.client.application.owner.members.has(interaction.user.id) : false) { throw new Error('403: user is not bot owner'); }
+		const application = await interaction.client.application.fetch();
+		if ((application.owner instanceof User) ? interaction.user.id !== application.owner.id : application.owner ? !application.owner.members.has(interaction.user.id) : false) { throw new Error('403: user is not bot owner'); }
 
 		const notified: string[] = [];
 		const type = interaction.options.getString('type');
