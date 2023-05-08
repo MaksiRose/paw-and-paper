@@ -556,8 +556,8 @@ async function getProxyingLoggingMessage(
 		let adjustedPage = page % pageCount;
 		if (adjustedPage < 0) { adjustedPage += pageCount; }
 
-		loggingChannelSelectMenuOptions = loggingChannelSelectMenuOptions.splice(page * 24, 24);
-		loggingChannelSelectMenuOptions.push({ label: 'Show more channels', value: `nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
+		loggingChannelSelectMenuOptions = loggingChannelSelectMenuOptions.splice(adjustedPage * 24, 24);
+		loggingChannelSelectMenuOptions.push({ label: 'Show more channels', value: `nextpage_${adjustedPage}`, description: `You are currently on page ${adjustedPage + 1}`, emoji: '📋' });
 	}
 
 	return {
@@ -602,8 +602,8 @@ async function getProxyingLoggingAdvancedMessage(
 		let adjustedPage = page % pageCount;
 		if (adjustedPage < 0) { adjustedPage += pageCount; }
 
-		disableSelectMenuOptions = disableSelectMenuOptions.splice(page * 24, 24);
-		disableSelectMenuOptions.push({ label: 'Show more channels', value: `nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
+		disableSelectMenuOptions = disableSelectMenuOptions.splice(adjustedPage * 24, 24);
+		disableSelectMenuOptions.push({ label: 'Show more channels', value: `nextpage_${adjustedPage}`, description: `You are currently on page ${adjustedPage + 1}`, emoji: '📋' });
 	}
 
 	return {
@@ -664,8 +664,8 @@ async function getProxyingNamerulesMessage(
 		let adjustedPage = page % pageCount;
 		if (adjustedPage < 0) { adjustedPage += pageCount; }
 
-		ruleSelectMenuOptions = ruleSelectMenuOptions.splice(page * 24, 24);
-		ruleSelectMenuOptions.push({ label: 'Show more rulesets', value: `nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
+		ruleSelectMenuOptions = ruleSelectMenuOptions.splice(adjustedPage * 24, 24);
+		ruleSelectMenuOptions.push({ label: 'Show more rulesets', value: `nextpage_${adjustedPage}`, description: `You are currently on page ${adjustedPage + 1}`, emoji: '📋' });
 	}
 
 	return {
@@ -704,8 +704,8 @@ async function getProxyingChannelsMessage(
 		let adjustedPage = page % pageCount;
 		if (adjustedPage < 0) { adjustedPage += pageCount; }
 
-		disableSelectMenuOptions = disableSelectMenuOptions.splice(page * 24, 24);
-		disableSelectMenuOptions.push({ label: 'Show more channels', value: `nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
+		disableSelectMenuOptions = disableSelectMenuOptions.splice(adjustedPage * 24, 24);
+		disableSelectMenuOptions.push({ label: 'Show more channels', value: `nextpage_${adjustedPage}`, description: `You are currently on page ${adjustedPage + 1}`, emoji: '📋' });
 	}
 
 	return {
@@ -749,8 +749,8 @@ async function getProxyingRolesMessage(
 		let adjustedPage = page % pageCount;
 		if (adjustedPage < 0) { adjustedPage += pageCount; }
 
-		disableSelectMenuOptions = disableSelectMenuOptions.splice(page * 24, 24);
-		disableSelectMenuOptions.push({ label: 'Show more roles', value: `nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
+		disableSelectMenuOptions = disableSelectMenuOptions.splice(adjustedPage * 24, 24);
+		disableSelectMenuOptions.push({ label: 'Show more roles', value: `nextpage_${adjustedPage}`, description: `You are currently on page ${adjustedPage + 1}`, emoji: '📋' });
 	}
 
 	return {
