@@ -319,14 +319,13 @@ export async function getGroupMessage(
 
 	let groupOptions: RestOrArray<SelectMenuComponentOptionData> = groups.map(group => ({
 		label: group.name,
+		description: `ID: ${group.id}`,
 		value: constructSelectOptions<SelectOptionArgs>(['switchto', group.id]),
-		default: currentGroup?.id === group.id ? true : false,
 	}));
 
 	groupOptions.push({
 		label: 'Empty Slot',
 		value: constructSelectOptions<SelectOptionArgs>(['switchto', '']),
-		default: currentGroup === undefined ? true : false,
 	});
 
 	if (groupOptions.length > 25) {
@@ -370,7 +369,8 @@ export async function getGroupMessage(
 				.setComponents(new StringSelectMenuBuilder()
 					.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, user.id, ['groupselect', `${page}`]))
 					.setPlaceholder('Select a group to view/edit')
-					.setOptions(groupOptions)),
+					.setOptions(groupOptions)
+					.setMinValues(0)),
 			new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(currentGroup === undefined ?
 					[new ButtonBuilder()
