@@ -51,10 +51,18 @@ export const command: SlashCommand = {
 			cluster.worker.send('restart');
 			new Promise<void>((resolve, reject) => {
 
-				const processFunc = async (message: any) => {
+				const rejectionTimeout = setTimeout(() => {
+					reject();
+					process.removeListener('message', processFunc);
+				}, 300000);
+
+				process.once('message', processFunc);
+
+				async function processFunc(message: any) {
 
 					if (typeof message === 'string' && message === 'ready') {
 
+						clearTimeout(rejectionTimeout);
 						killEvents();
 						killIntervals();
 
@@ -76,14 +84,7 @@ export const command: SlashCommand = {
 					}
 					process.removeListener('message', processFunc);
 					resolve();
-				};
-
-				setTimeout(() => {
-					reject();
-					process.removeListener('message', processFunc);
-				}, 300000);
-
-				process.once('message', processFunc);
+				}
 			})
 				.catch(async () => {
 
