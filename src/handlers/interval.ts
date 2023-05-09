@@ -12,10 +12,12 @@ import UserToServer from '../models/userToServer';
 import { hasNameAndSpecies } from '../utils/checkUserState';
 import { now, sendErrorMessage } from '../utils/helperFunctions';
 
+const intervals: NodeJS.Timer[] = [];
+
 /** It's checking whether the deletionTime of a property on the toDeleteList is older than an hour from now, and if it is, delete the property and delete the file from the toDelete folder. It's also checking whether a profile has a temporaryStatIncrease with a timestamp that is older than a week ago, and if it does, bring the stat back and delete the property from temporaryStatIncrease. */
 export async function execute(): Promise<void> {
 
-	setInterval(async () => {
+	const interval1 = setInterval(async () => {
 
 		/* It's checking whether the deletionTime of a property on the toDeleteList is older than an hour from now, and if it is, delete the property and delete the file from the toDelete folder. */
 		// const toDeleteList: DeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8'));
@@ -46,6 +48,7 @@ export async function execute(): Promise<void> {
 			await temporaryStatIncrease.destroy();
 		}
 	}, 3_600_000);
+	intervals.push(interval1);
 
 
 	async function tenSecondInterval() {
@@ -115,5 +118,15 @@ export async function execute(): Promise<void> {
 		}
 	}
 	tenSecondInterval();
-	setInterval(tenSecondInterval, 10_000);
+	const interval2 = setInterval(tenSecondInterval, 10_000);
+	intervals.push(interval2);
+}
+
+export function destroyIntervals(
+): void {
+
+	for (const interval of intervals) {
+
+		clearInterval(interval);
+	}
 }

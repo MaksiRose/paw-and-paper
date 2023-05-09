@@ -1,6 +1,10 @@
 import { PermissionFlagsBits, SlashCommandBuilder, User } from 'discord.js';
 import { respond } from '../../utils/helperFunctions';
 import { SlashCommand } from '../../typings/handle';
+import cluster from 'node:cluster';
+import { killEvents, waitForOperations } from '../../handlers/events';
+import { destroyIntervals as killIntervals } from '../../handlers/interval';
+import { exec } from 'node:child_process';
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -18,12 +22,106 @@ export const command: SlashCommand = {
 		const application = await interaction.client.application.fetch();
 		if ((application.owner instanceof User) ? interaction.user.id !== application.owner.id : application.owner ? !application.owner.members.has(interaction.user.id) : false) { return; }
 
-		// This is always a reply
-		await respond(interaction, {
-			content: 'Restarted!',
-		});
+		if (cluster.worker) {
 
-		interaction.client.destroy();
-		process.exit();
+			const { id } = await interaction.deferReply({ fetchReply: true });
+
+			const res = await new Promise<boolean>((resolve, reject) => {
+				exec('git pull origin stable && npm update && rm -rf dist && tsc -p tsconfig.json', (error, stdout, stderr) => {
+					if (error) {
+						console.error(`exec error: ${error}`);
+						reject(error);
+					}
+					else {
+						console.log(`stdout: ${stdout}`);
+						console.error(`stderr: ${stderr}`);
+					}
+					resolve(true);
+				});
+			}).catch(async (reason) => {
+
+				// This is always an editReply
+				await respond(interaction, {
+					content: `Restart wasn't successful because the command execution failed:\n${reason}`,
+				}, 'update', id);
+				return false;
+			});
+			if (res === false) { return; }
+
+			cluster.worker.send('restart');
+			await new Promise<void>((resolve, reject) => {
+
+				const processFunc = async (message: any) => {
+
+					if (typeof message === 'string' && message === 'ready') {
+
+						killEvents();
+						killIntervals();
+
+						// This is always an editReply
+						await respond(interaction, {
+							content: 'Restarted!',
+						}, 'update', id);
+
+						await waitForOperations();
+						interaction.client.destroy();
+						cluster.worker!.kill();
+					}
+					else {
+
+						// This is always an editReply
+						await respond(interaction, {
+							content: `Restart wasn't successful. The primary worker didn't report back with the new worker saying "ready", instead it sent:\n${message}`,
+						}, 'update', id);
+					}
+					process.removeListener('message', processFunc);
+					resolve();
+				};
+
+				setTimeout(() => {
+					reject();
+					process.removeListener('message', processFunc);
+				}, 300000);
+
+				process.once('message', processFunc);
+			})
+				.catch(async () => {
+
+					await respond(interaction, {
+						content: 'Restart wasn\'t successful. The primary worker didn\'t report back with the new worker saying "ready", instead it didn\'t report anything for 5 minutes, so the process got aborted.',
+					}, 'update', id);
+				});
+		}
+		else {
+
+			// This is always a reply
+			await respond(interaction, {
+				content: 'A cluster worker object hasn\'t been found. A normal restart will be started.',
+			});
+
+			await new Promise<boolean>((resolve, reject) => {
+				exec('git pull origin stable && npm update && rm -rf dist && tsc -p tsconfig.json', (error, stdout, stderr) => {
+					if (error) {
+						console.error(`exec error: ${error}`);
+						reject(error);
+					}
+					else {
+						console.log(`stdout: ${stdout}`);
+						console.error(`stderr: ${stderr}`);
+					}
+					resolve(true);
+				});
+			}).catch(async (reason) => {
+
+				// This is always a followUp
+				await respond(interaction, {
+					content: `Command execution failed:\n${reason}`,
+				});
+				return false;
+			});
+
+			interaction.client.destroy();
+			process.exit();
+		}
 	},
 };
