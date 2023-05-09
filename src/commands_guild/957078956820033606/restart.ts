@@ -49,7 +49,7 @@ export const command: SlashCommand = {
 			if (res === false) { return; }
 
 			cluster.worker.send('restart');
-			await new Promise<void>((resolve, reject) => {
+			new Promise<void>((resolve, reject) => {
 
 				const processFunc = async (message: any) => {
 
