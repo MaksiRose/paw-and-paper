@@ -1,6 +1,6 @@
 import { readdirSync } from 'fs';
 import path from 'path';
-import { client } from '..';
+import { client } from '../cluster';
 import { DiscordEvent } from '../typings/main';
 
 /** Adds all events to the client */

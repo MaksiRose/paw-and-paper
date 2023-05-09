@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import Fuse from 'fuse.js';
 import { Op } from 'sequelize';
-import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../..';
+import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../../cluster';
 import Den from '../../models/den';
 import DiscordUser from '../../models/discordUser';
 import DiscordUserToServer from '../../models/discordUserToServer';

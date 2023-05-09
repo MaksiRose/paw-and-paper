@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, StringSelectMenuBuilder, SlashCommandBuilder } from 'discord.js';
-import { handle } from '../..';
+import { handle } from '../../cluster';
 import Quid from '../../models/quid';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';

@@ -1,6 +1,6 @@
 import { ActionRowBuilder, APIEmbedField, EmbedBuilder, StringSelectMenuBuilder, SlashCommandBuilder, ButtonStyle } from 'discord.js';
 import { getArrayElement, respond } from '../../utils/helperFunctions';
-import { client, handle, octokit } from '../..';
+import { client, handle, octokit } from '../../cluster';
 import { SlashCommand } from '../../typings/handle';
 import { ButtonBuilder } from '@discordjs/builders';
 

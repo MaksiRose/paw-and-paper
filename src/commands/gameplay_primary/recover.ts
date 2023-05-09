@@ -1,6 +1,6 @@
 import { AsyncQueue } from '@sapphire/async-queue';
 import { ActionRowBuilder, APIActionRowComponent, APIButtonComponent, APISelectMenuComponent, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder } from 'discord.js';
-import { commonPlantsInfo, rarePlantsInfo, specialPlantsInfo, uncommonPlantsInfo } from '../..';
+import { commonPlantsInfo, rarePlantsInfo, specialPlantsInfo, uncommonPlantsInfo } from '../../cluster';
 import Quid from '../../models/quid';
 import QuidToServer from '../../models/quidToServer';
 import User from '../../models/user';

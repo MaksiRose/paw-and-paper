@@ -1,7 +1,7 @@
 import { AsyncQueue } from '@sapphire/async-queue';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { Op } from 'sequelize';
-import { client } from '../..';
+import { client } from '../../cluster';
 import DiscordUser from '../../models/discordUser';
 import DiscordUserToServer from '../../models/discordUserToServer';
 import Quid from '../../models/quid';

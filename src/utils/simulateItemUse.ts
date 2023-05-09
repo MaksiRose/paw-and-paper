@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '..';
+import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../cluster';
 import { addCorrectDietHungerPoints, removeHungerPoints } from '../commands/gameplay_maintenance/eat';
 import { getStatsPoints, isUnlucky as healingIsUnlucky, quidNeedsHealing } from '../commands/gameplay_maintenance/heal';
 import { addMaterialPoints, isUnlucky as repairingIsUnlucky } from '../commands/gameplay_maintenance/repair';

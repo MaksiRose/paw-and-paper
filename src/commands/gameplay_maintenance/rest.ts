@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, Message, RepliableInteraction, SlashCommandBuilder } from 'discord.js';
-import { client } from '../..';
+import { client } from '../../cluster';
 import Den from '../../models/den';
 import Quid from '../../models/quid';
 import QuidToServer from '../../models/quidToServer';

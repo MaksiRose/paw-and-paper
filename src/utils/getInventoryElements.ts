@@ -1,5 +1,5 @@
 import { RestOrArray, SelectMenuComponentOptionData } from 'discord.js';
-import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '..';
+import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../cluster';
 import { objectHasKey } from './helperFunctions';
 
 export default function getInventoryElements(

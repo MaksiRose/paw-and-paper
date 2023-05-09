@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder } from 'discord.js';
 import { Op } from 'sequelize';
-import { speciesInfo } from '../..';
+import { speciesInfo } from '../../cluster';
 import DiscordUser from '../../models/discordUser';
 import Quid from '../../models/quid';
 import QuidToServer from '../../models/quidToServer';

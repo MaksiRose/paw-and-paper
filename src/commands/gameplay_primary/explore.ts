@@ -17,7 +17,7 @@ import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
 import { RankType } from '../../typings/data/user';
 import { SpeciesHabitatType } from '../../typings/main';
-import { materialsInfo, speciesInfo } from '../..';
+import { materialsInfo, speciesInfo } from '../../cluster';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { AsyncQueue } from '@sapphire/async-queue';
 import QuidToServer from '../../models/quidToServer';

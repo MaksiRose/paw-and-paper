@@ -3,7 +3,7 @@ const bfd = require('bfd-api-redux');
 import express from 'express';
 import AutoPoster from 'topgg-autoposter';
 import { Api, Webhook } from '@top-gg/sdk';
-import { client, handle } from '..';
+import { client, handle } from '../cluster';
 import DiscordUser from '../models/discordUser';
 import User from '../models/user';
 import { now } from '../utils/helperFunctions';

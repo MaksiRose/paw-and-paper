@@ -1,7 +1,7 @@
 import { generateId } from 'crystalid';
 import { ChatInputCommandInteraction, EmbedBuilder, FormattingPatterns, AnySelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import Fuse from 'fuse.js';
-import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../..';
+import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../../cluster';
 import Den from '../../models/den';
 import DiscordUser from '../../models/discordUser';
 import Quid from '../../models/quid';
