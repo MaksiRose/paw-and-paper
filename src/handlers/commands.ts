@@ -1,7 +1,7 @@
 import { RESTPostAPIApplicationCommandsJSONBody } from 'discord.js';
 import { readdirSync, lstatSync } from 'fs';
 import path from 'path';
-import { handle } from '..';
+import { handle } from '../cluster';
 import { SlashCommand, ContextMenuCommand } from '../typings/handle';
 
 export const applicationCommands: Array<RESTPostAPIApplicationCommandsJSONBody> = [];

@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ModalBuilde
 import { capitalize, keyInObject, respond } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
 import { missingPermissions } from '../../utils/permissionHandler';
-import { speciesInfo } from '../..';
+import { speciesInfo } from '../../cluster';
 import { SpeciesNames } from '../../typings/data/general';
 import { SlashCommand } from '../../typings/handle';
 import { constructCustomId, constructSelectOptions, deconstructCustomId, deconstructSelectOptions } from '../../utils/customId';

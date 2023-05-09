@@ -5,7 +5,7 @@ import { disableAllComponents } from '../utils/componentDisabling';
 import { addCommasAndAnd, getFirstLine, keyInObject, now, respond } from '../utils/helperFunctions';
 import { createGuild } from '../utils/updateGuild';
 import { sendErrorMessage } from '../utils/helperFunctions';
-import { client, handle } from '../index';
+import { client, handle } from '../cluster';
 import { deconstructCustomId } from '../utils/customId';
 import DiscordUser from '../models/discordUser';
 import Server from '../models/server';

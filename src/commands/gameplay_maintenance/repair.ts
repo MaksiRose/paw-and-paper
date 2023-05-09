@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, StringSelectMenuBuilder, SlashCommandBuilder, WebhookMessageEditOptions, ChatInputCommandInteraction, ButtonInteraction } from 'discord.js';
-import { materialsInfo } from '../..';
+import { materialsInfo } from '../../cluster';
 import Den from '../../models/den';
 import Quid from '../../models/quid';
 import QuidToServer from '../../models/quidToServer';

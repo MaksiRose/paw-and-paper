@@ -1,5 +1,5 @@
 import { ActivityType } from 'discord.js';
-import { client } from '..';
+import { client } from '../cluster';
 import { DiscordEvent } from '../typings/main';
 
 export const event: DiscordEvent = {

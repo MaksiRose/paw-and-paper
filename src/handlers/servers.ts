@@ -1,4 +1,4 @@
-import { client } from '..';
+import { client } from '../cluster';
 import Server from '../models/server';
 import { createGuild } from '../utils/updateGuild';
 

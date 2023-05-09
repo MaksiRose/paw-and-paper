@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder } from 'discord.js';
-import { speciesInfo } from '../..';
+import { speciesInfo } from '../../cluster';
 import Quid from '../../models/quid';
 import QuidToServer from '../../models/quidToServer';
 import User from '../../models/user';

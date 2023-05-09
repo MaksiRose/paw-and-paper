@@ -1,6 +1,6 @@
 import { PermissionFlagsBits, SlashCommandBuilder, User } from 'discord.js';
 import { objectHasKey, respond } from '../../utils/helperFunctions';
-import { sequelize } from '../..';
+import { sequelize } from '../../cluster';
 import { SlashCommand } from '../../typings/handle';
 
 export const command: SlashCommand = {
