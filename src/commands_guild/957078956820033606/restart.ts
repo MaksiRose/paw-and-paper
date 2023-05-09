@@ -54,7 +54,7 @@ export const command: SlashCommand = {
 				const rejectionTimeout = setTimeout(() => {
 					reject();
 					process.removeListener('message', processFunc);
-				}, 300000);
+				}, 600000);
 
 				process.once('message', processFunc);
 
@@ -89,7 +89,7 @@ export const command: SlashCommand = {
 				.catch(async () => {
 
 					await respond(interaction, {
-						content: 'Restart wasn\'t successful. The primary worker didn\'t report back with the new worker saying "ready", instead it didn\'t report anything for 5 minutes, so the process got aborted.',
+						content: 'Restart wasn\'t successful. The primary worker didn\'t report back with the new worker saying "ready", instead it didn\'t report anything for 10 minutes, so the process got aborted.',
 					}, 'update', id);
 				});
 		}
