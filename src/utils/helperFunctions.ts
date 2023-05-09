@@ -364,5 +364,5 @@ export async function setCooldown(
 export function delay(
 	ms: number,
 ): Promise<void> {
-	return new Promise((resolve: () => void) => setTimeout(resolve, ms));
+	return new Promise<void>((resolve: () => void) => setTimeout(resolve, ms));
 }
