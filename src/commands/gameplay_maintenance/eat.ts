@@ -17,7 +17,7 @@ import { hasName, hasNameAndSpecies, isInGuild } from '../../utils/checkUserStat
 import { isInvalid } from '../../utils/checkValidity';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { getDisplayname, getDisplayspecies, pronoun, pronounAndPlural } from '../../utils/getQuidInfo';
-import { capitalize, keyInObject, now, respond } from '../../utils/helperFunctions';
+import { capitalize, deepCopy, keyInObject, now, respond } from '../../utils/helperFunctions';
 import { getRandomNumber } from '../../utils/randomizers';
 import { wearDownDen } from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -139,6 +139,7 @@ export async function sendEatMessage(
 	let increasedMaxStatType: StatIncreaseType | null = null;
 
 	let footerText = '';
+	const newInv = deepCopy(server.inventory);
 
 	if (keyInObject(allPlantsInfo, chosenFood)) {
 
@@ -157,13 +158,13 @@ export async function sendEatMessage(
 			await TemporaryStatIncrease.create({ id: generateId(), type: increasedMaxStatType, startedTimestamp: now(), quidToServerId: quidToServer.id });
 		}
 
-		if (server.inventory.filter(i => i === chosenFood).length <= 0) {
+		if (newInv.filter(i => i === chosenFood).length <= 0) {
 
 			// If this is a ChatInputCommand, this is a reply, else this is an update to the message with the component
 			await sendNoItemMessage(embed, quid, chosenFood, interaction, messageContent, restEmbed);
 			return;
 		}
-		server.inventory.splice(server.inventory.findIndex(i => i === chosenFood), 1);
+		newInv.splice(newInv.findIndex(i => i === chosenFood), 1);
 
 		const foodDen = await Den.findByPk(server.foodDenId, { rejectOnEmpty: true });
 
@@ -212,13 +213,13 @@ export async function sendEatMessage(
 	}
 	else if (keyInObject(speciesInfo, chosenFood)) {
 
-		if (server.inventory.filter(i => i === chosenFood).length <= 0) {
+		if (newInv.filter(i => i === chosenFood).length <= 0) {
 
 			// If this is a ChatInputCommand, this is a reply, else this is an update to the message with the component
 			await sendNoItemMessage(embed, quid, chosenFood, interaction, messageContent, restEmbed);
 			return;
 		}
-		server.inventory.splice(server.inventory.findIndex(i => i === chosenFood), 1);
+		newInv.splice(newInv.findIndex(i => i === chosenFood), 1);
 
 		const foodDen = await Den.findByPk(server.foodDenId, { rejectOnEmpty: true });
 
@@ -252,7 +253,7 @@ export async function sendEatMessage(
 		},
 		...(increasedMaxStatType ? { [increasedMaxStatType]: quidToServer[increasedMaxStatType] + 10 } : {}),
 	});
-	await server.update({ inventory: [...server.inventory] });
+	await server.update({ inventory: newInv });
 
 	footerText += `${finalHungerPoints >= 0 ? '+' : ''}${finalHungerPoints} hunger (${quidToServer.hunger}/${quidToServer.maxHunger})`;
 
