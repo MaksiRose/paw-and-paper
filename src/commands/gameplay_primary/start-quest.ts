@@ -173,7 +173,7 @@ export async function sendQuestMessage(
 
 	const components = [new ActionRowBuilder<ButtonBuilder>()
 		.setComponents(new ButtonBuilder()
-			.setCustomId('start-quest_start')
+			.setCustomId(`start-quest_start_@${quid.id}`)
 			.setLabel('Start quest')
 			.setEmoji('⭐')
 			.setStyle(ButtonStyle.Success))];
