@@ -21,7 +21,7 @@ import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 const { default_color } = require('../../../config.json');
 
-type serverMapInfo = { startsTimestamp: number | null, idleHumans: number, endingTimeout: NodeJS.Timeout | null, ongoingFights: number, stealInterval: NodeJS.Timer | null }
+type serverMapInfo = { startsTimestamp: number | null, idleHumans: number, endingTimeout: NodeJS.Timeout | null, ongoingFights: number, stealInterval: NodeJS.Timeout | null }
 const serverMap: Map<string, serverMapInfo > = new Map();
 
 type CustomIdArgs = ['new'] | ['new', string]
