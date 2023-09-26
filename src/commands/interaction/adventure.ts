@@ -24,7 +24,7 @@ import User from '../../models/user';
 import Friendship from '../../models/friendship';
 import { Op } from 'sequelize';
 import { updateAndGetMembers } from '../../utils/checkRoleRequirements';
-import { specialPlantsInfo } from '../..';
+import { specialPlantsInfo } from '../../cluster';
 const { error_color } = require('../../../config.json');
 
 export const command: SlashCommand = {

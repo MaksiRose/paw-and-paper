@@ -1,5 +1,5 @@
 import { Guild } from 'discord.js';
-import { client } from '../index';
+import { client } from '../cluster';
 import Server from '../models/server';
 import { DiscordEvent } from '../typings/main';
 

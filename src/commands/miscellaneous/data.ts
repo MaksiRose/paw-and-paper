@@ -2,7 +2,7 @@ import { generateId } from 'crystalid';
 import { AttachmentBuilder, SlashCommandBuilder } from 'discord.js';
 import { Op } from 'sequelize';
 import { request } from 'undici';
-import { speciesInfo } from '../..';
+import { speciesInfo } from '../../cluster';
 import BannedUser from '../../models/bannedUser';
 import DiscordUser from '../../models/discordUser';
 import DiscordUserToServer from '../../models/discordUserToServer';

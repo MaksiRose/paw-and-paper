@@ -15,7 +15,7 @@ import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { createFightGame } from '../../utils/gameBuilder';
 import { getDisplayname, pronounAndPlural, pronoun, getDisplayspecies } from '../../utils/getQuidInfo';
-import { getMessageId, now, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
+import { deepCopy, getMessageId, now, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -234,7 +234,7 @@ async function executeAttacking(
 
 			if (winLoseRatio < 1) {
 
-				const newServer = { inventory: [...server.inventory] };
+				const newServer = { inventory: deepCopy(server.inventory) };
 				minusItemText += removeByHighestItem(newServer, interaction.guild.name);
 				await server.update({ inventory: newServer.inventory });
 			}
@@ -377,7 +377,7 @@ export async function startAttack(
 					const server = await Server.findByPk(interaction.guildId, { rejectOnEmpty: true });
 
 					let footerText = '';
-					const newServer = { inventory: [...server.inventory] };
+					const newServer = { inventory: deepCopy(server.inventory) };
 					for (let i = 0; i < serverAttackInfo.idleHumans; i++) {
 
 						footerText += removeByHighestItem(newServer, interaction.guild.name);
@@ -470,7 +470,7 @@ async function remainingHumans(
 	const server = await Server.findByPk(interaction.guildId, { rejectOnEmpty: true });
 
 	let footerText = '';
-	const newServer = { inventory: [...server.inventory] };
+	const newServer = { inventory: deepCopy(server.inventory) };
 	while (serverAttackInfo.idleHumans > 0) {
 
 		footerText += removeByHighestItem(newServer, interaction.guild.name);
@@ -505,7 +505,7 @@ function removeByHighestItem(
 	name: string,
 ): string {
 
-	const arr = [...server.inventory];
+	const arr = server.inventory;
 	if (arr.length <= 0) { return ''; }
 
 	const obj: Record<string, number> = {};

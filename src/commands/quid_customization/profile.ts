@@ -2,7 +2,7 @@ import { ActionRowBuilder, EmbedBuilder, InteractionReplyOptions, RestOrArray, S
 import { capitalize, deepCopy, respond } from '../../utils/helperFunctions';
 import { hasName, hasNameAndSpecies } from '../../utils/checkUserState';
 import { hasCooldown, checkResting } from '../../utils/checkValidity';
-import { client } from '../..';
+import { client } from '../../cluster';
 import { SlashCommand } from '../../typings/handle';
 import { constructCustomId, constructSelectOptions, deconstructCustomId, deconstructSelectOptions } from '../../utils/customId';
 import Quid from '../../models/quid';

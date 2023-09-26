@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder } from 'discord.js';
-import { speciesInfo } from '../..';
+import { speciesInfo } from '../../cluster';
 import Quid from '../../models/quid';
 import QuidToServer from '../../models/quidToServer';
 import User from '../../models/user';
@@ -173,7 +173,7 @@ export async function sendQuestMessage(
 
 	const components = [new ActionRowBuilder<ButtonBuilder>()
 		.setComponents(new ButtonBuilder()
-			.setCustomId('start-quest_start')
+			.setCustomId(`start-quest_start_@${quid.id}`)
 			.setLabel('Start quest')
 			.setEmoji('⭐')
 			.setStyle(ButtonStyle.Success))];

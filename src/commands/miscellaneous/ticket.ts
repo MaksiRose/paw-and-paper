@@ -4,7 +4,7 @@ import { disableAllComponents } from '../../utils/componentDisabling';
 import { generateId } from 'crystalid';
 import { readFileSync, writeFileSync } from 'fs';
 import { hasPermission } from '../../utils/permissionHandler';
-import { octokit } from '../..';
+import { octokit } from '../../cluster';
 import { SlashCommand } from '../../typings/handle';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import ErrorInfo from '../../models/errorInfo';

@@ -17,7 +17,7 @@ import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
 import { RankType } from '../../typings/data/user';
 import { SpeciesHabitatType } from '../../typings/main';
-import { materialsInfo, speciesInfo } from '../..';
+import { materialsInfo, speciesInfo } from '../../cluster';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { AsyncQueue } from '@sapphire/async-queue';
 import QuidToServer from '../../models/quidToServer';
@@ -115,7 +115,7 @@ async function executeExploring(
 					name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
-				.setDescription(`*A hunter cuts ${quid.name} as they see ${pronoun(quid, 1)} running towards the pack borders.* "You don't have enough experience to go into the wilderness, ${quidToServer.rank}," *they say.*`)],
+				.setDescription(`*A hunter cuts ${quid.name} off as they see ${pronoun(quid, 1)} running towards the pack borders.* "You don't have enough experience to go into the wilderness, ${quidToServer.rank}," *they say.*`)],
 		});
 		return;
 	}

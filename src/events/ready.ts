@@ -5,6 +5,7 @@ import { execute as executeIntervalHandler } from '../handlers/interval';
 import { execute as executeVotesHandler } from '../handlers/votes';
 import { execute as executeServersHandler } from '../handlers/servers';
 import { execute as executeUsersHandler } from '../handlers/users';
+import cluster from 'node:cluster';
 
 export const event: DiscordEvent = {
 	name: 'ready',
@@ -12,6 +13,7 @@ export const event: DiscordEvent = {
 	async execute(client: Client<true>) {
 
 		/* Logging to the console that the bot is online and setting the bot's activity. */
+		if (cluster.worker) { cluster.worker.send('ready'); }
 		console.log('Paw and Paper is online!');
 		client.user?.setActivity('/help', { type: ActivityType.Listening });
 

@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import Fuse from 'fuse.js';
 import { Op } from 'sequelize';
-import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../..';
+import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../../cluster';
 import Den from '../../models/den';
 import DiscordUser from '../../models/discordUser';
 import DiscordUserToServer from '../../models/discordUserToServer';
@@ -580,7 +580,8 @@ export async function getHealResponse(
 	}
 
 	const experiencePoints = isSuccessful === false ? 0 : getRandomNumber(5, quidToServer.levels + 8);
-	const changedCondition = await changeCondition(user.id === user2.id ? quidToServer2 : quidToServer, user.id === user2.id ? quid2 : quid, experiencePoints); // userToHeal is used here when a user is healing themselves to take into account the changes to the injuries & health
+	const isSuccessfulSelfHealing = user.id === user2.id && isSuccessful;
+	const changedCondition = await changeCondition(isSuccessfulSelfHealing ? quidToServer2 : quidToServer, isSuccessfulSelfHealing ? quid2 : quid, experiencePoints); // userToHeal is used here when a user is healing themselves to take into account the changes to the injuries & health
 	const infectedEmbed = user.id !== user2.id ? await infectWithChance(quidToServer, quid, quidToServer2, quid2) : [];
 
 	const members = await updateAndGetMembers(user.id, interaction.guild);

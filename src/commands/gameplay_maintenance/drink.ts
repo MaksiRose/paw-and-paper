@@ -103,34 +103,40 @@ export async function sendDrinkMessage(
 		}
 	});
 
-	collector.on('end', async (collected) => {
-		try {
+	await new Promise<void>(resolve => {
 
-			await setCooldown(userToServer, false);
+		collector.on('end', async (collected) => {
+			try {
 
-			const thirstPoints = Math.min(quidToServer.maxThirst - quidToServer.thirst, getRandomNumber(3, collected.size));
-			const currentRegion = quidToServer.currentRegion;
+				await setCooldown(userToServer, false);
 
-			await quidToServer.update({ currentRegion: CurrentRegionType.Lake, thirst: quidToServer.thirst + thirstPoints });
-			await user.update({ advice_drinking: true });
+				const thirstPoints = Math.min(quidToServer.maxThirst - quidToServer.thirst, getRandomNumber(3, collected.size));
+				const currentRegion = quidToServer.currentRegion;
 
-			// This is an editReply
-			await respond(interaction, {
-				embeds: [...restEmbed, new EmbedBuilder()
-					.setColor(quid.color)
-					.setAuthor({
-						name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
-						iconURL: quid.avatarURL,
-					})
-					.setDescription(`*${quid.name} scurries over to the river and takes hasty gulps. The fresh water runs down ${pronoun(quid, 2)} throat and fills ${pronoun(quid, 2)} body with new energy.*`)
-					.setFooter({ text: `+${thirstPoints} thirst (${quidToServer.thirst}/${quidToServer.maxThirst})${(currentRegion !== CurrentRegionType.Lake) ? '\nYou are now at the lake' : ''}\n\nDon't forget to stay hydrated in real life too! :)` })],
-				components: disableAllComponents(components),
-			}, 'update', getMessageId(botReply));
-		}
-		catch (error) {
+				await quidToServer.update({ currentRegion: CurrentRegionType.Lake, thirst: quidToServer.thirst + thirstPoints });
+				await user.update({ advice_drinking: true });
 
-			await sendErrorMessage(interaction, error)
-				.catch(e => { console.error(e); });
-		}
+				// This is an editReply
+				await respond(interaction, {
+					embeds: [...restEmbed, new EmbedBuilder()
+						.setColor(quid.color)
+						.setAuthor({
+							name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
+							iconURL: quid.avatarURL,
+						})
+						.setDescription(`*${quid.name} scurries over to the river and takes hasty gulps. The fresh water runs down ${pronoun(quid, 2)} throat and fills ${pronoun(quid, 2)} body with new energy.*`)
+						.setFooter({ text: `+${thirstPoints} thirst (${quidToServer.thirst}/${quidToServer.maxThirst})${(currentRegion !== CurrentRegionType.Lake) ? '\nYou are now at the lake' : ''}\n\nDon't forget to stay hydrated in real life too! :)` })],
+					components: disableAllComponents(components),
+				}, 'update', getMessageId(botReply));
+			}
+			catch (error) {
+
+				await sendErrorMessage(interaction, error)
+					.catch(e => { console.error(e); });
+			}
+			finally { resolve(); }
+		});
+
+		setTimeout(() => { resolve(); }, 20_000);
 	});
 }

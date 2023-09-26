@@ -1,6 +1,6 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { Op } from 'sequelize';
-import { client } from '../..';
+import { client } from '../../cluster';
 import DiscordUser from '../../models/discordUser';
 import Quid from '../../models/quid';
 import QuidToServer from '../../models/quidToServer';

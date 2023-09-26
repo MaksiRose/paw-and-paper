@@ -50,8 +50,8 @@ export const command: SlashCommand = {
 				if (!attachment) { throw new Error('time'); }
 
 				/* Checking if the image is a .png, .jpeg, .jpg, .raw or .webp image. If it is not, it will send an error message. */
-				const imageURL = attachment.url;
-				if (!imageURL.endsWith('.png') && !imageURL.endsWith('.jpeg') && !imageURL.endsWith('.jpg') && !imageURL.endsWith('.raw') && !imageURL.endsWith('.webp')) {
+				const mimeType = attachment.contentType;
+				if (!mimeType || !mimeType.includes('image')) {
 
 					// This is always a followUp
 					await respond(interaction, {
@@ -63,7 +63,7 @@ export const command: SlashCommand = {
 					return;
 				}
 
-				await quid.update({ avatarURL: imageURL });
+				await quid.update({ avatarURL: attachment.url });
 
 				// This is always a followUp
 				await respond(interaction, {
@@ -74,7 +74,7 @@ export const command: SlashCommand = {
 							iconURL: quid.avatarURL,
 						})
 						.setTitle(`Profile picture for ${quid.name} set!`)
-						.setImage(imageURL)],
+						.setImage(attachment.url)],
 				});
 			})
 			.catch(async function() {

@@ -1,6 +1,6 @@
 import { AsyncQueue } from '@sapphire/async-queue';
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder } from 'discord.js';
-import { speciesInfo } from '../..';
+import { speciesInfo } from '../../cluster';
 import Quid from '../../models/quid';
 import QuidToServer from '../../models/quidToServer';
 import Server from '../../models/server';
@@ -81,7 +81,7 @@ async function executeScavenging(
 					name: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
-				.setDescription(`*A hunter cuts ${quid.name} as they see ${pronoun(quid, 1)} running towards the pack borders.* "You don't have enough experience to go into the wilderness, ${quidToServer.rank}," *they say.*`)],
+				.setDescription(`*A hunter cuts ${quid.name} off as they see ${pronoun(quid, 1)} running towards the pack borders.* "You don't have enough experience to go into the wilderness, ${quidToServer.rank}," *they say.*`)],
 		});
 		return;
 	}

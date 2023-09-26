@@ -1,7 +1,7 @@
 import { AsyncQueue } from '@sapphire/async-queue';
 import { generateId } from 'crystalid';
 import { Guild } from 'discord.js';
-import { client } from '..';
+import { client } from '../cluster';
 import BannedServer from '../models/bannedServer';
 import Den from '../models/den';
 import ProxyLimits from '../models/proxyLimits';
