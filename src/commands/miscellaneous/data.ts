@@ -85,7 +85,8 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		if (attachment.url?.toLowerCase().endsWith('.json') === false) {
+		const mimeType = attachment.contentType;
+		if (!mimeType || mimeType.toLowerCase().includes('json') === false) {
 
 			// This is always a reply
 			await respond(interaction, {
