@@ -144,7 +144,7 @@ export async function executePlaying(
 	}
 
 	/* Check if the user is interactable, and if they are, define quid data and profile data. */
-	if (mentionedUserId && !isInteractable(interaction, quid2, quidToServer2, user2, userToServer2, messageContent, restEmbed) || !user2 || !userToServer2 || !quidToServer2) { return; }
+	if (mentionedUserId != undefined && isInteractable(interaction, quid2, quidToServer2, user2, userToServer2, messageContent, restEmbed) === false && user2 != undefined && userToServer2 != undefined && quidToServer2 != undefined) { return; }
 
 	await setCooldown(userToServer, true);
 
