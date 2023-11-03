@@ -4,18 +4,30 @@ import process from 'node:process';
 if (cluster.isPrimary) {
 
 	console.log(`Primary cluster ${process.pid} is running`);
-	cluster.fork();
+	const currWorker = cluster.fork();
+	let currentWorkerId = currWorker.id;
+	let lastAliveWorkerId: number | undefined = undefined;
 
-	cluster.on('message', (worker, message: {cmd: string}) => {
+	cluster.on('message', (worker, message: { cmd: string; }) => {
 
-		if (typeof message.cmd === 'string' && message.cmd === 'restart') {
+		if (typeof message.cmd === 'string') {
 
-			const newWorker = cluster.fork();
-			newWorker.once('message', (newMessage: {cmd: string}) => {
+			if (message.cmd === 'restart') {
 
-				if (typeof newMessage.cmd === 'string' && newMessage.cmd === 'ready') { worker.send({ cmd: 'ready' }); }
-				else { worker.send({ cmd: 'failed' }); }
-			});
+				const newWorker = cluster.fork();
+				currentWorkerId = newWorker.id;
+				lastAliveWorkerId = worker.id;
+			}
+
+			const oldWorker = (cluster.workers && lastAliveWorkerId) ? cluster.workers[lastAliveWorkerId] : undefined;
+			if (oldWorker && worker.id !== lastAliveWorkerId && worker.id === currentWorkerId) {
+				if (message.cmd === 'ready') { oldWorker.send({ cmd: 'ready' }); }
+				else {
+
+					oldWorker.send({ cmd: 'failed' });
+					worker.kill();
+				}
+			}
 		}
 	});
 
