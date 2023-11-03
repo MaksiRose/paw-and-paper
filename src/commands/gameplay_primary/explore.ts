@@ -752,7 +752,7 @@ async function executeExploring(
 					content: messageContent,
 					embeds: [...restEmbed, embed],
 					components: [...previousExploreComponents ? [previousExploreComponents] : [], exploreComponent],
-					fetchreply: true,
+					fetchReply: true,
 				}, 'update', newInteraction.message.id);
 
 				/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
