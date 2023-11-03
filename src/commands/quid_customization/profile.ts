@@ -77,7 +77,7 @@ export const command: SlashCommand = {
 			return;
 		}
 		/* Checking if the user has a cooldown. */
-		else if (hasNameAndSpecies(quid) && interaction.inCachedGuild() && await hasCooldown(interaction, user, userToServer, quid, quidToServer)) { return; } // This is always a reply
+		else if (hasNameAndSpecies(quid) && interaction.inCachedGuild() && (isYourself && await hasCooldown(interaction, user, userToServer, quid, quidToServer))) { return; } // This is always a reply
 
 		const response = await getProfileMessageOptions(discordUser.id, quid, !mentionedUser, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user });
 		const selectMenu = await getQuidSelectMenu(user.id, discordUser.id, interaction.user.id, undefined, quid?.id, !mentionedUser);
