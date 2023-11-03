@@ -170,6 +170,7 @@ async function executeAttacking(
 		botReply = await respond(newInteraction ?? interaction, {
 			embeds: [...restEmbed, embed],
 			components: [...previousFightComponents ? [previousFightComponents] : [], fightGame.fightComponent],
+			fetchReply: true,
 		}, newInteraction !== undefined ? 'update' : 'reply', newInteraction?.message.id ?? (botReply ? getMessageId(botReply) : undefined));
 
 		/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */

@@ -296,6 +296,7 @@ export const command: SlashCommand = {
 						row => row.join('').replaceAll('0', emptyField).replaceAll('1', player1Field).replaceAll('2', player2Field),
 					).join('\n') + '\n1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣' : ''}`)],
 				components: componentArray,
+				fetchReply: true,
 			});
 
 			if (previousInteraction !== undefined) { await previousInteraction.webhook.deleteMessage('@original'); }

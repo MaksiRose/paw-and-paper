@@ -168,6 +168,7 @@ async function executeExploring(
 				})
 				.setDescription(`*${quid.name} is longing for adventure as ${pronounAndPlural(quid, 0, 'look')} into the wild outside of camp. All there is to decide is where the journey will lead ${pronoun(quid, 1)}.*`)],
 			components: [biomeComponent],
+			fetchReply: true,
 		});
 
 		const int = await (getBiomeMessage as Message<true> | InteractionResponse<true>)
@@ -431,6 +432,7 @@ async function executeExploring(
 					.setLabel('Leave')
 					.setEmoji('💨')
 					.setStyle(ButtonStyle.Primary))],
+			fetchReply: true,
 		}, 'update', buttonInteraction?.message.id ?? (botReply ? getMessageId(botReply) : undefined));
 
 		const int = await (botReply as Message<true> | InteractionResponse<true>)
@@ -474,6 +476,7 @@ async function executeExploring(
 					content: messageContent,
 					embeds: [...restEmbed, embed],
 					components: [...previousExploreComponents ? [previousExploreComponents] : [], exploreComponent],
+					fetchReply: true,
 				}, 'update', newInteraction.message.id);
 
 				/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
@@ -677,6 +680,7 @@ async function executeExploring(
 					.setLabel('Flee')
 					.setEmoji('💨')
 					.setStyle(ButtonStyle.Primary))],
+			fetchReply: true,
 		}, 'update', buttonInteraction?.message.id ?? (botReply ? getMessageId(botReply) : undefined));
 
 		const int = await (botReply as Message<true> | InteractionResponse<true>)
@@ -748,6 +752,7 @@ async function executeExploring(
 					content: messageContent,
 					embeds: [...restEmbed, embed],
 					components: [...previousExploreComponents ? [previousExploreComponents] : [], exploreComponent],
+					fetchreply: true,
 				}, 'update', newInteraction.message.id);
 
 				/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */

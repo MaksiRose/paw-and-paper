@@ -303,6 +303,7 @@ async function startQuest(
 			content: messageContent,
 			embeds: [...embedArray, embed, ...afterEmbedArray],
 			components: [...previousQuestComponents ? [previousQuestComponents] : [], questComponents],
+			fetchReply: true,
 		}, 'update', newInteraction?.message.id ?? interaction.message.id);
 
 		newInteraction = await (botReply as Message<true> | InteractionResponse<true>)
