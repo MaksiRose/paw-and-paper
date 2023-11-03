@@ -6,7 +6,7 @@ if (cluster.isPrimary) {
 	console.log(`Primary cluster ${process.pid} is running`);
 	cluster.fork();
 
-	cluster.once('message', (worker, message: {cmd: string}) => {
+	cluster.on('message', (worker, message: {cmd: string}) => {
 
 		if (typeof message.cmd === 'string' && message.cmd === 'restart') {
 
