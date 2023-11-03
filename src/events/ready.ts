@@ -13,7 +13,7 @@ export const event: DiscordEvent = {
 	async execute(client: Client<true>) {
 
 		/* Logging to the console that the bot is online and setting the bot's activity. */
-		if (cluster.worker) { cluster.worker.send('ready'); }
+		if (cluster.worker) { cluster.worker.send({ cmd: 'ready' }); }
 		console.log('Paw and Paper is online!');
 		client.user?.setActivity('/help', { type: ActivityType.Listening });
 

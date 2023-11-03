@@ -48,7 +48,7 @@ export const command: SlashCommand = {
 			});
 			if (res === false) { return; }
 
-			cluster.worker.send('restart');
+			cluster.worker.send({ cmd: 'restart' });
 			new Promise<void>((resolve, reject) => {
 
 				const rejectionTimeout = setTimeout(() => {
@@ -58,9 +58,9 @@ export const command: SlashCommand = {
 
 				process.once('message', processFunc);
 
-				async function processFunc(message: any) {
+				async function processFunc(message: {cmd: string}) {
 
-					if (typeof message === 'string' && message === 'ready') {
+					if (typeof message.cmd === 'string' && message.cmd === 'ready') {
 
 						clearTimeout(rejectionTimeout);
 						killEvents();

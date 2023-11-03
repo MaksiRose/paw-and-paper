@@ -6,15 +6,15 @@ if (cluster.isPrimary) {
 	console.log(`Primary cluster ${process.pid} is running`);
 	cluster.fork();
 
-	cluster.on('message', (worker, message) => {
+	cluster.once('message', (worker, message: {cmd: string}) => {
 
-		if (typeof message === 'string' && message === 'restart') {
+		if (typeof message.cmd === 'string' && message.cmd === 'restart') {
 
 			const newWorker = cluster.fork();
-			newWorker.once('message', (newMessage) => {
+			newWorker.once('message', (newMessage: {cmd: string}) => {
 
-				if (typeof newMessage === 'string' && newMessage === 'ready') { worker.send('ready'); }
-				else { worker.send('failed'); }
+				if (typeof newMessage.cmd === 'string' && newMessage.cmd === 'ready') { worker.send({ cmd: 'ready' }); }
+				else { worker.send({ cmd: 'failed' }); }
 			});
 		}
 	});
