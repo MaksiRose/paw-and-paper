@@ -232,13 +232,17 @@ export async function executePlaying(
 			/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 			playComponent = fightGame.correctButtonOverwrite();
 
+			let i_error = null;
 			const i = await (botReply as Message<true> | InteractionResponse<true>)
 				.awaitMessageComponent({
 					filter: i => i.user.id === interaction.user.id,
 					componentType: ComponentType.Button,
 					time: responseTime,
 				})
-				.catch(() => { return null; });
+				.catch((e) => {
+					i_error = e;
+					return null;
+				});
 
 			if (i !== null) {
 
@@ -263,6 +267,9 @@ export async function executePlaying(
 				else if (i.customId.includes(fightGame.cycleKind) && quidToServer.rank === RankType.Youngling) { changedCondition.statsUpdateText = `${await addExperience(quidToServer, getRandomNumber(2, 1))}\n${changedCondition.statsUpdateText}`; }
 
 				buttonInteraction = i;
+			}
+			else if (tutorialMapEntry === 2) {
+				console.error(i_error);
 			}
 
 			playComponent.setComponents(playComponent.components.map(component => component.setDisabled(true)));
@@ -353,13 +360,17 @@ export async function executePlaying(
 		/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 		playComponent = plantGame.correctButtonOverwrite();
 
+		let i_error = null;
 		const i = await (botReply as Message<true> | InteractionResponse<true>)
 			.awaitMessageComponent({
 				filter: i => i.user.id === interaction.user.id,
 				componentType: ComponentType.Button,
 				time: responseTime,
 			})
-			.catch(() => { return null; });
+			.catch((e) => {
+				i_error = e;
+				return null;
+			});
 		let isWin = false;
 
 		if (i !== null) {
@@ -388,6 +399,9 @@ export async function executePlaying(
 				embed.setDescription(descriptionText.substring(0, descriptionText.length - 1) + ` But as the ${getDisplayspecies(quid)} tries to pick it up, it just breaks into little pieces.*`);
 			}
 			buttonInteraction = i;
+		}
+		else if (tutorialMapEntry === 1) {
+			console.error(i_error);
 		}
 
 		if (changedCondition.statsUpdateText) { embed.setFooter({ text: `${changedCondition.statsUpdateText}${isWin ? `\n\n+ 1 ${foundItem}` : ''} ` }); }
