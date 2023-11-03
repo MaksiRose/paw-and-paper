@@ -87,9 +87,9 @@ export async function executePlaying(
 
 	if (await hasFullInventory(interaction, user, userToServer, quid, quidToServer, restEmbed, messageContent)) { return; }
 
-	const tutorialMapEntry = tutorialMap.get(quid.id + quidToServer.serverId);
+	const tutorialMapEntry = tutorialMap.get(quidToServer.id);
 	const mentionedUserId = tutorialMapEntry === 2 ? undefined : interaction.isChatInputCommand() ? interaction.options.getUser('user')?.id : deconstructCustomId<CustomIdArgs>(interaction.customId)?.args[1];
-	if (quidToServer.tutorials_play === false && quidToServer.rank === RankType.Youngling && (tutorialMapEntry === undefined || tutorialMapEntry === 0)) {
+	if (quidToServer.tutorials_play === false && quidToServer.rank === RankType.Youngling && (tutorialMapEntry === undefined || tutorialMapEntry < 1)) {
 
 		// This is an update when forceEdit is true, which it is only for the travel-regions command, else this is a reply
 		await respond(interaction, {
@@ -105,7 +105,7 @@ export async function executePlaying(
 						.setStyle(ButtonStyle.Success)),
 			],
 		}, forceEdit ? 'update' : 'reply', (forceEdit && interaction.isMessageComponent()) ? interaction.message.id : undefined);
-		tutorialMap.set(quid.id + quidToServer.serverId, 1);
+		tutorialMap.set(quidToServer.id, 1);
 		return;
 	}
 
@@ -231,13 +231,17 @@ export async function executePlaying(
 			/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 			playComponent = fightGame.correctButtonOverwrite();
 
+			let i_error = null;
 			const i = await (botReply as Message<true> | InteractionResponse<true>)
 				.awaitMessageComponent({
 					filter: i => i.user.id === interaction.user.id,
 					componentType: ComponentType.Button,
 					time: responseTime,
 				})
-				.catch(() => { return null; });
+				.catch((e) => {
+					i_error = e;
+					return null;
+				});
 
 			if (i !== null) {
 
@@ -253,7 +257,7 @@ export async function executePlaying(
 
 					await quidToServer.update({ tutorials_play: true });
 
-					tutorialMap.delete(quid.id + quidToServer.serverId);
+					tutorialMap.delete(quidToServer.id);
 
 					whoWinsChance = 0;
 
@@ -262,6 +266,9 @@ export async function executePlaying(
 				else if (i.customId.includes(fightGame.cycleKind) && quidToServer.rank === RankType.Youngling) { changedCondition.statsUpdateText = `${await addExperience(quidToServer, getRandomNumber(2, 1))}\n${changedCondition.statsUpdateText}`; }
 
 				buttonInteraction = i;
+			}
+			else if (tutorialMapEntry === 2) {
+				console.error(i_error);
 			}
 
 			playComponent.setComponents(playComponent.components.map(component => component.setDisabled(true)));
@@ -351,13 +358,17 @@ export async function executePlaying(
 		/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 		playComponent = plantGame.correctButtonOverwrite();
 
+		let i_error = null;
 		const i = await (botReply as Message<true> | InteractionResponse<true>)
 			.awaitMessageComponent({
 				filter: i => i.user.id === interaction.user.id,
 				componentType: ComponentType.Button,
 				time: responseTime,
 			})
-			.catch(() => { return null; });
+			.catch((e) => {
+				i_error = e;
+				return null;
+			});
 		let isWin = false;
 
 		if (i !== null) {
@@ -370,7 +381,7 @@ export async function executePlaying(
 				/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
 				playComponent = plantGame.chosenRightButtonOverwrite(i.customId);
 
-				if (tutorialMapEntry === 1) { tutorialMap.set(quid.id + quidToServer.serverId, 2); }
+				if (tutorialMapEntry === 1) { tutorialMap.set(quidToServer.id, 2); }
 
 				const newInv = deepCopy(quidToServer.inventory);
 				newInv.push(foundItem);
@@ -386,6 +397,9 @@ export async function executePlaying(
 				embed.setDescription(descriptionText.substring(0, descriptionText.length - 1) + ` But as the ${getDisplayspecies(quid)} tries to pick it up, it just breaks into little pieces.*`);
 			}
 			buttonInteraction = i;
+		}
+		else if (tutorialMapEntry === 1) {
+			console.error(i_error);
 		}
 
 		if (changedCondition.statsUpdateText) { embed.setFooter({ text: `${changedCondition.statsUpdateText}${isWin ? `\n\n+ 1 ${foundItem}` : ''} ` }); }
@@ -407,7 +421,7 @@ export async function executePlaying(
 	}
 	else {
 
-		const tutorialMapEntry_ = tutorialMap.get(quid.id + quidToServer.serverId);
+		const tutorialMapEntry_ = tutorialMap.get(quidToServer.id);
 		// This is an update when forceEdit is true, which it is only for the travel-regions command, else this is a reply
 		(response = await respond(buttonInteraction ?? interaction, {
 			content: messageContent,
