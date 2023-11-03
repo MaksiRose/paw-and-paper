@@ -226,6 +226,7 @@ export async function executePlaying(
 				content: messageContent,
 				embeds: [...restEmbed, embed],
 				components: [playComponent],
+				fetchReply: true,
 			}, forceEdit ? 'update' : 'reply', (forceEdit && interaction.isMessageComponent()) ? interaction.message.id : undefined);
 
 			/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
@@ -353,6 +354,7 @@ export async function executePlaying(
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [playComponent],
+			fetchReply: true,
 		}, forceEdit ? 'update' : 'reply', (forceEdit && interaction.isMessageComponent()) ? interaction.message.id : undefined);
 
 		/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
