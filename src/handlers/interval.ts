@@ -12,7 +12,7 @@ import UserToServer from '../models/userToServer';
 import { hasNameAndSpecies } from '../utils/checkUserState';
 import { now, sendErrorMessage } from '../utils/helperFunctions';
 
-const intervals: NodeJS.Timer[] = [];
+const intervals: NodeJS.Timeout[] = [];
 
 /** It's checking whether the deletionTime of a property on the toDeleteList is older than an hour from now, and if it is, delete the property and delete the file from the toDelete folder. It's also checking whether a profile has a temporaryStatIncrease with a timestamp that is older than a week ago, and if it does, bring the stat back and delete the property from temporaryStatIncrease. */
 export async function execute(): Promise<void> {
