@@ -143,7 +143,7 @@ async function executeScavenging(
 			.setFooter({ text: 'Click the fields to reveal what\'s underneath. Based on how close you are to the correct field, a color on a scale from green (closest) to red (farthest) is going to appear. You can click 4 times and have 2 minutes to win.' })],
 		components: componentArray,
 	});
-	console.log('test 1')
+	console.log('test 1');
 
 	await interactionCollector(interaction, user, quid, userToServer, quidToServer, server, false);
 
@@ -193,7 +193,10 @@ async function executeScavenging(
 					/* Checking if the user has clicked on the correct field. If they have, it will stop the collector and if they haven't, it will edit the message with the new components. */
 					if (emoji === filledFieldArray[0]) {
 
-						const playingField = componentArray.map(c => c.components.map(b => b.data.emoji?.name ?? unclickedField).join('')).join('\n');
+						const playingField = componentArray.map(c => c.components.map(b => {
+							const bdata = b.toJSON();
+							return (bdata.style !== ButtonStyle.Premium && bdata.style !== ButtonStyle.Link && bdata.emoji?.name) ?? unclickedField;
+						}).join('')).join('\n');
 						componentArray = [];
 
 						const meatCount = Math.round((await simulateMeatUse(server, true) + await simulateMeatUse(server, true) + await simulateMeatUse(server, false)) / 3);

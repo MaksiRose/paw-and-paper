@@ -283,7 +283,9 @@ export async function sendErrorMessage(
 				if (interaction.isMessageComponent()) { await interaction.message.reply({ ...messageOptions, failIfNotExists: false }); }
 				if (interaction.isMessageContextMenuCommand()) { await interaction.targetMessage.reply({ ...messageOptions, failIfNotExists: false }); }
 				if (interaction.isUserContextMenuCommand() || interaction.isChatInputCommand() || interaction.type === InteractionType.ModalSubmit) {
-					await interaction.channel?.send(messageOptions);
+					if (interaction.channel == null) { throw new Error('interaction channel is null'); }
+					if (!interaction.channel.isSendable()) { throw new Error(`interaction channel type is a partial group dm channel. json:\n${interaction.channel.toJSON()}`); }
+					await interaction.channel.send(messageOptions);
 				}
 			})()
 				.catch((error3) => {

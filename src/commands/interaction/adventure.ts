@@ -221,11 +221,12 @@ export const command: SlashCommand = {
 			emojisInComponentArray.push([]);
 			for (let row = 0; row < 5; row++) {
 
-				componentArray[column]?.addComponents(new ButtonBuilder()
-					.setCustomId(`board_${column}_${row}`)
-					.setEmoji(coveredField)
-					.setDisabled(false)
-					.setStyle(ButtonStyle.Secondary),
+				componentArray[column]?.addComponents(
+					new ButtonBuilder()
+						.setCustomId(`board_${column}_${row}`)
+						.setEmoji(coveredField)
+						.setDisabled(false)
+						.setStyle(ButtonStyle.Secondary),
 				);
 
 				const randomMemoryCardOption = getArrayElement(chosenMemoryCardOptions.splice(getRandomNumber(chosenMemoryCardOptions.length), 1), 0);
@@ -309,9 +310,10 @@ export const command: SlashCommand = {
 					if (secondPickRow === null) { return collector.stop('error_Error: secondPickRow is null'); }
 
 					/* If there are no emojis or the emojis don't match, set both buttons emojis to covered fields and enable them */
-					const firstPickEmoji = componentArray[firstPickColumn]?.components[firstPickRow]?.toJSON().emoji?.name;
-					const secondPickEmoji = componentArray[secondPickColumn]?.components[secondPickRow]?.toJSON().emoji?.name;
-					if (firstPickEmoji === undefined || secondPickEmoji === undefined || firstPickEmoji !== secondPickEmoji) {
+					const firstPickButton = componentArray[firstPickColumn]?.components[firstPickRow]?.toJSON();
+					const secondPickButton = componentArray[secondPickColumn]?.components[secondPickRow]?.toJSON();
+
+					if (firstPickButton === undefined || secondPickButton === undefined || (firstPickButton.style === ButtonStyle.Secondary && secondPickButton.style === ButtonStyle.Secondary && firstPickButton.emoji?.name !== secondPickButton.emoji?.name)) {
 
 						componentArray[firstPickColumn]?.components[firstPickRow]?.setEmoji(coveredField);
 						componentArray[firstPickColumn]?.components[firstPickRow]?.setDisabled(false);
@@ -417,7 +419,7 @@ export const command: SlashCommand = {
 						let maxVal = 1;
 						for (const v of arr) {
 
-							obj[v] = ++obj[v] || 1;
+							obj[v] = obj[v] ? (++obj[v] || 1) : 1;
 
 							if (obj[v]! > maxVal) {
 

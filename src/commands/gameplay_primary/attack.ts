@@ -395,7 +395,7 @@ export async function startAttack(
 					catch {
 
 						const channel = botReply instanceof Message ? botReply.channel : botReply.interaction.channel ?? (botReply.interaction.isRepliable() ? (await botReply.interaction.fetchReply()).channel : null);
-						if (!channel) { throw new TypeError('channel is null'); }
+						if (!channel || !channel.isSendable()) { throw new TypeError('channel is null or a partial group dm'); }
 						await channel.send({ embeds: [embed] });
 					}
 				}
@@ -492,7 +492,7 @@ async function remainingHumans(
 	catch {
 
 		const channel = botReply instanceof Message ? botReply.channel : botReply.interaction.channel ?? (botReply.interaction.isRepliable() ? (await botReply.interaction.fetchReply()).channel : null);
-		if (!channel) { throw new TypeError('channel is null'); }
+		if (!channel || !channel.isSendable()) { throw new TypeError('channel is null'); }
 		await channel.send({ embeds: [embed] });
 	}
 }
@@ -514,7 +514,7 @@ function removeByHighestItem(
 	let maxVal = 1;
 	for (const v of arr) {
 
-		obj[v] = ++obj[v] || 1;
+		obj[v] = obj[v] ? (++obj[v] || 1) : 1;
 
 		if (obj[v]! > maxVal) {
 

@@ -92,21 +92,21 @@ export function createPlantGame(
 
 			const data = component.toJSON();
 
-			if (data.style !== ButtonStyle.Link && data.custom_id.includes(emojiToFind) && !data.custom_id.includes((playerHabitat === 'accessible' ? accessiblePlantEmojis : plantEmojis).toAvoid)) { component.setStyle(ButtonStyle.Primary); }
+			if (data.style !== ButtonStyle.Link && data.style !== ButtonStyle.Premium && data.custom_id.includes(emojiToFind) && !data.custom_id.includes((playerHabitat === 'accessible' ? accessiblePlantEmojis : plantEmojis).toAvoid)) { component.setStyle(ButtonStyle.Primary); }
 			return component;
 		})),
 		chosenRightButtonOverwrite: (customId) => plantComponent.setComponents(plantComponent.components.map(component => {
 
 			const data = component.toJSON();
 
-			if (data.style !== ButtonStyle.Link && data.custom_id === customId) { component.setStyle(ButtonStyle.Success); }
+			if (data.style !== ButtonStyle.Link && data.style !== ButtonStyle.Premium && data.custom_id === customId) { component.setStyle(ButtonStyle.Success); }
 			return component;
 		})),
 		chosenWrongButtonOverwrite: (customId) => plantComponent.setComponents(plantComponent.components.map(component => {
 
 			const data = component.toJSON();
 
-			if (data.style !== ButtonStyle.Link && data.custom_id === customId) { component.setStyle(ButtonStyle.Danger); }
+			if (data.style !== ButtonStyle.Link && data.style !== ButtonStyle.Premium && data.custom_id === customId) { component.setStyle(ButtonStyle.Danger); }
 			return component;
 		})),
 	};
@@ -159,7 +159,7 @@ export function createFightGame(
 
 			const data = component.toJSON();
 
-			if (data.style !== ButtonStyle.Link && data.custom_id.includes(
+			if (data.style !== ButtonStyle.Link && data.style !== ButtonStyle.Premium && data.custom_id.includes(
 				cycleKind === 'defend' ? '_attack' : cycleKind === 'dodge' ? 'defend' : 'dodge',
 			)) { component.setStyle(ButtonStyle.Primary); }
 			return component;
@@ -168,14 +168,14 @@ export function createFightGame(
 
 			const data = component.toJSON();
 
-			if (data.style !== ButtonStyle.Link && data.custom_id === customId) { component.setStyle(ButtonStyle.Success); }
+			if (data.style !== ButtonStyle.Link && data.style !== ButtonStyle.Premium && data.custom_id === customId) { component.setStyle(ButtonStyle.Success); }
 			return component;
 		})),
 		chosenWrongButtonOverwrite: (customId) => fightComponent.setComponents(fightComponent.components.map(component => {
 
 			const data = component.toJSON();
 
-			if (data.style !== ButtonStyle.Link && data.custom_id === customId) { component.setStyle(ButtonStyle.Danger); }
+			if (data.style !== ButtonStyle.Link && data.style !== ButtonStyle.Premium && data.custom_id === customId) { component.setStyle(ButtonStyle.Danger); }
 			return component;
 		})),
 	};

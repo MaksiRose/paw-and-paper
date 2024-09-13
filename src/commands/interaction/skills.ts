@@ -434,9 +434,10 @@ export const command: SlashCommand = {
 				: qtsSkillsPrep;
 
 			if (skillName === undefined) { throw new TypeError('skillName is undefined'); }
+			if (qtsSkills[skillName] === undefined) { throw new TypeError('skillName is not in the list of skills of this quid in this server'); }
 			const plusOrMinus = interaction.fields.getTextInputValue('skills_modify_textinput').startsWith('+') ? '+' : interaction.fields.getTextInputValue('skills_modify_textinput').startsWith('-') ? '-' : '';
 			const newValue = Number(interaction.fields.getTextInputValue('skills_modify_textinput').replace(plusOrMinus, '').replace(/\s/g, ''));
-			const oldValue = qtsSkills[skillName] ?? 0;
+			const oldValue = qtsSkills[skillName];
 
 			if (isNaN(newValue)) {
 

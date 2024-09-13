@@ -321,7 +321,7 @@ async function startQuest(
 
 				const data = component.toJSON();
 
-				if (data.style !== ButtonStyle.Link && data.custom_id === newInteraction!.customId) { component.setEmoji('🔘'); }
+				if (data.style !== ButtonStyle.Link && data.style !== ButtonStyle.Premium && data.custom_id === newInteraction!.customId) { component.setEmoji('🔘'); }
 				return component;
 			}));
 
@@ -330,7 +330,7 @@ async function startQuest(
 
 				const data = component.toJSON();
 
-				if (data.style !== ButtonStyle.Link && data.custom_id.includes(`${buttonColorKind}${buttonTextOrColor}`)) { component.setEmoji('☑️'); }
+				if (data.style !== ButtonStyle.Link && data.style !== ButtonStyle.Premium && data.custom_id.includes(`${buttonColorKind}${buttonTextOrColor}`)) { component.setEmoji('☑️'); }
 				return component;
 			}));
 		}

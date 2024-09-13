@@ -1,5 +1,5 @@
 import { generateId } from 'crystalid';
-import { EmbedBuilder, TextBasedChannel } from 'discord.js';
+import { EmbedBuilder, SendableChannels } from 'discord.js';
 import { Op } from 'sequelize';
 import Friendship from '../models/friendship';
 import Quid from '../models/quid';
@@ -13,7 +13,7 @@ const requiredPoints = [1, 3, 6, 9, 15, 24, 39, 63, 99, 162] as const;
  * Creates a friendship or adds friendship points to an existing friendship. Sends a message if they have more hearts than before.
  */
 export async function addFriendshipPoints(
-	message: { createdTimestamp: number, channel: TextBasedChannel
+	message: { createdTimestamp: number, channel: SendableChannels
 },
 	quid1: Quid<true> | Quid<false>,
 	quid2: Quid<true> | Quid<false>,

@@ -100,6 +100,7 @@ export const command: SlashCommand = {
 		if (await missingPermissions(interaction, [
 			'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints
 		]) === true) { return; }
+		if (!interaction.message.channel.isSendable()) { return; }
 
 		const originalUserId = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
 		const originalUser = originalUserId ? await interaction.client.users.fetch(originalUserId).catch(() => { return undefined; }) : undefined;
@@ -165,7 +166,7 @@ export const command: SlashCommand = {
 				components: [],
 			}, 'update', interaction.message.id);
 
-			if (hasNameAndSpecies(quid) && hasNameAndSpecies(partner.quid)) { await addFriendshipPoints(interaction.message, quid, partner.quid, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user }); }
+			if (hasNameAndSpecies(quid) && hasNameAndSpecies(partner.quid)) { await addFriendshipPoints({ createdTimestamp: interaction.message.createdTimestamp, channel: interaction.message.channel }, quid, partner.quid, { serverId: interaction.guildId ?? undefined, userToServer, quidToServer, user }); }
 			return;
 		}
 
