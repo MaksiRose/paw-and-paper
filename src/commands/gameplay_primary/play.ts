@@ -461,7 +461,7 @@ export async function executePlaying(
 	await eatAdvice(interaction, user, quidToServer);
 
 	const channel = interaction.channel ?? await interaction.client.channels.fetch(interaction.channelId);
-	if (channel === null || !channel.isTextBased()) { throw new TypeError('interaction.channel is null or not text based'); }
+	if (channel === null || !channel.isSendable()) { throw new TypeError('interaction.channel is null or not text based'); }
 	if (playedTogether && hasNameAndSpecies(quid2)) { await addFriendshipPoints({ createdTimestamp: response.createdTimestamp, channel: channel }, quid, quid2, { serverId: interaction.guildId, userToServer, quidToServer, user }); }
 }
 

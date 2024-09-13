@@ -216,7 +216,7 @@ export async function sendMessage(
 					)) { return; }
 
 				const logChannel = await channel.guild.channels.fetch(server.logChannelId);
-				if (!logChannel || !logChannel.isTextBased()) { return; }
+				if (!logChannel || !logChannel.isSendable()) { return; }
 
 				logChannel.send({
 					content: `Message Link: https://discord.com/channels/${channel.guildId}/${channel.id}/${botMessage.id}\nSent by: <@${discordUser.id}> ${discordUser.tag}\nQuid ID: ${quid.id}`,

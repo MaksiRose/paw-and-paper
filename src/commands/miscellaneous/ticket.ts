@@ -171,7 +171,7 @@ export const command: SlashCommand = {
 			else if (userOrChannel === 'channel') {
 
 				const serverChannel = await interaction.client.channels.fetch(userOrChannelId);
-				if (serverChannel !== null && serverChannel.isTextBased()) { return serverChannel; }
+				if (serverChannel !== null && serverChannel.isSendable()) { return serverChannel; }
 			}
 			throw new Error('Couldn\'t get a channel');
 		}();
@@ -232,7 +232,7 @@ export async function createNewTicket(
 			const memberResolvable = serverChannel.guild.members.me ?? serverChannel.client.user.id;
 
 			if (
-				serverChannel.isTextBased() && await hasPermission(memberResolvable, serverChannel, 'ViewChannel')
+				serverChannel.isSendable() && await hasPermission(memberResolvable, serverChannel, 'ViewChannel')
 			) {
 
 				if (serverChannel.isThread()) {

@@ -136,7 +136,7 @@ export const command: ContextMenuCommand = {
 					)) { return; }
 
 					const logChannel = await interaction.guild.channels.fetch(server.logChannelId);
-					if (!logChannel || !logChannel.isTextBased()) { return; }
+					if (!logChannel || !logChannel.isSendable()) { return; }
 
 					logChannel.send({
 						content: `**A message got replaced**\nMessage Link: https://discord.com/channels/${interaction.guildId}/${interaction.channelId!}/${botMessage.id}\nPrevious Message Link: ${previousMessage.url}\nSent by: <@${interaction.user.id}> ${interaction.user.tag}\nNew Quid ID: ${quid.id}\nOriginally sent on: ${time(Math.floor((previousMessage.createdTimestamp) / 1000), 'f')}`,

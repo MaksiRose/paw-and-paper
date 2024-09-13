@@ -98,7 +98,7 @@ export const command: ContextMenuCommand = {
 					)) { return; }
 
 				const logChannel = await interaction.guild.channels.fetch(server.logChannelId);
-				if (!logChannel || !logChannel.isTextBased()) { return; }
+				if (!logChannel || !logChannel.isSendable()) { return; }
 
 				logChannel.send({
 					content: `**A message got deleted**\nMessage Link: https://discord.com/channels/${interaction.guildId}/${interaction.channelId!}/${interaction.targetId}\nSent by: <@${interaction.user.id}> ${interaction.user.tag}\nQuid ID: ${webhookData?.quidId || '`Missing`'}\nOriginally sent on: ${time(Math.floor((targetMessageCreatedTimestamp) / 1000), 'f')}`,

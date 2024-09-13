@@ -210,7 +210,7 @@ export const command: SlashCommand = {
 		});
 
 		const channel = interaction.channel ?? await client.channels.fetch(interaction.channelId);
-		if (channel === null || !channel.isTextBased()) { throw new TypeError('interaction.channel is null or not text based'); }
+		if (channel === null || !channel.isSendable()) { throw new TypeError('interaction.channel is null or not text based'); }
 		await addFriendshipPoints({ createdTimestamp: botReply.createdTimestamp, channel: channel }, quid, quid2, { serverId: interaction.guildId, userToServer, quidToServer, user });
 
 		await isPassedOut(interaction, user, userToServer, quid, quidToServer, true);

@@ -631,7 +631,7 @@ export async function getHealResponse(
 	await eatAdvice(interaction, user, quidToServer);
 
 	const channel = interaction.channel ?? await interaction.client.channels.fetch(interaction.channelId);
-	if (channel === null || !channel.isTextBased()) { throw new TypeError('interaction.channel is null or not text based'); }
+	if (channel === null || !channel.isSendable()) { throw new TypeError('interaction.channel is null or not text based'); }
 	if (user2.id !== user.id) { await addFriendshipPoints({ createdTimestamp: botReply.createdTimestamp, channel: channel }, quid, quid2, { serverId: server.id, userToServer, quidToServer, user }); }
 
 	return;

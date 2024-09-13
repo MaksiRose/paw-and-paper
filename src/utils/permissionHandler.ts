@@ -51,7 +51,8 @@ export const permissionDisplay: Record<keyof typeof PermissionFlagsBits, string>
 	SendVoiceMessages: 'send voice messages',
 	CreateGuildExpressions: 'create guild expressions',
 	CreateEvents: 'create events',
-	SendPolls: 'send polls'
+	SendPolls: 'send polls',
+	UseExternalApps: 'use external apps',
 };
 
 export async function hasPermission(
@@ -67,7 +68,7 @@ export async function hasPermission(
 	else {
 
 		const channel = typeof channelResolvable === 'string' ? await client.channels.fetch(channelResolvable, { force: false }) : channelResolvable;
-		if (!channel || !channel.isTextBased()) { return false; }
+		if (!channel || !channel.isSendable()) { return false; }
 		if (channel.isDMBased()) {
 
 			const permissions: PermissionResolvable[] = ['SendMessages', 'ViewChannel', 'EmbedLinks', 'AttachFiles', 'AddReactions', 'UseExternalEmojis', 'UseExternalStickers', 'ReadMessageHistory'];

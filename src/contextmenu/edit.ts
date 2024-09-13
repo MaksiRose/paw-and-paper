@@ -147,7 +147,7 @@ async function editWebhookMessage(
 					)) { return; }
 
 			const logChannel = await interaction.guild.channels.fetch(server.logChannelId);
-			if (!logChannel || !logChannel.isTextBased()) { return; }
+			if (!logChannel || !logChannel.isSendable()) { return; }
 
 			const webhookData = await Webhook.findByPk(webhookMessage.id);
 			const quid = webhookData ? await Quid.findByPk(webhookData.quidId) : null;

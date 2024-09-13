@@ -23,7 +23,7 @@ export const command: SlashCommand = {
 
 		const channel = interaction.channel ?? await interaction.client.channels.fetch(interaction.channelId);
 		if (channel === null) { throw new TypeError('channel is null'); }
-		if (!channel.isTextBased()) { throw new TypeError('channel is not text based'); }
+		if (!channel.isSendable()) { throw new TypeError('channel is not text based'); }
 
 		// This is always a reply
 		const botReply = await respond(interaction, {

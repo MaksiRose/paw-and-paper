@@ -252,7 +252,7 @@ export async function sendReminder(
 				await quidToServer.update({ sapling_sentReminder: true });
 
 				const channel = await client.channels.fetch(quidToServer.sapling_lastChannelId!);
-				if (!channel || !channel.isTextBased() || channel.isDMBased()) { throw new Error('lastMessageChannelId is undefined, not a text based channel or a DM channel'); }
+				if (!channel || !channel.isSendable() || channel.isDMBased()) { throw new Error('lastMessageChannelId is undefined, not a text based channel or a DM channel'); }
 
 				const member = channel.guild.members.me || await channel.guild.members.fetchMe({ force: false });
 
