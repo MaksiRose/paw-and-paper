@@ -143,6 +143,7 @@ async function executeScavenging(
 			.setFooter({ text: 'Click the fields to reveal what\'s underneath. Based on how close you are to the correct field, a color on a scale from green (closest) to red (farthest) is going to appear. You can click 4 times and have 2 minutes to win.' })],
 		components: componentArray,
 	});
+	console.log('test 1')
 
 	await interactionCollector(interaction, user, quid, userToServer, quidToServer, server, false);
 
@@ -157,7 +158,7 @@ async function executeScavenging(
 	): Promise<void> {
 
 		let correctButtonPresses = 0;
-
+		console.log('test 2!');
 		/* Creating a collector that will collect the interactions of the user with the message. */
 		const collector = (botReply as Message<true> | InteractionResponse<true>).createMessageComponentCollector({
 			filter: i => i.user.id === interaction.user.id,
@@ -165,16 +166,19 @@ async function executeScavenging(
 			time: isHumanTrap ? 12_000 : 120_000,
 		});
 		const queue = new AsyncQueue();
-
+		console.log('test 3');
 		collector.on('collect', async int => {
 			await queue.wait();
 			try {
 
+				console.log('test 4');
 				if (collector.ended) { return; }
+				console.log('test 5');
 
 				/* It's checking if the customId of the button includes the word `board-`, which means that it is part of the scavenge game, or if the customId of the button includes the  word `humantrap-`, which means that it is part of the humantrap game. */
 				if (int.customId.includes('board_')) {
 
+					console.log('test 6');
 					correctButtonPresses += 1;
 					/* Getting the position of the button that the user clicked. */
 					const verticalBoardPosition = Number(int.customId.split('_')[1]);

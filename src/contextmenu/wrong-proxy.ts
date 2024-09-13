@@ -1,4 +1,4 @@
-import { ActionRowBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, WebhookClient, ForumChannel, NewsChannel, StageChannel, StringSelectMenuInteraction, TextChannel, VoiceChannel, Message, APIMessage, Webhook as DiscordWebhook, time, EmbedBuilder } from 'discord.js';
+import { ActionRowBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, WebhookClient, ForumChannel, NewsChannel, StageChannel, StringSelectMenuInteraction, TextChannel, VoiceChannel, Message, APIMessage, Webhook as DiscordWebhook, time, EmbedBuilder, MediaChannel } from 'discord.js';
 import Channel from '../models/channel';
 import DiscordUser from '../models/discordUser';
 import ProxyLimits from '../models/proxyLimits';
@@ -165,7 +165,7 @@ export const command: ContextMenuCommand = {
 };
 
 async function replaceWebhookMessage(
-	webhookChannel: NewsChannel | StageChannel | TextChannel | VoiceChannel | ForumChannel,
+	webhookChannel: NewsChannel | StageChannel | TextChannel | VoiceChannel | ForumChannel | MediaChannel,
 	interaction: StringSelectMenuInteraction<'cached'>,
 	targetMessageId: string,
 	quid: Quid<false> | Quid<true>,

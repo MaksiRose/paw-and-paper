@@ -49,9 +49,7 @@ export async function execute(
 export function killEvents(
 ): void {
 
-	for (const [eventName, func] of events.entries()) {
-		client.removeListener(eventName, func);
-	}
+	client.removeAllListeners();
 }
 
 export function waitForOperations() {

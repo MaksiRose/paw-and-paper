@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ForumChannel, Message, ModalBuilder, ModalSubmitInteraction, NewsChannel, StageChannel, TextChannel, TextInputBuilder, TextInputStyle, VoiceChannel, WebhookClient, Webhook as DiscordWebhook, EmbedBuilder, APIMessage, time } from 'discord.js';
+import { ActionRowBuilder, ForumChannel, Message, ModalBuilder, ModalSubmitInteraction, NewsChannel, StageChannel, TextChannel, TextInputBuilder, TextInputStyle, VoiceChannel, WebhookClient, Webhook as DiscordWebhook, EmbedBuilder, APIMessage, time, MediaChannel } from 'discord.js';
 import { respond } from '../utils/helperFunctions';
 import { canManageWebhooks, missingPermissions } from '../utils/permissionHandler';
 import { ContextMenuCommand } from '../typings/handle';
@@ -107,7 +107,7 @@ export const command: ContextMenuCommand = {
 async function editWebhookMessage(
 	interaction: ModalSubmitInteraction<'cached'>,
 	messageId: string,
-	webhookChannel: NewsChannel | StageChannel | TextChannel | VoiceChannel | ForumChannel,
+	webhookChannel: NewsChannel | StageChannel | TextChannel | VoiceChannel | ForumChannel | MediaChannel,
 	server: Server,
 	user?: User,
 	userToServer?: UserToServer,

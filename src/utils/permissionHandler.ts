@@ -49,6 +49,9 @@ export const permissionDisplay: Record<keyof typeof PermissionFlagsBits, string>
 	UseSoundboard: 'use the soundboard',
 	UseExternalSounds: 'use external sounds',
 	SendVoiceMessages: 'send voice messages',
+	CreateGuildExpressions: 'create guild expressions',
+	CreateEvents: 'create events',
+	SendPolls: 'send polls'
 };
 
 export async function hasPermission(
