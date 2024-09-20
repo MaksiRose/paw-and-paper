@@ -995,6 +995,24 @@ export const speciesInfo: { [key in SpeciesNames]: SpeciesInfo } = {
 executeEventHandler()
 	.then(function() {
 
+		setInterval(() => {
+			const listenerCounts = ['messageCreate', 'interactionCreate'].map(event => ({
+				event,
+				count: client.listenerCount(event),
+			}));
+			console.log('Listener counts:', listenerCounts);
+		}, 60000); // Every 60 seconds
+
 		executeCommandHandler();
 		client.login(token);
 	});
+
+const { monitorEventLoopDelay } = require('perf_hooks');
+
+const h = monitorEventLoopDelay({ resolution: 10 });
+h.enable();
+
+setInterval(() => {
+	console.log(`Event Loop Delay: ${h.mean / 1e6} ms`);
+	h.reset();
+}, 10000); // Every 10 seconds
