@@ -13,7 +13,7 @@
 	"author": "Maksi",
 	"license": "ISC",
 	"dependencies": {
-		"@octokit/rest": "^21.0.2",
+		"@octokit/rest": "^19.0.7",
 		"@sapphire/async-queue": "^1.5.3",
 		"@top-gg/sdk": "^3.1.6",
 		"bfd-api-redux": "^2.0.0",
