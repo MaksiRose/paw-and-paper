@@ -26,19 +26,26 @@ export const event: DiscordEvent = {
 	name: 'interactionCreate',
 	once: false,
 	async execute(interaction: Interaction) {
+		const startperf = performance.now();
 		try {
 
 			/* This is only null when in DM without CHANNEL partial, or when channel cache is sweeped. Therefore, this is technically unsafe since this value could become null after this check. This scenario is unlikely though. */
 			if (!interaction.channel) { await client.channels.fetch(interaction.channelId || ''); }
+
+			if (interaction.channelId === '962969729247637544') { console.log(`time 1: ${startperf - performance.now()}`); }
 
 			const discordUser = await DiscordUser.findByPk(interaction.user.id, {
 				include: [{ model: User, as: 'user' }],
 			}) ?? undefined;
 			const user = discordUser?.user;
 
+			if (interaction.channelId === '962969729247637544') { console.log(`time 2: ${startperf - performance.now()}`); }
+
 			const server = interaction.inCachedGuild()
 				? ((await Server.findByPk(interaction.guildId)) ?? await createGuild(interaction.guild))
 				: undefined;
+
+			if (interaction.channelId === '962969729247637544') { console.log(`time 3: ${startperf - performance.now()}`); }
 
 			const userToServer = (user && server)
 				? (
@@ -52,9 +59,13 @@ export const event: DiscordEvent = {
 				)
 				: undefined;
 
+			if (interaction.channelId === '962969729247637544') { console.log(`time 4: ${startperf - performance.now()}`); }
+
 			const quid: Quid | undefined = (user && !server)
 				? (user.lastGlobalActiveQuidId ? ((await Quid.findByPk(user.lastGlobalActiveQuidId)) ?? undefined) : undefined)
 				: (userToServer?.activeQuid ?? undefined);
+
+			if (interaction.channelId === '962969729247637544') { console.log(`time 5: ${startperf - performance.now()}`); }
 
 			/* It's updating the last interaction info for the user in the server. */
 			if (userToServer && interaction.inCachedGuild() && interaction.isRepliable()) {
@@ -70,12 +81,16 @@ export const event: DiscordEvent = {
 				else if (!serverActiveUsers.includes(interaction.user.id)) { serverActiveUsers.push(interaction.user.id); }
 			}
 
+			if (interaction.channelId === '962969729247637544') { console.log(`time 6: ${startperf - performance.now()}`); }
+
 			/* It's updating the info for the discord user in the server */
 			const discordUserToServer = (discordUser && server)
 				? await DiscordUserToServer.findOne({ where: { discordUserId: discordUser.id, serverId: server.id } }).then((row) => {
 					if (row) { return row.update({ isMember: true, lastUpdatedTimestamp: now() }, { logging: false }); }
 					else { return DiscordUserToServer.create({ id: generateId(), discordUserId: discordUser.id, serverId: server.id, isMember: true, lastUpdatedTimestamp: now() }); }
 				}) : undefined;
+
+			if (interaction.channelId === '962969729247637544') { console.log(`time 7: ${startperf - performance.now()}`); }
 
 			/* It's updating the info for the quid in the server, if it exists */
 			const quidToServer = (quid && interaction.inGuild())
@@ -85,6 +100,8 @@ export const event: DiscordEvent = {
 					if (row) { return row.update({ lastActiveTimestamp: now() }, { logging: false }); }
 					else { return QuidToServer.create({ id: generateId(), quidId: userToServer!.activeQuidId!, serverId: userToServer!.serverId, lastActiveTimestamp: now() }); }
 				}) : undefined;
+
+			if (interaction.channelId === '962969729247637544') { console.log(`time 8: ${startperf - performance.now()}`); }
 
 			if (interaction.isRepliable() && interaction.inRawGuild()) {
 
@@ -113,9 +130,13 @@ export const event: DiscordEvent = {
 
 			if (interaction.isChatInputCommand()) {
 
+				if (interaction.channelId === '962969729247637544') { console.log(`time 9: ${startperf - performance.now()}`); }
+
 				/* Getting the command from the client and checking if the command is undefined. If it is, it will error. */
 				const command = handle.slashCommands.get(interaction.commandName);
 				if (command === undefined || !keyInObject(command, 'sendCommand')) { return await sendErrorMessage(interaction, new Error('Unknown command')); }
+
+				if (interaction.channelId === '962969729247637544') { console.log(`time 10: ${startperf - performance.now()}`); }
 
 				/* This sends the command and error message if an error occurs. */
 				{ console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully executed \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`); }
