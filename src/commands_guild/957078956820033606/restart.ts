@@ -28,7 +28,7 @@ export const command: SlashCommand = {
 			const { id } = await interaction.deferReply({ fetchReply: true }).catch(() => { return { id: undefined }; });
 
 			const res = await new Promise<boolean>((resolve, reject) => {
-				exec('git pull origin stable && npm update && rm -rf dist && tsc -p tsconfig.json', (error, stdout, stderr) => {
+				exec('git restore . && git pull origin stable && npm update && rm -rf dist && tsc -p tsconfig.json', (error, stdout, stderr) => {
 					if (error) {
 						console.error(`exec error: ${error}`);
 						reject(error);
