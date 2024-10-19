@@ -25,7 +25,7 @@ export const command: SlashCommand = {
 
 		if (cluster.worker) {
 
-			const { id } = await interaction.deferReply({ fetchReply: true });
+			const { id } = await interaction.deferReply({ fetchReply: true }).catch(() => { return { id: undefined }; });
 
 			const res = await new Promise<boolean>((resolve, reject) => {
 				exec('git pull origin stable && npm update && rm -rf dist && tsc -p tsconfig.json', (error, stdout, stderr) => {
