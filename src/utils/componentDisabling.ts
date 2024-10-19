@@ -24,7 +24,7 @@ export function disableAllComponents(
 			const data = isJSONEncodable(component) ? component.toJSON() : component;
 
 			if (data.type !== ComponentType.Button || data.style !== ButtonStyle.Link) { data.disabled = true; }
-			return data.type === ComponentType.Button ? new ButtonBuilder(data) : data.type === ComponentType.StringSelect ? new StringSelectMenuBuilder(data) : data.type === ComponentType.RoleSelect ? new RoleSelectMenuBuilder(data) : data.type === ComponentType.UserSelect ? new UserSelectMenuBuilder(data) : data.type === ComponentType.ChannelSelect ? new ChannelSelectMenuBuilder(data) :	new MentionableSelectMenuBuilder(data);
+			return data.type === ComponentType.Button ? new ButtonBuilder(data) : data.type === ComponentType.StringSelect ? new StringSelectMenuBuilder(data) : data.type === ComponentType.RoleSelect ? new RoleSelectMenuBuilder(data) : data.type === ComponentType.UserSelect ? new UserSelectMenuBuilder(data) : data.type === ComponentType.ChannelSelect ? new ChannelSelectMenuBuilder(data) : data.type === ComponentType.MentionableSelect ? new MentionableSelectMenuBuilder(data) : new StringSelectMenuBuilder(data);
 		}));
 	});
 }
