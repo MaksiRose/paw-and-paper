@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Op } from 'sequelize';
 import { isResting, startResting } from '../commands/gameplay_maintenance/rest';
 import { lastInteractionMap, serverActiveUsersMap } from '../events/interactionCreate';
@@ -51,75 +52,74 @@ export async function execute(): Promise<void> {
 	intervals.push(interval1);
 
 
-	async function tenSecondInterval() {
+	// async function tenSecondInterval() {
 
-		const tenMinutesInS = 600;
-		const usersToServers = await UserToServer.findAll({
-			where: {
-				activeQuidId: { [Op.not]: null },
-				lastInteraction_timestamp: { [Op.not]: null, [Op.lt]: now() - tenMinutesInS },
-				hasCooldown: false,
-			},
-		});
-		for (const userToServer of usersToServers) {
+	// 	const tenMinutesInS = 600;
+	// 	const usersToServers = await UserToServer.findAll({
+	// 		where: {
+	// 			activeQuidId: { [Op.not]: null },
+	// 			lastInteraction_timestamp: { [Op.not]: null, [Op.lt]: now() - tenMinutesInS },
+	// 			hasCooldown: false,
+	// 		},
+	// 	});
+	// 	for (const userToServer of usersToServers) {
 
-			if (!userToServer.activeQuidId || !userToServer.lastInteraction_timestamp) { continue; } // This should never happen and is just for typings
-			const quid = await Quid.findByPk(userToServer.activeQuidId);
+	// 		if (!userToServer.activeQuidId || !userToServer.lastInteraction_timestamp) { continue; } // This should never happen and is just for typings
+	// 		const quid = await Quid.findByPk(userToServer.activeQuidId);
 
-			/* start resting if possible */
-			if (!hasNameAndSpecies(quid)) { continue; }
+	// 		/* start resting if possible */
+	// 		if (!hasNameAndSpecies(quid)) { continue; }
 
-			const user = await User.findByPk(userToServer.userId);
-			const quidToServer = await QuidToServer.findOne({ where: { quidId: quid.id, serverId: userToServer.serverId } });
-			const server = await Server.findByPk(userToServer.serverId);
-			const discordUsers = await DiscordUser.findAll({ where: { userId: userToServer.userId } });
-			const discordUsersToServer = await DiscordUserToServer.findOne({
-				where: {
-					discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
-					isMember: true,
-					serverId: userToServer.serverId,
-				},
-			});
-			if (!user || !quidToServer || !server || !discordUsersToServer) { continue; }
+	// 		const user = await User.findByPk(userToServer.userId);
+	// 		const quidToServer = await QuidToServer.findOne({ where: { quidId: quid.id, serverId: userToServer.serverId } });
+	// 		const server = await Server.findByPk(userToServer.serverId);
+	// 		const discordUsers = await DiscordUser.findAll({ where: { userId: userToServer.userId } });
+	// 		const discordUsersToServer = await DiscordUserToServer.findOne({
+	// 			where: {
+	// 				discordUserId: { [Op.in]: discordUsers.map(du => du.id) },
+	// 				isMember: true,
+	// 				serverId: userToServer.serverId,
+	// 			},
+	// 		});
+	// 		if (!user || !quidToServer || !server || !discordUsersToServer) { continue; }
 
-			const hasLessThanMaxEnergy = quidToServer.energy < quidToServer.maxEnergy;
-			const isConscious = quidToServer.energy > 0 && quidToServer.health > 0 && quidToServer.hunger > 0 && quidToServer.thirst > 0;
-			if (isResting(userToServer) === false && hasLessThanMaxEnergy && isConscious) {
+	// 		const hasLessThanMaxEnergy = quidToServer.energy < quidToServer.maxEnergy;
+	// 		const isConscious = quidToServer.energy > 0 && quidToServer.health > 0 && quidToServer.hunger > 0 && quidToServer.thirst > 0;
+	// 		if (isResting(userToServer) === false && hasLessThanMaxEnergy && isConscious) {
 
-				const lastInteraction = lastInteractionMap.get(user.id + server.id);
-				await startResting(lastInteraction, discordUsersToServer.discordUserId, user, quid, userToServer, quidToServer, server, '', true)
-					.catch(async (error) => {
-						if (lastInteraction !== undefined) {
+	// 			const lastInteraction = lastInteractionMap.get(user.id + server.id);
+	// 			await startResting(lastInteraction, discordUsersToServer.discordUserId, user, quid, userToServer, quidToServer, server, '', true)
+	// 				.catch(async (error) => {
+	// 					if (lastInteraction !== undefined) {
 
-							await sendErrorMessage(lastInteraction, error)
-								.catch(e => { console.error(e); });
-							lastInteractionMap.delete(user.id + server.id); // This is to avoid sending repeating error messages every 10 seconds
-						}
-						else {
+	// 						await sendErrorMessage(lastInteraction, error)
+	// 							.catch(e => { console.error(e); });
+	// 						lastInteractionMap.delete(user.id + server.id); // This is to avoid sending repeating error messages every 10 seconds
+	// 					}
+	// 					else {
 
-							console.error(error);
-							// This is to avoid sending repeating error messages to the console every 10 seconds
-							await userToServer.update({ lastInteraction_timestamp: null });
-						}
-					});
-			}
-		}
+	// 						console.error(error);
+	// 						// This is to avoid sending repeating error messages to the console every 10 seconds
+	// 						await userToServer.update({ lastInteraction_timestamp: null });
+	// 					}
+	// 				});
+	// 		}
+	// 	}
 
-		for (let [guildId, array] of serverActiveUsersMap.entries()) {
+	// 	for (let [guildId, array] of serverActiveUsersMap.entries()) {
 
-			for (const userId of array) {
+	// 		for (const userId of array) {
 
-				const userToServer = await UserToServer.findOne({ where: { userId: userId, serverId: guildId } });
+	// 			const userToServer = await UserToServer.findOne({ where: { userId: userId, serverId: guildId } });
 
-				/* If there is no last interaction or if the last interaction was created more than 5 minutes ago, remove the user from the array */
-				if (!userToServer || !userToServer.lastInteraction_timestamp || userToServer.lastInteraction_timestamp <= now() - 300) { array = array.filter(v => v !== userId); }
-			}
-			serverActiveUsersMap.set(guildId, array);
-		}
-	}
-	tenSecondInterval();
-	const interval2 = setInterval(tenSecondInterval, 10_000);
-	intervals.push(interval2);
+	// 			/* If there is no last interaction or if the last interaction was created more than 5 minutes ago, remove the user from the array */
+	// 			if (!userToServer || !userToServer.lastInteraction_timestamp || userToServer.lastInteraction_timestamp <= now() - 300) { array = array.filter(v => v !== userId); }
+	// 		}
+	// 		serverActiveUsersMap.set(guildId, array);
+	// 	}
+	// }
+	// const interval2 = setInterval(tenSecondInterval, 10_000);
+	// intervals.push(interval2);
 }
 
 export function destroyIntervals(

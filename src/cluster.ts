@@ -22,11 +22,7 @@ export const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 		freezeTableName: true,
 	},
 	models: readdirSync(tablePath).map(el => tablePath + el),
-	benchmark: true,
 	logging: (_msg, options: any) => {
-		if (options.type === 'SELECT') {
-			console.log(`executed in ${options.benchmark} ms: ${_msg}`);
-		}
 		if (
 			options &&
 			options.instance &&
