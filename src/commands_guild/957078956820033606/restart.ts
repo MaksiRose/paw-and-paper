@@ -5,6 +5,7 @@ import cluster from 'node:cluster';
 import { killEvents, waitForOperations } from '../../handlers/events';
 import { destroyIntervals as killIntervals } from '../../handlers/interval';
 import { exec } from 'node:child_process';
+import { sequelize } from '../../cluster';
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -72,6 +73,7 @@ export const command: SlashCommand = {
 						}, 'update', id);
 
 						await waitForOperations();
+						await sequelize.close();
 						interaction.client.destroy();
 						cluster.worker!.kill();
 					}

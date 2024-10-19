@@ -27,16 +27,24 @@ export const event: DiscordEvent = {
 			return;
 		}
 
+		if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 1: ${performance.now()}`); }
+
 		const discordUser = await DiscordUser.findByPk(message.author.id, {
 			include: [{ model: User, as: 'user' }],
 		});
 		const user = discordUser?.user;
 
+		if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 2: ${performance.now()}`); }
+
 		const server = (await Server.findByPk(message.guildId)) ?? await createGuild(message.guild);
+
+		if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 3: ${performance.now()}`); }
 
 		if (user === undefined || server === null) { return; }
 
 		let { replaceMessage, quid, userToServer } = await checkForProxy(message, user);
+
+		if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 9: ${performance.now()}`); }
 
 		if (server.currentlyVisitingChannelId !== null && message.channel.id === server.visitChannelId) {
 
@@ -57,6 +65,8 @@ export const event: DiscordEvent = {
 					return null;
 				});
 
+			if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 10: ${performance.now()}`); }
+
 			if (!botMessage) { return; }
 			console.log(`\x1b[32m${message.author.tag} (${message.author.id})\x1b[0m successfully \x1b[31mproxied \x1b[0ma new message in \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
@@ -65,6 +75,7 @@ export const event: DiscordEvent = {
 				await message
 					.delete()
 					.catch(async e => { if (isObject(e) && e.code === 10008) { await message.channel.messages.delete(botMessage.id); } }); // If the message is unknown, its webhooked message is probbaly not supposed to exist too, so we delete it
+				if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 11: ${performance.now()}`); }
 			}
 			else if (await hasPermission(message.guild.members.me || await message.channel.guild.members.fetchMe({ force: false }) || message.client.user.id, message.channel, message.channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) {
 
@@ -91,16 +102,22 @@ export async function checkForProxy(
 
 	let replaceMessage = true;
 
+	if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 4: ${performance.now()}`); }
+
 	DiscordUserToServer
 		.update({ isMember: true, lastUpdatedTimestamp: now() }, { where: { discordUserId: message.author.id, serverId: message.guildId } })
 		.then(([r]) => {
 			if (r === 0) { DiscordUserToServer.create({ id: generateId(), discordUserId: message.author.id, serverId: message.guildId, isMember: true, lastUpdatedTimestamp: now() }); }
 		});
 
+	if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 5: ${performance.now()}`); }
+
 
 	const userToServer = await UserToServer.findOne({
 		where: { serverId: message.guildId, userId: user.id },
 	});
+
+	if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 6: ${performance.now()}`); }
 
 
 	const messageIncludesAntiProxy = user.antiproxies.some(ap => message.content.startsWith(ap[0] ?? '')
@@ -126,6 +143,8 @@ export async function checkForProxy(
 		const finalQuidId = user.proxy_setTo === ProxySetTo.onWithSelectMode ? user.lastGlobalActiveQuidId : user.proxy_lastGlobalProxiedQuidId;
 		let finalQuid: Quid | null = null;
 
+		if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 7a: ${performance.now()}`); }
+
 		for (const quid of (await Quid.findAll({ where: { userId: user.id }, attributes: ['id', 'proxies'] }))) {
 
 			for (const p of quid.proxies) {
@@ -142,6 +161,8 @@ export async function checkForProxy(
 				}
 			}
 		}
+
+		if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 8a: ${performance.now()}`); }
 
 		if (replaceMessage) {
 
@@ -167,6 +188,8 @@ export async function checkForProxy(
 		const finalQuidId = userToServer.autoproxy_setTo === AutoproxySetTo.onWithSelectMode ? userToServer.activeQuidId : userToServer.lastProxiedQuidId;
 		let finalQuid: Quid | null = null;
 
+		if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 7b: ${performance.now()}`); }
+
 		for (const quid of (await Quid.findAll({ where: { userId: user.id }, attributes: ['id', 'proxies'] }))) {
 
 			for (const p of quid.proxies) {
@@ -183,6 +206,8 @@ export async function checkForProxy(
 				}
 			}
 		}
+
+		if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 8b: ${performance.now()}`); }
 
 		if (replaceMessage) { userToServer.update({ lastProxiedQuidId: finalQuid?.id }); }
 

@@ -10,6 +10,7 @@ import { Octokit } from '@octokit/rest';
 import { execute as executeCommandHandler } from './handlers/commands';
 import { execute as executeEventHandler } from './handlers/events';
 const { token, bfd_token, bfd_authorization, top_token, top_authorization, dbl_token, dbl_authorization, github_token, database_password } = require('../config.json');
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const bfd = require('bfd-api-redux/src/main');
 
 
@@ -38,11 +39,12 @@ export const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 						for (const val of before) { countMap.set(val, (countMap.get(val) || 0) - 1); }
 						for (const val of after) { countMap.set(val, (countMap.get(val) || 0) + 1); }
 
-						const removed = Array.from(countMap.entries())
+						const arr = Array.from(countMap.entries());
+						const removed = arr
 							.filter(([, count]) => count < 0)
 							.flatMap(([val, count]) => Array(Math.abs(count)).fill(val));
 
-						const added = Array.from(countMap.entries())
+						const added = arr
 							.filter(([, count]) => count > 0)
 							.flatMap(([val, count]) => Array(count).fill(val));
 
