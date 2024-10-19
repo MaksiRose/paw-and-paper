@@ -22,17 +22,21 @@ export const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 		freezeTableName: true,
 	},
 	models: readdirSync(tablePath).map(el => tablePath + el),
-	logging: (_msg, sequelizeLogParams: any) => {
+	benchmark: true,
+	logging: (_msg, options: any) => {
+		if (options.type === 'SELECT') {
+			console.log(`executed in ${options.benchmark} ms: ${_msg}`);
+		}
 		if (
-			sequelizeLogParams &&
-			sequelizeLogParams.instance &&
-			sequelizeLogParams.instance._changed
+			options &&
+			options.instance &&
+			options.instance._changed
 		) {
-			if (sequelizeLogParams.type === 'UPDATE') {
-				const changes = (Array.from(sequelizeLogParams.instance._changed) as string[]).map((columnName) => {
+			if (options.type === 'UPDATE') {
+				const changes = (Array.from(options.instance._changed) as string[]).map((columnName) => {
 
-					const before = sequelizeLogParams.instance._previousDataValues[columnName];
-					const after = sequelizeLogParams.instance.dataValues[columnName];
+					const before = options.instance._previousDataValues[columnName];
+					const after = options.instance.dataValues[columnName];
 
 					if (Array.isArray(after) && Array.isArray(before)) {
 						const countMap = new Map<any, number>();
@@ -54,17 +58,17 @@ export const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 						return { column: columnName, before, after };
 					}
 				});
-				console.log(`${sequelizeLogParams.instance.constructor.name} ${sequelizeLogParams.instance.id} updated:`, changes);
+				console.log(`${options.instance.constructor.name} ${options.instance.id} updated:`, changes);
 			}
-			else if (sequelizeLogParams.type === 'INSERT') {
-				const changes: Record<string, any> = { id: sequelizeLogParams.instance.dataValues.id };
-				(Array.from(sequelizeLogParams.instance._changed) as string[]).forEach((columnName) => {
-					changes[columnName] = sequelizeLogParams.instance.dataValues[columnName];
+			else if (options.type === 'INSERT') {
+				const changes: Record<string, any> = { id: options.instance.dataValues.id };
+				(Array.from(options.instance._changed) as string[]).forEach((columnName) => {
+					changes[columnName] = options.instance.dataValues[columnName];
 				});
-				console.log(`Created ${sequelizeLogParams.instance.constructor.name}:`, changes);
+				console.log(`Created ${options.instance.constructor.name}:`, changes);
 			}
-			else if (sequelizeLogParams.type === 'DELETE') {
-				console.log(`Deleted ${sequelizeLogParams.instance.constructor.name} ${sequelizeLogParams.instance.id}`);
+			else if (options.type === 'DELETE') {
+				console.log(`Deleted ${options.instance.constructor.name} ${options.instance.id}`);
 			}
 		}
 	},

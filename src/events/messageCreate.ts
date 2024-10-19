@@ -95,7 +95,7 @@ export async function checkForProxy(
 	const [partialUserToServer, partialQuids] = await Promise.all([
 		UserToServer.findOne({
 			where: { serverId: message.guildId, userId: partialUser.id },
-			attributes: ['autoproxy_setTo', 'autoproxy_setToWhitelist', 'autoproxy_whitelist', 'autoproxy_blacklist', 'activeQuidId', 'lastProxiedQuidId', 'tag'],
+			attributes: ['id', 'autoproxy_setTo', 'autoproxy_setToWhitelist', 'autoproxy_whitelist', 'autoproxy_blacklist', 'activeQuidId', 'lastProxiedQuidId', 'tag'],
 		}),
 		Quid.findAll({ where: { userId: partialUser.id }, attributes: ['id', 'proxies'] }),
 	]);
