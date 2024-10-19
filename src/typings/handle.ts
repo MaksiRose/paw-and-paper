@@ -6,9 +6,8 @@ import UserToServer from '../models/userToServer';
 import Quid from '../models/quid';
 import QuidToServer from '../models/quidToServer';
 import DiscordUser from '../models/discordUser';
-import DiscordUserToServer from '../models/discordUserToServer';
 
-type dataOptions = { user?: User, server?: Server, userToServer?: UserToServer, quid?: Quid<true> | Quid<false>, quidToServer?: QuidToServer; discordUser?: DiscordUser, discordUserToServer?: DiscordUserToServer }
+type dataOptions = { user?: User, server?: Server, userToServer?: UserToServer, quid?: Quid<true> | Quid<false>, quidToServer?: QuidToServer; discordUser?: DiscordUser, }
 
 interface Command {
 	data: RESTPostAPIApplicationCommandsJSONBody;

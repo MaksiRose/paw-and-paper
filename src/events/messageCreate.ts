@@ -105,7 +105,7 @@ export async function checkForProxy(
 	if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 4: ${performance.now()}`); }
 
 	DiscordUserToServer
-		.update({ isMember: true, lastUpdatedTimestamp: now() }, { where: { discordUserId: message.author.id, serverId: message.guildId } })
+		.update({ isMember: true, lastUpdatedTimestamp: now() }, { where: { discordUserId: message.author.id, serverId: message.guildId }, logging: false })
 		.then(([r]) => {
 			if (r === 0) { DiscordUserToServer.create({ id: generateId(), discordUserId: message.author.id, serverId: message.guildId, isMember: true, lastUpdatedTimestamp: now() }); }
 		});
