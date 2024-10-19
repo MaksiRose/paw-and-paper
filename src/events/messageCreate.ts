@@ -21,34 +21,26 @@ export const event: DiscordEvent = {
 
 		if (message.author.bot || !message.inGuild()) { return; }
 
-		if (message.content.toLowerCase().startsWith('rp ') && await hasPermission(message.guild.members.me || message.client.user.id, message.channel, message.channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) {
-
-			await message.reply({ content: '**Regular commands were replaced in favour of slash (`/`) commands.**\n\nIf you don\'t know what slash commands are or how to use them, read this article: <https://support.discord.com/hc/en-us/articles/1500000368501-Slash-Commands-FAQ>\n\nIf no slash commands for this bot appear, re-invite this bot by clicking on its profile and then on "Add to server".' });
-			return;
-		}
-
 		if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 1: ${performance.now()}`); }
 
-		const discordUser = await DiscordUser.findByPk(message.author.id, {
-			include: [{ model: User, as: 'user' }],
-		});
-		const user = discordUser?.user;
+		const partialUser = (await DiscordUser.findByPk(message.author.id, {
+			include: [{ model: User, as: 'user', attributes: ['id', 'antiproxies', 'proxy_setTo', 'lastGlobalActiveQuidId', 'proxy_lastGlobalProxiedQuidId', 'proxy_keepInMessage', 'tag'] }],
+		}))?.user;
+		if (!partialUser) { return; }
 
 		if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 2: ${performance.now()}`); }
 
-		const server = (await Server.findByPk(message.guildId)) ?? await createGuild(message.guild);
+		const partialServer = (await Server.findByPk(message.guildId, { attributes: ['id', 'currentlyVisitingChannelId', 'visitChannelId', 'logChannelId', 'logLimitsId', 'proxy_channelLimitsId', 'proxy_roleLimitsId', 'nameRuleSets'] })) ?? await createGuild(message.guild);
 
 		if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 3: ${performance.now()}`); }
 
-		if (user === undefined || server === null) { return; }
-
-		let { replaceMessage, quid, userToServer } = await checkForProxy(message, user);
+		let { replaceMessage, quid, partialUserToServer } = await checkForProxy(message, partialUser);
 
 		if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 9: ${performance.now()}`); }
 
-		if (server.currentlyVisitingChannelId !== null && message.channel.id === server.visitChannelId) {
+		if (partialServer.currentlyVisitingChannelId !== null && message.channel.id === partialServer.visitChannelId) {
 
-			const otherServerData = await Server.findOne({ where: { id: server.currentlyVisitingChannelId } });
+			const otherServerData = await Server.findOne({ where: { id: partialServer.currentlyVisitingChannelId } });
 
 			if (otherServerData) {
 
@@ -59,7 +51,7 @@ export const event: DiscordEvent = {
 
 		if (replaceMessage && hasName(quid) && (message.content.length > 0 || message.attachments.size > 0)) {
 
-			const botMessage = await sendMessage(message.channel, message.content, quid, user, server, message.author, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined, userToServer ?? undefined)
+			const botMessage = await sendMessage(message.channel, message.content, quid, partialUser, partialServer, message.author, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined, partialUserToServer ?? undefined)
 				.catch(error => {
 					console.error(error);
 					return null;
@@ -97,10 +89,16 @@ export const event: DiscordEvent = {
 
 export async function checkForProxy(
 	message: Message<true> & Message<boolean>,
-	user: User,
-): Promise<{ replaceMessage: boolean, quid: Quid | null, userToServer: UserToServer | null; }> {
+	partialUser: User,
+): Promise<{ replaceMessage: boolean, quid: Quid | null, partialUserToServer: UserToServer | null; }> {
 
-	let replaceMessage = true;
+	const [partialUserToServer, partialQuids] = await Promise.all([
+		UserToServer.findOne({
+			where: { serverId: message.guildId, userId: partialUser.id },
+			attributes: ['autoproxy_setTo', 'autoproxy_setToWhitelist', 'autoproxy_whitelist', 'autoproxy_blacklist', 'activeQuidId', 'lastProxiedQuidId', 'tag'],
+		}),
+		Quid.findAll({ where: { userId: partialUser.id }, attributes: ['id', 'proxies'] }),
+	]);
 
 	if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 4: ${performance.now()}`); }
 
@@ -113,104 +111,73 @@ export async function checkForProxy(
 	if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 5: ${performance.now()}`); }
 
 
-	const userToServer = await UserToServer.findOne({
-		where: { serverId: message.guildId, userId: user.id },
-	});
+	const messageIncludesAntiProxy = partialUser.antiproxies.some(
+		ap => message.content.startsWith(ap[0] ?? '') && message.content.endsWith(ap[1] ?? ''),
+	);
+	const followsGlobalSettings = partialUserToServer === null || partialUserToServer.autoproxy_setTo === AutoproxySetTo.followGlobal;
 
-	if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 6: ${performance.now()}`); }
+	/* If the message includes an antiproxy, then don't replace the message. If the users settings are set to sticky mode, then update the database so it doesn't proxy anymore. In any case, return the proxy check, because an included antiproxy always means the message should not be proxied. */
+	if (messageIncludesAntiProxy) {
+		if (partialUser.proxy_setTo === ProxySetTo.onWithStickyMode) {
+			if (followsGlobalSettings) {
+				await Promise.all([
+					partialUserToServer?.update({ lastProxiedQuidId: null }),
+					partialUser.update({ proxy_lastGlobalProxiedQuidId: null }),
+				]);
+			}
+			else {
+				await partialUserToServer.update({ lastProxiedQuidId: null });
+			}
+		}
+		return { replaceMessage: false, quid: null, partialUserToServer };
+	}
 
-
-	const messageIncludesAntiProxy = user.antiproxies.some(ap => message.content.startsWith(ap[0] ?? '')
-		&& message.content.endsWith(ap[1] ?? ''));
-
-
-	const followsGlobalSettings = userToServer === null || userToServer.autoproxy_setTo === AutoproxySetTo.followGlobal;
+	let replaceMessage = true;
+	let finalQuid: Quid | null = null;
+	let finalQuidId: string | null = null;
 
 	if (followsGlobalSettings) {
+		if (partialUser.proxy_setTo === ProxySetTo.off) { replaceMessage = false; }
 
-		if (user.proxy_setTo === ProxySetTo.off) { replaceMessage = false; }
-		if (messageIncludesAntiProxy) {
-
-			if (replaceMessage) {
-
-				userToServer?.update({ lastProxiedQuidId: null });
-				user.update({ proxy_lastGlobalProxiedQuidId: null });
-			}
-			replaceMessage = false;
-		}
-
-
-		const finalQuidId = user.proxy_setTo === ProxySetTo.onWithSelectMode ? user.lastGlobalActiveQuidId : user.proxy_lastGlobalProxiedQuidId;
-		let finalQuid: Quid | null = null;
-
-		if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 7a: ${performance.now()}`); }
-
-		for (const quid of (await Quid.findAll({ where: { userId: user.id }, attributes: ['id', 'proxies'] }))) {
-
-			for (const p of quid.proxies) {
-
-				if (message.content.startsWith(p[0] ?? '')
-					&& message.content.endsWith(p[1] ?? '')) {
-
-					finalQuid = quid;
-					replaceMessage = true;
-					if (user.proxy_keepInMessage === false) {
-
-						message.content = message.content.substring(p[0]?.length ?? 0, message.content.length - (p[1]?.length ?? 0));
-					}
-				}
-			}
-		}
-
-		if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 8a: ${performance.now()}`); }
-
-		if (replaceMessage) {
-
-			userToServer?.update({ lastProxiedQuidId: finalQuid?.id });
-			user.update({ proxy_lastGlobalProxiedQuidId: finalQuid?.id });
-		}
-
-		return { replaceMessage, quid: await Quid.findByPk(finalQuid?.id ?? finalQuidId ?? ''), userToServer };
+		finalQuidId = partialUser.proxy_setTo === ProxySetTo.onWithSelectMode ? partialUser.lastGlobalActiveQuidId : partialUser.proxy_lastGlobalProxiedQuidId;
 	}
 	else {
+		if (partialUserToServer.autoproxy_setTo === AutoproxySetTo.off) { replaceMessage = false; }
+		if (partialUserToServer.autoproxy_setToWhitelist === true
+			? !partialUserToServer.autoproxy_whitelist.includes(message.channelId)
+			: partialUserToServer.autoproxy_blacklist.includes(message.channelId)) { replaceMessage = false; }
 
-		if (userToServer.autoproxy_setTo === AutoproxySetTo.off) { replaceMessage = false; }
-		if (messageIncludesAntiProxy) {
+		finalQuidId = partialUserToServer.autoproxy_setTo === AutoproxySetTo.onWithSelectMode ? partialUserToServer.activeQuidId : partialUserToServer.lastProxiedQuidId;
+	}
 
-			if (replaceMessage) { userToServer.update({ lastProxiedQuidId: null }); }
-			replaceMessage = false;
-		}
-		if (userToServer.autoproxy_setToWhitelist === true
-			? !userToServer.autoproxy_whitelist.includes(message.channelId)
-			: userToServer.autoproxy_blacklist.includes(message.channelId)) { replaceMessage = false; }
+	if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 7a: ${performance.now()}`); }
 
-
-		const finalQuidId = userToServer.autoproxy_setTo === AutoproxySetTo.onWithSelectMode ? userToServer.activeQuidId : userToServer.lastProxiedQuidId;
-		let finalQuid: Quid | null = null;
-
-		if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 7b: ${performance.now()}`); }
-
-		for (const quid of (await Quid.findAll({ where: { userId: user.id }, attributes: ['id', 'proxies'] }))) {
-
-			for (const p of quid.proxies) {
-
-				if (message.content.startsWith(p[0] ?? '')
+	for (const partialQuid of partialQuids) {
+		for (const p of partialQuid.proxies) {
+			if (message.content.startsWith(p[0] ?? '')
 					&& message.content.endsWith(p[1] ?? '')) {
-
-					finalQuid = quid;
-					replaceMessage = true;
-					if (user.proxy_keepInMessage === false) {
-
-						message.content = message.content.substring(p[0]?.length ?? 0, message.content.length - (p[1]?.length ?? 0));
-					}
+				finalQuid = partialQuid;
+				replaceMessage = true;
+				if (partialUser.proxy_keepInMessage === false) {
+					message.content = message.content.substring(p[0]?.length ?? 0, message.content.length - (p[1]?.length ?? 0));
 				}
 			}
 		}
-
-		if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 8b: ${performance.now()}`); }
-
-		if (replaceMessage) { userToServer.update({ lastProxiedQuidId: finalQuid?.id }); }
-
-		return { replaceMessage, quid: await Quid.findByPk(finalQuid?.id ?? finalQuidId ?? ''), userToServer };
 	}
+
+	if (message.channelId === '962969729247637544') { console.log(`message id: ${message.id} // time 8a: ${performance.now()}`); }
+
+	if (replaceMessage) {
+		if (followsGlobalSettings) {
+			await Promise.all([partialUserToServer?.update({ lastProxiedQuidId: finalQuid?.id }),
+				partialUser.update({ proxy_lastGlobalProxiedQuidId: finalQuid?.id })]);
+		}
+		else {
+			await partialUserToServer.update({ lastProxiedQuidId: finalQuid?.id });
+		}
+	}
+
+	finalQuidId = finalQuid?.id ?? finalQuidId;
+	const quid = finalQuidId ? await Quid.findByPk(finalQuidId) : null;
+	return { replaceMessage, quid, partialUserToServer };
 }

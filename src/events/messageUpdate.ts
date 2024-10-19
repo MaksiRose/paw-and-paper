@@ -17,21 +17,20 @@ export const event: DiscordEvent = {
 
 		if (message.author.bot || !message.inGuild()) { return; }
 
-		const discordUser = await DiscordUser.findByPk(message.author.id, {
-			include: [{ model: User, as: 'user' }],
-		});
-		const user = discordUser?.user;
+		const partialUser = (await DiscordUser.findByPk(message.author.id, {
+			include: [{ model: User, as: 'user', attributes: ['id', 'antiproxies', 'proxy_setTo', 'lastGlobalActiveQuidId', 'proxy_lastGlobalProxiedQuidId', 'proxy_keepInMessage', 'tag', 'proxy_editing'] }],
+		}))?.user;
+		if (!partialUser) { return; }
 
-		const server = (await Server.findByPk(message.guildId)) ?? await createGuild(message.guild);
+		const partialServer = (await Server.findByPk(message.guildId, { attributes: ['id', 'currentlyVisitingChannelId', 'visitChannelId', 'logChannelId', 'logLimitsId', 'proxy_channelLimitsId', 'proxy_roleLimitsId', 'nameRuleSets'] })) ?? await createGuild(message.guild);
 
-		if (user === undefined || server === null) { return; }
-		if (user.proxy_editing === false) { return; }
+		if (partialUser.proxy_editing === false) { return; }
 
-		const { replaceMessage, quid, userToServer } = await checkForProxy(message, user);
+		const { replaceMessage, quid, partialUserToServer } = await checkForProxy(message, partialUser);
 
 		if (replaceMessage && hasName(quid) && (message.content.length > 0 || message.attachments.size > 0)) {
 
-			const botMessage = await sendMessage(message.channel, message.content, quid, user, server, message.author, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined, userToServer ?? undefined)
+			const botMessage = await sendMessage(message.channel, message.content, quid, partialUser, partialServer, message.author, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined, partialUserToServer ?? undefined)
 				.catch(error => {
 					console.error(error);
 					return null;

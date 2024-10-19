@@ -323,6 +323,7 @@ export const command: SlashCommand = {
 					}
 					else {
 
+						// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 						user1IsPlaying ? uncoveredCardsUser1 += 1 : uncoveredCardsUser2 += 1;
 					}
 

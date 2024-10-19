@@ -11,8 +11,8 @@ export async function execute(
 	const allServers = await client.guilds.fetch();
 	for (const OAuth2Guild of allServers.values()) {
 
-		const server = await Server.findByPk(OAuth2Guild.id);
-		if (!server) {
+		const partialServer = await Server.findByPk(OAuth2Guild.id, { attributes: ['id'] });
+		if (!partialServer) {
 
 			const guild = await client.guilds.fetch(OAuth2Guild.id);
 			await createGuild(guild)
