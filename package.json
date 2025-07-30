@@ -13,6 +13,7 @@
 	"author": "Maksi",
 	"license": "ISC",
 	"dependencies": {
+		"@discordjs/collection": "^2.1.1",
 		"@octokit/rest": "^19.0.7",
 		"@sapphire/async-queue": "^1.5.3",
 		"@top-gg/sdk": "^3.1.6",

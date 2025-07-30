@@ -13,7 +13,7 @@ import { checkForProxy } from './messageCreate';
 export const event: DiscordEvent = {
 	name: 'messageUpdate',
 	once: false,
-	async execute(_oldMessage: Message, message: Message) {
+	async execute(oldMessage: Message, message: Message) {
 
 		if (message.author.bot || !message.inGuild()) { return; }
 
@@ -26,9 +26,10 @@ export const event: DiscordEvent = {
 
 		if (partialUser.proxy_editing === false) { return; }
 
+		const { replaceOldMessage} = await checkForProxy(oldMessage, partialUser);
 		const { replaceMessage, quid, partialUserToServer } = await checkForProxy(message, partialUser);
 
-		if (replaceMessage && hasName(quid) && (message.content.length > 0 || message.attachments.size > 0)) {
+		if (!replaceOldMessage && replaceMessage && hasName(quid) && (message.content.length > 0 || message.attachments.size > 0)) {
 
 			const botMessage = await sendMessage(message.channel, message.content, quid, partialUser, partialServer, message.author, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined, partialUserToServer ?? undefined)
 				.catch(error => {
