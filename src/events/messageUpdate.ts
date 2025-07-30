@@ -9,13 +9,15 @@ import { isObject } from '../utils/helperFunctions';
 import { getMissingPermissionContent, hasPermission, permissionDisplay } from '../utils/permissionHandler';
 import { createGuild } from '../utils/updateGuild';
 import { checkForProxy } from './messageCreate';
+import UserToServer from '../models/userToServer';
+import Quid from '../models/quid';
 
 export const event: DiscordEvent = {
 	name: 'messageUpdate',
 	once: false,
 	async execute(oldMessage: Message, message: Message) {
 
-		if (message.author.bot || !message.inGuild()) { return; }
+		if (message.author.bot || !message.inGuild() || !oldMessage.inGuild()) { return; }
 
 		const partialUser = (await DiscordUser.findByPk(message.author.id, {
 			include: [{ model: User, as: 'user', attributes: ['id', 'antiproxies', 'proxy_setTo', 'lastGlobalActiveQuidId', 'proxy_lastGlobalProxiedQuidId', 'proxy_keepInMessage', 'tag', 'proxy_editing'] }],
@@ -26,10 +28,27 @@ export const event: DiscordEvent = {
 
 		if (partialUser.proxy_editing === false) { return; }
 
-		const { replaceOldMessage} = await checkForProxy(oldMessage, partialUser);
+		const [partialQuids] = await Promise.all([
+			Quid.findAll({ where: { userId: partialUser.id }, attributes: ['id', 'proxies'] }),
+		]);
+		let oldMessageIsProxied = false;
+		let newMessageIsProxied = false;
+		for (const partialQuid of partialQuids) {
+			for (const p of partialQuid.proxies) {
+				if (oldMessage.content.startsWith(p[0] ?? '')
+					&& oldMessage.content.endsWith(p[1] ?? '')) {
+					oldMessageIsProxied = true;
+				}
+				if (message.content.startsWith(p[0] ?? '')
+					&& message.content.endsWith(p[1] ?? '')) {
+					newMessageIsProxied = true;
+				}
+			}
+		}
 		const { replaceMessage, quid, partialUserToServer } = await checkForProxy(message, partialUser);
 
-		if (!replaceOldMessage && replaceMessage && hasName(quid) && (message.content.length > 0 || message.attachments.size > 0)) {
+		if (!oldMessageIsProxied && !newMessageIsProxied) { return; }
+		if (replaceMessage && hasName(quid) && (message.content.length > 0 || message.attachments.size > 0)) {
 
 			const botMessage = await sendMessage(message.channel, message.content, quid, partialUser, partialServer, message.author, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined, partialUserToServer ?? undefined)
 				.catch(error => {
