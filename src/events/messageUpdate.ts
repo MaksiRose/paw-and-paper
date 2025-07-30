@@ -9,7 +9,6 @@ import { isObject } from '../utils/helperFunctions';
 import { getMissingPermissionContent, hasPermission, permissionDisplay } from '../utils/permissionHandler';
 import { createGuild } from '../utils/updateGuild';
 import { checkForProxy } from './messageCreate';
-import UserToServer from '../models/userToServer';
 import Quid from '../models/quid';
 
 export const event: DiscordEvent = {
