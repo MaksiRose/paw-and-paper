@@ -1,4 +1,4 @@
-import { ActionRowBuilder, EmbedBuilder, InteractionReplyOptions, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, EmbedBuilder, InteractionReplyOptions, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, WebhookMessageEditOptions } from 'discord.js';
 import { capitalize, deepCopy, respond } from '../../utils/helperFunctions';
 import { hasName, hasNameAndSpecies } from '../../utils/checkUserState';
 import { hasCooldown, checkResting } from '../../utils/checkValidity';
@@ -16,8 +16,8 @@ import QuidToServer from '../../models/quidToServer';
 import { generateId } from 'crystalid';
 const { error_color } = require('../../../config.json');
 
-export type CustomIdArgs = ['accountselect', string, `${number}`] | ['learnabout', string]
-type SelectOptionArgs = ['nextpage'] | ['switchto' | 'view', string]
+export type CustomIdArgs = ['accountselect', string, `${number}`] | ['learnabout', string];
+type SelectOptionArgs = ['nextpage'] | ['switchto' | 'view', string];
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -257,7 +257,7 @@ export async function getProfileMessageOptions(
 	isYourself: boolean,
 	displaynameOptions: Parameters<typeof getDisplayname>[1],
 	embedArray: Array<EmbedBuilder> = [],
-): Promise<InteractionReplyOptions> {
+): Promise<InteractionReplyOptions & WebhookMessageEditOptions> {
 
 	const pronouns = quid ? deepCopy(quid.pronouns_en) : [];
 	if (quid && quid.noPronouns_en === true) { pronouns.push(['none']); }

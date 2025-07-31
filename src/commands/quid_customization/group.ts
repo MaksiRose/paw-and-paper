@@ -1,5 +1,5 @@
 import { generateId } from 'crystalid';
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, ModalBuilder, RestOrArray, SelectMenuComponentOptionData, SlashCommandBuilder, StringSelectMenuBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, ModalBuilder, RestOrArray, SelectMenuComponentOptionData, SlashCommandBuilder, StringSelectMenuBuilder, TextInputBuilder, TextInputStyle, WebhookMessageEditOptions } from 'discord.js';
 import Group from '../../models/group';
 import GroupToQuid from '../../models/groupToQuid';
 import GroupToServer from '../../models/groupToServer';
@@ -15,8 +15,8 @@ import { capitalize, respond } from '../../utils/helperFunctions';
 import { createId } from './name';
 const { default_color } = require('../../../config.json');
 
-type CustomIdArgs = ['groupselect', `${number}`] | ['create'] | ['rename' | 'delete' | 'tag' | 'confirm' | 'cancel' | 'join' | 'leave' | 'maingroup', string]
-type SelectOptionArgs = ['nextpage', string] | ['switchto', string]
+type CustomIdArgs = ['groupselect', `${number}`] | ['create'] | ['rename' | 'delete' | 'tag' | 'confirm' | 'cancel' | 'join' | 'leave' | 'maingroup', string];
+type SelectOptionArgs = ['nextpage', string] | ['switchto', string];
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -98,10 +98,10 @@ export const command: SlashCommand = {
 						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, user.id, ['confirm', customId.args[1]]))
 						.setLabel('Confirm')
 						.setStyle(ButtonStyle.Danger),
-					new ButtonBuilder()
-						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, user.id, ['cancel', customId.args[1]]))
-						.setLabel('Cancel')
-						.setStyle(ButtonStyle.Secondary))],
+						new ButtonBuilder()
+							.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, user.id, ['cancel', customId.args[1]]))
+							.setLabel('Cancel')
+							.setStyle(ButtonStyle.Secondary))],
 			}, 'update', interaction.message.id);
 			return;
 		}
@@ -312,7 +312,7 @@ export async function getGroupMessage(
 	quid?: Quid<true> | Quid<false>,
 	quidToServer?: QuidToServer,
 	groupId?: string,
-): Promise<InteractionReplyOptions> {
+): Promise<InteractionReplyOptions & WebhookMessageEditOptions> {
 
 	const groups = await Group.findAll({ where: { userId: user.id } });
 	const currentGroup = groups.find(g => g.id === (groupId ?? quid?.mainGroupId ?? ''));

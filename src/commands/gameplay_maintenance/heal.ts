@@ -237,15 +237,15 @@ function stringIsAvailableItem(
 ): string is CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | 'water' {
 
 	return string === 'water'
-	|| (
-		(
-			keyInObject(commonPlantsInfo, string)
-			|| keyInObject(uncommonPlantsInfo, string)
-			|| keyInObject(rarePlantsInfo, string)
-			|| keyInObject(specialPlantsInfo, string)
-		)
-		&& inventory.includes(string)
-	);
+		|| (
+			(
+				keyInObject(commonPlantsInfo, string)
+				|| keyInObject(uncommonPlantsInfo, string)
+				|| keyInObject(rarePlantsInfo, string)
+				|| keyInObject(specialPlantsInfo, string)
+			)
+			&& inventory.includes(string)
+		);
 }
 
 export async function getHealResponse(
@@ -273,14 +273,16 @@ export async function getHealResponse(
 	const quidsToHeal = await (async function(
 	): Promise<Quid[]> {
 
-		const quidToServers = await QuidToServer.findAll({ where: { serverId: server.id }, include: [{
-			model: Quid,
-			as: 'quid',
-			where: {
-				name: { [Op.not]: '' },
-				species: { [Op.not]: null },
-			},
-		}] });
+		const quidToServers = await QuidToServer.findAll({
+			where: { serverId: server.id }, include: [{
+				model: Quid,
+				as: 'quid',
+				where: {
+					name: { [Op.not]: '' },
+					species: { [Op.not]: null },
+				},
+			}]
+		});
 		return quidToServers.filter(qts => quidNeedsHealing(qts)).map(qts => qts.quid);
 	})();
 

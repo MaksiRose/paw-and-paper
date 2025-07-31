@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, Options, WebhookMessageEditOptions } from 'discord.js';
 import { respond } from '../../utils/helperFunctions';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { SlashCommand } from '../../typings/handle';
@@ -202,7 +202,7 @@ export const command: SlashCommand = {
 
 				const quidIdIn = { [Op.in]: quids.map(q => q.id) };
 				await Webhook.destroy({ where: { quidId: quidIdIn } });
-				await Friendship.destroy({ where: { [Op.or]: [ { quidId1: quidIdIn }, { quidId2: quidIdIn }] } });
+				await Friendship.destroy({ where: { [Op.or]: [{ quidId1: quidIdIn }, { quidId2: quidIdIn }] } });
 				await GroupToQuid.destroy({ where: { quidId: quidIdIn } });
 
 				const quidToServerIdIn = { [Op.in]: quidsToServers.map(qts => qts.id) };
@@ -424,7 +424,7 @@ function sendOriginalMessage(
 	user: User,
 	hasQuids: boolean,
 	hasServerInfo: boolean,
-): InteractionReplyOptions {
+): InteractionReplyOptions & WebhookMessageEditOptions {
 
 	return {
 		embeds: [new EmbedBuilder()
@@ -498,7 +498,7 @@ function getQuidsPage(
 function getServersPage(
 	page: number,
 	user: User,
-	servers: ({name?: string, id: string})[],
+	servers: ({ name?: string, id: string; })[],
 ): StringSelectMenuBuilder {
 
 	let accountsMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [];

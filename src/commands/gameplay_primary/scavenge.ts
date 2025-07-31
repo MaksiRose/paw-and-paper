@@ -22,7 +22,7 @@ import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers'
 import { pickMaterial, pickMeat, simulateMaterialUse, simulateMeatUse } from '../../utils/simulateItemUse';
 import { remindOfAttack } from './attack';
 
-type CustomIdArgs = ['new']
+type CustomIdArgs = ['new'];
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()

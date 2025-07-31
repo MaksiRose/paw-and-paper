@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, SlashCommandBuilder, TopLevelComponent } from 'discord.js';
 import DiscordUser from '../../models/discordUser';
 import Quid from '../../models/quid';
 import QuidToServer from '../../models/quidToServer';

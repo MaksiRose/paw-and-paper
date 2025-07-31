@@ -1,30 +1,34 @@
-import { ComponentType, ButtonStyle, APIActionRowComponent, ActionRowBuilder, ActionRow, MessageActionRowComponent, APIMessageActionRowComponent, MessageActionRowComponentBuilder, ButtonBuilder, ButtonComponent, APIButtonComponent, StringSelectMenuBuilder, APISelectMenuComponent, isJSONEncodable, RoleSelectMenuBuilder, UserSelectMenuBuilder, ChannelSelectMenuBuilder, MentionableSelectMenuBuilder, StringSelectMenuComponent } from 'discord.js';
+import { ComponentType, ButtonStyle, ActionRowBuilder, MessageActionRowComponentBuilder, ButtonBuilder, StringSelectMenuBuilder, isJSONEncodable, RoleSelectMenuBuilder, UserSelectMenuBuilder, ChannelSelectMenuBuilder, MentionableSelectMenuBuilder, TopLevelComponent } from 'discord.js';
 
 /**
  * Goes through all components in a message and disables them.
  */
 export function disableAllComponents(
-	messageComponents: ActionRowBuilder<ButtonBuilder>[] | ActionRow<ButtonComponent>[] | APIActionRowComponent<APIButtonComponent>[],
+	messageComponents: ActionRowBuilder<ButtonBuilder>[],
 ): ActionRowBuilder<ButtonBuilder>[];
 export function disableAllComponents(
-	messageComponents: ActionRowBuilder<StringSelectMenuBuilder>[] | ActionRow<StringSelectMenuComponent>[] | APIActionRowComponent<APISelectMenuComponent>[],
-): ActionRowBuilder<StringSelectMenuBuilder>[];
-export function disableAllComponents(
-	messageComponents: ActionRowBuilder<MessageActionRowComponentBuilder>[] | ActionRow<MessageActionRowComponent>[] | APIActionRowComponent<APIMessageActionRowComponent>[],
+	messageComponents: ActionRowBuilder<MessageActionRowComponentBuilder>[],
 ): ActionRowBuilder<MessageActionRowComponentBuilder>[];
 export function disableAllComponents(
-	messageComponents: ActionRowBuilder<MessageActionRowComponentBuilder>[] | ActionRow<MessageActionRowComponent>[] | APIActionRowComponent<APIMessageActionRowComponent>[],
-): ActionRowBuilder<MessageActionRowComponentBuilder>[] {
+	messageComponents: TopLevelComponent[],
+): TopLevelComponent[];
+export function disableAllComponents(
+	messageComponents: (ActionRowBuilder<MessageActionRowComponentBuilder> | TopLevelComponent)[],
+): (ActionRowBuilder<MessageActionRowComponentBuilder> | TopLevelComponent)[];
+export function disableAllComponents(
+	messageComponents: (ActionRowBuilder<MessageActionRowComponentBuilder> | TopLevelComponent)[],
+): (ActionRowBuilder<MessageActionRowComponentBuilder> | TopLevelComponent)[] {
 
-	return messageComponents = messageComponents.map(actionRow => {
+	return messageComponents.map(component => {
 
-		const newActionRow = new ActionRowBuilder<MessageActionRowComponentBuilder>(isJSONEncodable(actionRow) ? actionRow.toJSON() : actionRow);
-		return newActionRow.setComponents(actionRow.components.map(component => {
+		const newComp = component.toJSON();
+		if (newComp.type !== ComponentType.ActionRow) { return component; }
 
-			const data = isJSONEncodable(component) ? component.toJSON() : component;
+		const newTLC = new ActionRowBuilder<MessageActionRowComponentBuilder>();
+		return newTLC.setComponents(newComp.components.map(compcomp => {
 
-			if (data.type !== ComponentType.Button || data.style !== ButtonStyle.Link) { data.disabled = true; }
-			return data.type === ComponentType.Button ? new ButtonBuilder(data) : data.type === ComponentType.StringSelect ? new StringSelectMenuBuilder(data) : data.type === ComponentType.RoleSelect ? new RoleSelectMenuBuilder(data) : data.type === ComponentType.UserSelect ? new UserSelectMenuBuilder(data) : data.type === ComponentType.ChannelSelect ? new ChannelSelectMenuBuilder(data) : data.type === ComponentType.MentionableSelect ? new MentionableSelectMenuBuilder(data) : new StringSelectMenuBuilder(data);
+			if (compcomp.type !== ComponentType.Button || compcomp.style !== ButtonStyle.Link) { compcomp.disabled = true; }
+			return compcomp.type === ComponentType.Button ? new ButtonBuilder(compcomp) : compcomp.type === ComponentType.StringSelect ? new StringSelectMenuBuilder(compcomp) : compcomp.type === ComponentType.RoleSelect ? new RoleSelectMenuBuilder(compcomp) : compcomp.type === ComponentType.UserSelect ? new UserSelectMenuBuilder(compcomp) : compcomp.type === ComponentType.ChannelSelect ? new ChannelSelectMenuBuilder(compcomp) : compcomp.type === ComponentType.MentionableSelect ? new MentionableSelectMenuBuilder(compcomp) : new StringSelectMenuBuilder(compcomp);
 		}));
 	});
 }

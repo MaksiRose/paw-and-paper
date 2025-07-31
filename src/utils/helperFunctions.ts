@@ -1,5 +1,5 @@
 import { generateId } from 'crystalid';
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, RepliableInteraction, WebhookMessageEditOptions, Snowflake, InteractionResponse } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, RepliableInteraction, WebhookMessageEditOptions, Snowflake, InteractionResponse, PrimaryEntryPointCommandInteraction } from 'discord.js';
 import DiscordUser from '../models/discordUser';
 import ErrorInfo from '../models/errorInfo';
 import Server from '../models/server';
@@ -35,19 +35,19 @@ export function getArrayElement<T>(
  */
 export async function respond(
 	interaction: RepliableInteraction,
-	options: InteractionReplyOptions & WebhookMessageEditOptions & {fetchReply: true},
+	options: InteractionReplyOptions & WebhookMessageEditOptions & { fetchReply: true; },
 	type?: 'reply' | 'update',
 	editId?: Snowflake | '@original',
-): Promise<Message<boolean>>
+): Promise<Message<boolean>>;
 export async function respond(
 	interaction: RepliableInteraction,
-	options: InteractionReplyOptions & WebhookMessageEditOptions & {fetchReply?: boolean},
+	options: InteractionReplyOptions & WebhookMessageEditOptions & { fetchReply?: boolean; },
 	type?: 'reply' | 'update',
 	editId?: Snowflake | '@original',
-): Promise<InteractionResponse<boolean> | Message<boolean>>
+): Promise<InteractionResponse<boolean> | Message<boolean>>;
 export async function respond(
 	interaction: RepliableInteraction,
-	options: InteractionReplyOptions & WebhookMessageEditOptions & {fetchReply?: boolean},
+	options: InteractionReplyOptions & WebhookMessageEditOptions & { fetchReply?: boolean; },
 	type: 'reply' | 'update' = 'reply',
 	editId?: Snowflake | '@original',
 ): Promise<InteractionResponse<boolean> | Message<boolean>> {
@@ -182,7 +182,7 @@ export async function sendErrorMessage(
 			id: interaction.commandId,
 			name: interaction.commandName,
 			command_type: interaction.commandType,
-			options: interaction.options.data,
+			options: interaction.isPrimaryEntryPointCommand() ? {} : interaction.options.data,
 			target_id: interaction.isContextMenuCommand() ? interaction.targetId : undefined,
 		} : {
 			component_type: interaction.isMessageComponent() ? interaction.componentType : undefined,
